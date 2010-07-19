@@ -79,7 +79,7 @@ int main()
   CustomNicolasAccessor<int, MatrixXf> acc( orig );
   cout << MatrixXf::NullaryExpr( 5, 4, acc );
   cout << endl << endl;
-  (MatrixXf::NullaryExpr( 5, 4, acc ))(1,1)=-5;
+  //(MatrixXf::NullaryExpr( 5, 4, acc ))(1,1)=-5;
   MatrixXf o2(5,5); o2 = MatrixXf::Ones(5,5);
   cout << o2 << endl << endl;
   cout << o2*MatrixXf::NullaryExpr( 5, 4, acc ) << endl<<endl;

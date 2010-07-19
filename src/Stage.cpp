@@ -12,82 +12,6 @@ typedef bnu::triangular_adaptator< SubMatrixXd > TriSubMatrixXd;
 namespace soth
 {
 
-  /* --- ROT GR ------------------------------------------------------------- */
-  /* --- ROT GR ------------------------------------------------------------- */
-  /* --- ROT GR ------------------------------------------------------------- */
-
-  class RotationGiven
-  {
-  protected:
-    double c,s;
-    unsigned int i,j;
-
-  public:
-    RotationGiven( double a, double b, unsigned int i, unsigned int j );
-    RotationGiven( void );
-
-    template< typename MatrixType >
-    void init( const MatrixType& m, unsigned int i1, unsigned int i2, unsigned int j );
-    template< typename MatrixType >
-    void init( unsigned int i, unsigned int j1, unsigned int j2, const MatrixType& m );
-
-
-    /* --- operator -- */
-    template <typename MatrixType >
-    MatrixType & multiplyLeft( MatrixType & m );
-    template <typename MatrixType >
-    MatrixType & multiplyRight( MatrixType & m );
-
-  };
-
-  /* --- ROT HH ------------------------------------------------------------- */
-  /* --- ROT HH ------------------------------------------------------------- */
-  /* --- ROT HH ------------------------------------------------------------- */
-
-  class RotationHouseHolder
-  {
-  protected:
-    VectorXd h;
-    double factor;
-
-  public:
-    RotationHouseHolder( void )
-
-    // Init from column j of QR-issued matrix m.
-    template< typename MatrixType >
-    void init( MatrixType& m, unsigned int j );
-
-    /* --- operator -- */
-    template <typename MatrixType >
-    MatrixType & multiplyLeft( MatrixType & m );
-    template <typename MatrixType >
-    MatrixType & multiplyRight( MatrixType & m );
-
-  };
-
-  typedef std::list< RotationGiven > RotationGiven_list_t;
-  typedef std::list< RotationHouseHolder > RotationHouseHolder_list_t;
-
-  template< typename MatrixGen >
-  void initFromQR( RotationHouseHolder_list_t& hh, MatrixGen& A )
-  {
-    const unsigned int colA=A.size2();
-    const unsigned int rowA=A.size1();
-    hh.resize(colA);
-    RotationHouseHolder_list_t::iterator iterHH=hh.begin();
-    for( unsigned int j=0;j<colA;++j,++iterHH )
-      {
-	iterHH->init(A,j);
-	for( unsigned int i=j+1;i<rowA; ++i ) { A(i,j) = 0; }
-      }
-  }
-
-  template< typename MatrixGen >
-  void prod( const RotationHouseHolder_list_t& hh, MatrixGen& A );
-  template< typename MatrixGen >
-  void prod( MatrixGen& A,const RotationHouseHolder_list_t& hh );
-
-
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
@@ -108,7 +32,7 @@ namespace soth
     TriMatrixXd Ldamp;
 
     // fullRankRows = Ir. defRankRows = In.
-    Indirect& Ir,In; // Ir = L0sq.indirect1() -- In = 
+    Indirect& Ir,In; // Ir = L0sq.indirect1() -- In =
     Indirect unactiveRows;
 
     unsigned int sizeM,sizeL; // sizeL = card(Ir)
@@ -270,17 +194,17 @@ namespace soth
   public:
     /* --- ACCESSORS --- */
 
-    MatrixSubf M();
-    MatrixSubf L();
-    MatrixSubf Lo();
+    SubMatrixXd M();
+    SubMatrixXd L();
+    SubMatrixXd Lo();
 
-    const_MatrixSubf M() const ;
-    const_MatrixSubf L() const ;
-    const_MatrixSubf Lo() const ;
+    const_SubMatrixXd M() const ;
+    const_SubMatrixXd L() const ;
+    const_SubMatrixXd Lo() const ;
 
-    RowSubf row( const unsigned int r );
-    RowSubf rown( const unsigned int r ); // row rank def
-    RowSubf rowf( const unsigned int r ); // row rank full
+    SubRowXd row( const unsigned int r );
+    SubRowXd rown( const unsigned int r ); // row rank def
+    SubRowXd rowf( const unsigned int r ); // row rank full
 
     /* --- MODIFIORS --- */
     void increaseSizeM();

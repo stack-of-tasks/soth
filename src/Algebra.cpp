@@ -32,7 +32,6 @@ MATLAB::MATLAB( const VectorXi& v1 )
 template< typename bubTemplateMatrix >
 void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
       {
-	//MATLAB::fullPrec=false;
 	std::ostringstream os; os << "[ ";
 	std::ostringstream ostmp;
 	for( unsigned int i=0;i<m1.rows();++i )
@@ -63,6 +62,8 @@ MATLAB::MATLAB( const MatrixXd& m1)
 
 namespace soth
 {
+  bool MATLAB::fullPrec=false;
+
   std::ostream & operator << (std::ostream & os, const MATLAB & m )
   {return os << m.str; }
 }
