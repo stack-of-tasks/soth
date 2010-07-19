@@ -13,22 +13,32 @@ namespace soth
     double factor;
 
   public:
-    RotationHouseHolder( void )
+    RotationHouseHolder( void );
+
+    template< typename VectorGen >
+      RotationHouseHolder( const VectorGen& v, const double& f )
+      : h(v.size()),factor(f)
+      {
+	for( unsigned int i=0;i<v.size();++i ) h(i)=v(i);
+      }
 
     // Init from column j of QR-issued matrix m.
     template< typename MatrixType >
     void init( MatrixType& m, unsigned int j );
 
     /* --- operator -- */
-    template <typename MatrixType >
-    MatrixType & multiplyLeft( MatrixType & m );
-    template <typename MatrixType >
-    MatrixType & multiplyRight( MatrixType & m );
+    template <typename MatrixGen >
+    MatrixGen & multiplyMatrixLeft( MatrixGen & m );
+    template <typename MatrixGen >
+    MatrixGen & multiplyMatrixRight( MatrixGen & m );
+    template <typename VectorGen >
+    VectorGen & multiplyVector( VectorGen & m );
 
   };
 
-  typedef std::list< RotationGiven > RotationGiven_list_t;
   typedef std::list< RotationHouseHolder > RotationHouseHolder_list_t;
+
+  /* --- HEAVY CODE --------------------------------------------------------- */
 
   template< typename MatrixGen >
   void initFromQR( RotationHouseHolder_list_t& hh, MatrixGen& A )

@@ -252,7 +252,7 @@ namespace boost
 	template<typename bnuTemplateMatrix>
 	  inline int geqp (bnuTemplateMatrix &A,
 			   ::boost::numeric::ublas::vector< int >& jp,
-			   bnuVector& tau)
+			   ::boost::numeric::ublas::vector< double >& tau)
         {
           int const mF= traits::matrix_size1 (A);
           int const nF= traits::matrix_size2 (A);

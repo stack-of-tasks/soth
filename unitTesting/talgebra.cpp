@@ -4,6 +4,7 @@
 
 #include "soth/Algebra.h"
 #include <iostream>
+#include <boost/numeric/bindings/lapack/geqrf.hpp>
 
 bool soth::MATLAB::fullPrec = true;
 
@@ -17,7 +18,7 @@ int main (int argc, char** argv)
 
   soth::bnu::vector<int> E(9);
   soth::bnu::vector<double> b(9);
-  boost::numeric::bindings::lapack::geqp(A,E,b);
+
 
 
   soth::bnu::matrix<double,soth::bnu::column_major> Aqr;
@@ -26,10 +27,11 @@ int main (int argc, char** argv)
 
   soth::bnu::vector<double> betas(5); betas.clear();
   soth::bnu::vector<int> orderSe(5); orderSe.clear();
-  boost::numeric::bindings::lapack::geqp(Aqr,orderSe,betas);
+    boost::numeric::bindings::lapack::geqp(Aqr,orderSe,betas);
+
   std::cout << "qr(Aqr) =" << (soth::MATLAB)Aqr << std::endl;
   std::cout << "b =" << (soth::MATLAB)betas << std::endl;
   std::cout << "E =" << (soth::MATLAB)orderSe << std::endl;
-  
+
 
 }
