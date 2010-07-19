@@ -76,55 +76,16 @@ int main()
   }
   cout << orig << endl << endl;
 
-  CustomNicolasAccessor<int, MatrixXf> acc( orig );
-  cout << MatrixXf::NullaryExpr( 5, 4, acc );
+  typedef CustomNicolasAccessor<float, MatrixXf> MatrixIdxOp;
+  MatrixIdxOp acc( orig );
+  CwiseNullaryOp<MatrixIdxOp, MatrixXf> Midx = MatrixXf::NullaryExpr( 5, 4, acc );
+
+  cout << Midx;
   cout << endl << endl;
-  //(MatrixXf::NullaryExpr( 5, 4, acc ))(1,1)=-5;
+  //Midx(1,1)=-5;
   MatrixXf o2(5,5); o2 = MatrixXf::Ones(5,5);
   cout << o2 << endl << endl;
   cout << o2*MatrixXf::NullaryExpr( 5, 4, acc ) << endl<<endl;
 
 }
 
-
-/*
- CwiseNullaryOp< CustomNullaryOp, Derived > NullaryExpr  	(  	Index   	 rows,
-		Index  	cols,
-		const CustomNullaryOp &  	func	
-	)
- */
-
-
-
-
-
-
-
-
-
-
-/**
- * Petit main pour construire le tableau map, il fait l'hypothèse suivante:
- * quand tu écris en matlab Mat([1,3,2...],1:3:9) ta matrice de départ est 9x9,
- * stockée en column major mode (le mode par défault en Eigen) et en fait
- * ton indice 1, fair référence à la ligne 0 ou la colonne 0.
-*/
-
-/*
-int main()
-{
-  Matrix<int,5,1> rows;
-  rows << 1,3,2,5,8;
-  Vector4i cols;
-  cols << 1, 3, 6, 9;
-
-  for( int j=0; j<4; ++j )
-  {
-    for( int i=0; i<5; ++i )
-    {
-      cout << (cols[j]-1)*9+rows[i]-1 << ", ";
-    }
-  }
-  cout << endl;
-}
-*/
