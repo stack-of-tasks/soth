@@ -1,8 +1,6 @@
 # 
 #  Copyright 
 # 
-MESSAGE("DOC = "${PROJECT_NAME} " " ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.doxytag)
-
 
 # Configure package.dox file
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/package.dox.cmake

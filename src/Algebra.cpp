@@ -3,7 +3,19 @@
 
 using namespace soth;
 
-MATLAB::MATLAB( const bnu::vector<double>& v1 )
+MATLAB::MATLAB( const VectorXd& v1 )
+      {
+	std::ostringstream os; os << "[ ";
+	for( unsigned int i=0;i<v1.size();++i )
+	  {
+	    {os << " "; double a=v1(i);  os << a;}
+	    //DEBUGos <<  v1(i);
+	    if( v1.size()!=i+1 ) { os << ", "; }
+	  }
+	os << "]';";
+	str = os.str();
+      }
+MATLAB::MATLAB( const VectorXi& v1 )
       {
 	std::ostringstream os; os << "[ ";
 	for( unsigned int i=0;i<v1.size();++i )
@@ -17,32 +29,20 @@ MATLAB::MATLAB( const bnu::vector<double>& v1 )
       }
 
 
-MATLAB::MATLAB( const bnu::index_array<>& v1 )
-      {
-	std::ostringstream os; os << "[ ";
-	for( unsigned int i=0;i<v1.size();++i )
-	  {
-	    os <<  v1(i);
-	    if( v1.size()!=i+1 ) { os << ", "; }
-	  }
-	os << "]";
-	str = os.str();
-      }
-
 template< typename bubTemplateMatrix >
 void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
       {
 	//MATLAB::fullPrec=false;
 	std::ostringstream os; os << "[ ";
 	std::ostringstream ostmp;
-	for( unsigned int i=0;i<m1.size1();++i )
+	for( unsigned int i=0;i<m1.rows();++i )
 	  {
-	    for( unsigned int j=0;j<m1.size2();++j )
+	    for( unsigned int j=0;j<m1.cols();++j )
 	      {
 		if( m1(i,j)<0 ) ostmp << "-"; else ostmp << " ";
 		if(MATLAB::fullPrec||fabs(m1(i,j))>1e-6) ostmp <<  fabs(m1(i,j));
 		else { ostmp << "0"; }
-		if( m1.size2()!=j+1 )
+		if( m1.cols()!=j+1 )
 		  {
 		    ostmp << ",";
 		    const int size = ostmp.str().length();
@@ -51,14 +51,14 @@ void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
 		  }
 		os << ostmp.str(); ostmp.str("") ;
 	      }
-	    if( m1.size1()!=i+1 ) { os << " ;" << std::endl<<"  "; }
+	    if( m1.rows()!=i+1 ) { os << " ;" << std::endl<<"  "; }
 	    else { os << "  ];"; }
 	  }
 	matlab.str = os.str();
       }
 
- 
-MATLAB::MATLAB( const bnu::matrix<double>& m1)
+
+MATLAB::MATLAB( const MatrixXd& m1)
 {initMATLABFromBubMatrix(*this,m1);}
 
 namespace soth
