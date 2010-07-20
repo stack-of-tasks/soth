@@ -43,9 +43,33 @@ namespace soth
   {
     friend std::ostream & operator << (std::ostream & os, const MATLAB & m );
 
-    MATLAB( const VectorXd& v1 );
-    MATLAB( const VectorXi& v1 );
-    MATLAB( const MatrixXd& m1);
+
+    template< typename Derived >
+    MATLAB( const MatrixBase<Derived> & m1 )
+    {
+      std::ostringstream os; os << "[ ";
+      std::ostringstream ostmp;
+      for( unsigned int i=0;i<m1.rows();++i )
+	{
+	  for( unsigned int j=0;j<m1.cols();++j )
+	    {
+	      if( m1(i,j)<0 ) ostmp << "-"; else ostmp << " ";
+	      if(MATLAB::fullPrec||fabs(m1(i,j))>1e-6) ostmp <<  fabs(m1(i,j));
+	      else { ostmp << "0"; }
+	      if( m1.cols()!=j+1 )
+		{
+		  ostmp << ",";
+		  const int size = ostmp.str().length();
+		  for( unsigned int i=size;i<8;++i) ostmp<<" ";
+		  ostmp << "\t";
+		}
+	      os << ostmp.str(); ostmp.str("") ;
+	    }
+	  if( m1.rows()!=i+1 ) { os << " ;" << std::endl<<"  "; }
+	  else { os << "  ];"; }
+	}
+      str = os.str();
+    }
 
     static bool fullPrec;
     std::string str;

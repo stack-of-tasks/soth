@@ -33,35 +33,71 @@ namespace soth
       for( unsigned int i=0;i<size;++i ) h(i)=v(i);
     }
 
-    template< typename MatrixGen,typename VectorGen >
-    RotationHouseholder( const MatrixGen& qr, const VectorGen& coeff, Index j )
+    template< typename Derived,typename VectorGen >
+    RotationHouseholder( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j )
     {      init(qr,coeff,j);    }
 
     // Init from column j of QR-issued matrix qr.
-    template< typename MatrixGen,typename VectorGen >
-    void init( const MatrixGen& qr, const VectorGen& coeff, Index j );
+    template< typename Derived,typename VectorGen >
+    void init( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j );
 
     /* --- operator -- */
 
-    // M := M*H;
-    template< typename MatrixGen >
-    MatrixGen & multiplyMatrixLeft( MatrixGen & M );
-    // M := H*M;
-    template< typename MatrixGen >
-    MatrixGen & multiplyMatrixRight( MatrixGen & M );
-    // v := H*v = v'*H
+    // M := M*H.
+    template< typename Derived >
+    void multiplyMatrixLeft( MatrixBase<Derived> & M ) const;
+    // M := H*M.
+    template< typename Derived >
+    void multiplyMatrixRight( MatrixBase<Derived> & M ) const;
+    // v := H*v = v'*H.
     template< typename VectorGen >
-    void multiplyVector( VectorGen & v );
+    void multiplyVector( VectorGen & v ) const;
 
   }; // class RotationHouseholder
 
-  typedef std::vector< RotationHouseholder > householder_sequence_t;
+  class HouseholderSequence
+    :public std::vector< RotationHouseholder >
+  {
+  public:
+    template< typename Derived,typename VectorGen >
+    HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorGen & coeff  );
+
+    // v := H1*...*Hn*v = v*Hn*...*H1.
+    template< typename VectorGen >
+    void applyThisOnVector( VectorGen & v ) const;
+    // v := Hn*...*H1*v = v*H1*...*Hn.
+    template< typename VectorGen >
+    void applyTransposeOnVector( VectorGen & v ) const;
+
+    // M := M*H1*...*Hn.
+    template< typename Derived >
+    void applyThisOnTheLeft( MatrixBase<Derived> & M ) const;
+    // M := M*Hn*...*H1.
+    template< typename Derived >
+    void applyTransposeOnTheLeft( MatrixBase<Derived> & M ) const;
+    // M := H1*...*Hn*M.
+    template< typename Derived >
+    void applyThisOnTheRight( MatrixBase<Derived> & M ) const;
+    // M := Hn*...*H1*M.
+    template< typename Derived >
+    void applyTransposeOnTheRight( MatrixBase<Derived> & M ) const;
+
+  protected:
+    typedef std::vector< RotationHouseholder > base_seq_t;
+    typedef base_seq_t::iterator iterator;
+    typedef base_seq_t::const_iterator const_iterator;
+    typedef base_seq_t::reverse_iterator riterator;
+    typedef base_seq_t::const_reverse_iterator const_riterator;
+
+  };
 
 
   /* --- HEAVY CODE --------------------------------------------------------- */
-  template< typename MatrixGen,typename VectorGen >
+  /* --- HEAVY CODE --------------------------------------------------------- */
+  /* --- HEAVY CODE --------------------------------------------------------- */
+  template< typename Derived,typename VectorGen >
   void RotationHouseholder::
-  init( const MatrixGen& qr, const VectorGen& coeff, Index j )
+  init( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j )
   {
     assert( qr.diagonalSize() == coeff.size() );
     assert( qr.cols()>j );
@@ -75,49 +111,144 @@ namespace soth
 
   template< typename VectorGen >
   void RotationHouseholder::
-  multiplyVector( VectorGen & v )
+  multiplyVector( VectorGen & v ) const
   {
     typedef typename VectorGen::Index Index;
-    // v -= b*g*(g'*v)
-    // with g=[ 0...0 1 h ];
+    /* v -= b*g*(g'*v)
+     * with g=[ 0...0 1 h ]. */
     const Index nv = v.size();
     const Index & nh = size;
 
-    // Compute g'*v
+    /* Compute g'*v. */
     const Index vstart = nv-nh;
     double gv = v(vstart-1);
-    for( Index i=0;i<nh;++i )
-      {
-	gv += v(vstart+i)*h(i);
-      }
+    gv+= h.dot( v.tail(nh) );
 
-    // Compute b*g'*v
+    /* Compute b*g'*v. */
     gv *= factor;
 
-    // Apply v -= h*bgv
+    /* Apply v -= h*bgv. */
     v(vstart-1) -= gv;
-    for( Index i=0;i<nh;++i )
-      {
-	 v(vstart+i) -= gv*h(i);
-      }
-
+    v.tail(nh) -= gv*h;
   }
 
- 
+  // M := H*M;
+  template< typename Derived >
+  void RotationHouseholder::
+  multiplyMatrixRight( MatrixBase<Derived> & M ) const
+  {
+    const Index nc = M.cols();
+    for( Index i=0;i<nc;++i )
+      {
+	Eigen::MatrixXd::ColXpr Jcol = M.col(i);
+	multiplyVector( Jcol );
+      }
+  }
 
-  /* template< typename MatrixGen > */
-  /* void initFromQR( RotationHouseholder_list_t& hh, MatrixGen& A ) */
-  /* { */
-  /*   const unsigned int colA=A.size2(); */
-  /*   const unsigned int rowA=A.size1(); */
-  /*   hh.resize(colA); */
-  /*   RotationHouseholder_list_t::iterator iterHH=hh.begin(); */
-  /*   for( unsigned int j=0;j<colA;++j,++iterHH ) */
-  /*     { */
-  /* 	iterHH->init(A,j); */
-  /* 	for( unsigned int i=j+1;i<rowA; ++i ) { A(i,j) = 0; } */
-  /*     } */
-  /* } */
+  // M := M*H;
+  template< typename Derived >
+  void RotationHouseholder::
+  multiplyMatrixLeft( MatrixBase<Derived> & M ) const
+  {
+    const Index nr = M.rows();
+    for( Index i=0;i<nr;++i )
+      {
+	Eigen::MatrixXd::RowXpr Jrow = M.row(i);
+	multiplyVector( Jrow );
+      }
+  }
+
+  /* --- HEAVY CODE --------------------------------------------------------- */
+  template< typename Derived, typename VectorGen >
+  HouseholderSequence::
+  HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorGen & coeff )
+  {
+    resize(mQR.diagonalSize());
+    for( unsigned int i=0;i<mQR.diagonalSize();++i )
+      at(i).init(mQR,coeff,i);
+  }
+
+
+  // M := M*H1*...*Hn.
+  template< typename Derived >
+  void HouseholderSequence::
+  applyThisOnTheLeft( MatrixBase<Derived> & M ) const
+  {
+    typedef typename Derived::Index Index;
+    const Index nr = M.rows();
+    for( Index i=0;i<nr;++i )
+      {
+	std::cout << "i = " << i << std::endl;
+	typename Derived::RowXpr Mrow = M.row(i);
+	applyTransposeOnVector( Mrow );
+      }
+  }
+
+  // M := M*Hn*...*H1.
+  template< typename Derived >
+  void HouseholderSequence::
+  applyTransposeOnTheLeft( MatrixBase<Derived> & M ) const
+  {
+    typedef typename Derived::Index Index;
+    const Index nr = M.rows();
+    for( Index i=0;i<nr;++i )
+      {
+	std::cout << "i = " << i << std::endl;
+	typename Derived::RowXpr Mrow = M.row(i);
+	applyThisOnVector( Mrow );
+      }
+  }
+
+
+  // M := H1*...*Hn*M = [ H*M(:,1) ... H*M(:,nc) ].
+  template< typename Derived >
+  void HouseholderSequence::
+  applyThisOnTheRight( MatrixBase<Derived> & M ) const
+  {
+    typedef typename Derived::Index Index;
+    const Index nr = M.cols();
+    for( Index i=0;i<nr;++i )
+      {
+	std::cout << "i = " << i << std::endl;
+	typename Derived::ColXpr Mcol = M.col(i);
+	applyThisOnVector( Mcol );
+      }
+  }
+  // M := Hn*...*H1*M.
+  template< typename Derived >
+  void HouseholderSequence::
+  applyTransposeOnTheRight( MatrixBase<Derived> & M ) const
+  {
+    typedef typename Derived::Index Index;
+    const Index nr = M.cols();
+    for( Index i=0;i<nr;++i )
+      {
+	std::cout << "i = " << i << std::endl;
+	typename Derived::ColXpr Mcol = M.col(i);
+	applyTransposeOnVector( Mcol );
+      }
+  }
+
+  // v := H1*...*Hn*v = v*Hn*...*H1.
+  template< typename VectorGen >
+  void HouseholderSequence::
+  applyThisOnVector( VectorGen & v ) const
+  {
+    for( const_riterator iter=rbegin();iter!=rend();++iter )
+      {
+	iter->multiplyVector(v);
+      }
+  }
+  // v := Hn*...*H1*v = v*H1*...*Hn.
+  template< typename VectorGen >
+  void HouseholderSequence::
+  applyTransposeOnVector( VectorGen & v ) const
+  {
+    for( const_iterator iter=begin();iter!=end();++iter )
+      {
+	iter->multiplyVector(v);
+      }
+  }
 
 
 

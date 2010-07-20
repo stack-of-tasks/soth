@@ -11,6 +11,7 @@ SET(${PROJECT_NAME}_SRC
     soth.cpp
     Algebra.cpp
     Bound.cpp
+    Stage.cpp
 )
 
 

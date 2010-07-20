@@ -1,6 +1,8 @@
 #ifndef __SOTH_BOUND__
 #define __SOTH_BOUND__
 
+#include <vector>
+
 namespace soth
 {
   class Bound

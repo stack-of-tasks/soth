@@ -1,15 +1,22 @@
 #ifndef __SOTH_BASEY__
 #define __SOTH_BASEY__
 
+
+#include "soth/RotationHouseholder.hpp"
+
 namespace soth
 {
-  
+
   class BaseY
   {
   protected:
+    typedef MatrixXd::Index Index;
+
+  protected:
     bool isExplicit;
     MatrixXd matrixExplicit;
-    householder_sequence_t matrixHH;
+    HouseholderSequence matrixHH;
+    Index size;
 
   public:
     // Empty construction with memory allocation.
@@ -24,15 +31,12 @@ namespace soth
     template< typename VectorGen >
     void applyThisOnTheLeft( VectorGen & a );
 
-    // Y *= Yup
+    // Y *= Yup. Carefull: there is some recopy here.
     void composeOnTheRight( const BaseY& Yp );
-
+    // Y *= HHup.
+    void composeOnTheRight( const HouseholderSequence & hh );
 
   };
-
-
-
-
 
 };
 

@@ -3,30 +3,30 @@
 
 using namespace soth;
 
-MATLAB::MATLAB( const VectorXd& v1 )
-      {
-	std::ostringstream os; os << "[ ";
-	for( unsigned int i=0;i<v1.size();++i )
-	  {
-	    {os << " "; double a=v1(i);  os << a;}
-	    //DEBUGos <<  v1(i);
-	    if( v1.size()!=i+1 ) { os << ", "; }
-	  }
-	os << "]';";
-	str = os.str();
-      }
-MATLAB::MATLAB( const VectorXi& v1 )
-      {
-	std::ostringstream os; os << "[ ";
-	for( unsigned int i=0;i<v1.size();++i )
-	  {
-	    {os << " "; double a=v1(i);  os << a;}
-	    //DEBUGos <<  v1(i);
-	    if( v1.size()!=i+1 ) { os << ", "; }
-	  }
-	os << "]';";
-	str = os.str();
-      }
+// MATLAB::MATLAB( const VectorXd& v1 )
+//       {
+// 	std::ostringstream os; os << "[ ";
+// 	for( unsigned int i=0;i<v1.size();++i )
+// 	  {
+// 	    {os << " "; double a=v1(i);  os << a;}
+// 	    //DEBUGos <<  v1(i);
+// 	    if( v1.size()!=i+1 ) { os << ", "; }
+// 	  }
+// 	os << "]';";
+// 	str = os.str();
+//       }
+// MATLAB::MATLAB( const VectorXi& v1 )
+//       {
+// 	std::ostringstream os; os << "[ ";
+// 	for( unsigned int i=0;i<v1.size();++i )
+// 	  {
+// 	    {os << " "; double a=v1(i);  os << a;}
+// 	    //DEBUGos <<  v1(i);
+// 	    if( v1.size()!=i+1 ) { os << ", "; }
+// 	  }
+// 	os << "]';";
+// 	str = os.str();
+//       }
 
 
 template< typename bubTemplateMatrix >
@@ -57,8 +57,8 @@ void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
       }
 
 
-MATLAB::MATLAB( const MatrixXd& m1)
-{initMATLABFromBubMatrix(*this,m1);}
+// MATLAB::MATLAB( const MatrixXd& m1)
+// {initMATLABFromBubMatrix(*this,m1);}
 
 namespace soth
 {
