@@ -90,6 +90,11 @@ void testSubmatrix()
 }
 
 
+int main( void )
+{
+  testSubmatrix();
+}
+
 /*
  CwiseNullaryOp< CustomNullaryOp, Derived > NullaryExpr  	(  	Index   	 rows,
 		Index  	cols,
