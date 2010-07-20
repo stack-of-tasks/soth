@@ -26,20 +26,23 @@ namespace soth
     RotationHouseholder( Index inSize )
       : h(inSize),factor(0),size(inSize) {}
 
-    template< typename VectorGen >
-    RotationHouseholder( const VectorGen& v, const double& f )
-      : h(v.size()),factor(f),size(v.size())
+    template< typename VectorBase >
+    RotationHouseholder( const VectorBase& v, const double& f )
+      : h(v),factor(f),size(v.size())
     {
-      for( unsigned int i=0;i<size;++i ) h(i)=v(i);
+      EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     }
 
-    template< typename Derived,typename VectorGen >
-    RotationHouseholder( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j )
-    {      init(qr,coeff,j);    }
+    template< typename Derived,typename VectorBase >
+    RotationHouseholder( const MatrixBase<Derived>& qr, const VectorBase& coeff, Index j )
+    {
+      EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
+      init(qr,coeff,j);    
+    }
 
     // Init from column j of QR-issued matrix qr.
-    template< typename Derived,typename VectorGen >
-    void init( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j );
+    template< typename Derived,typename VectorBase >
+    void init( const MatrixBase<Derived>& qr, const VectorBase& coeff, Index j );
 
     /* --- operator -- */
 
@@ -50,8 +53,8 @@ namespace soth
     template< typename Derived >
     void multiplyMatrixRight( MatrixBase<Derived> & M ) const;
     // v := H*v = v'*H.
-    template< typename VectorGen >
-    void multiplyVector( VectorGen & v ) const;
+    template< typename VectorBase >
+    void multiplyVector( VectorBase & v ) const;
 
   }; // class RotationHouseholder
 
@@ -59,15 +62,15 @@ namespace soth
     :public std::vector< RotationHouseholder >
   {
   public:
-    template< typename Derived,typename VectorGen >
-    HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorGen & coeff  );
+    template< typename Derived,typename VectorBase >
+    HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorBase & coeff  );
 
     // v := H1*...*Hn*v = v*Hn*...*H1.
-    template< typename VectorGen >
-    void applyThisOnVector( VectorGen & v ) const;
+    template< typename VectorBase >
+    void applyThisOnVector( VectorBase & v ) const;
     // v := Hn*...*H1*v = v*H1*...*Hn.
-    template< typename VectorGen >
-    void applyTransposeOnVector( VectorGen & v ) const;
+    template< typename VectorBase >
+    void applyTransposeOnVector( VectorBase & v ) const;
 
     // M := M*H1*...*Hn.
     template< typename Derived >
@@ -95,10 +98,11 @@ namespace soth
   /* --- HEAVY CODE --------------------------------------------------------- */
   /* --- HEAVY CODE --------------------------------------------------------- */
   /* --- HEAVY CODE --------------------------------------------------------- */
-  template< typename Derived,typename VectorGen >
+  template< typename Derived,typename VectorBase >
   void RotationHouseholder::
-  init( const MatrixBase<Derived>& qr, const VectorGen& coeff, Index j )
+  init( const MatrixBase<Derived>& qr, const VectorBase& coeff, Index j )
   {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     assert( qr.diagonalSize() == coeff.size() );
     assert( qr.cols()>j );
     assert( j>=0 );
@@ -109,11 +113,12 @@ namespace soth
     factor = coeff(j);
   }
 
-  template< typename VectorGen >
+  template< typename VectorBase >
   void RotationHouseholder::
-  multiplyVector( VectorGen & v ) const
+  multiplyVector( VectorBase & v ) const
   {
-    typedef typename VectorGen::Index Index;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
+    typedef typename VectorBase::Index Index;
     /* v -= b*g*(g'*v)
      * with g=[ 0...0 1 h ]. */
     const Index nv = v.size();
@@ -159,12 +164,13 @@ namespace soth
   }
 
   /* --- HEAVY CODE --------------------------------------------------------- */
-  template< typename Derived, typename VectorGen >
+  template< typename Derived, typename VectorBase >
   HouseholderSequence::
-  HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorGen & coeff )
+  HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorBase & coeff )
   {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     resize(mQR.diagonalSize());
-    for( unsigned int i=0;i<mQR.diagonalSize();++i )
+    for( int i=0;i<mQR.diagonalSize();++i )
       at(i).init(mQR,coeff,i);
   }
 
@@ -230,20 +236,22 @@ namespace soth
   }
 
   // v := H1*...*Hn*v = v*Hn*...*H1.
-  template< typename VectorGen >
+  template< typename VectorBase >
   void HouseholderSequence::
-  applyThisOnVector( VectorGen & v ) const
+  applyThisOnVector( VectorBase & v ) const
   {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     for( const_riterator iter=rbegin();iter!=rend();++iter )
       {
 	iter->multiplyVector(v);
       }
   }
   // v := Hn*...*H1*v = v*H1*...*Hn.
-  template< typename VectorGen >
+  template< typename VectorBase >
   void HouseholderSequence::
-  applyTransposeOnVector( VectorGen & v ) const
+  applyTransposeOnVector( VectorBase & v ) const
   {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     for( const_iterator iter=begin();iter!=end();++iter )
       {
 	iter->multiplyVector(v);
