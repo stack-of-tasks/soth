@@ -22,7 +22,7 @@ void testSubMatrix()
   std::cout << "permuting row 1 and 2" << std::endl;
   p.permuteRow(1,2);
   std::cout << p << std::endl << std::endl;
-  
+
   std::cout << "permuting col 2 and 4 then 1 and 4" << std::endl;
   p.permuteCol(2,4);
   p.permuteCol(1,4);
