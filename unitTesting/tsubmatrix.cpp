@@ -1,138 +1,74 @@
 #include <Eigen/Core>
+namespace Eigen
+{
+  #include "soth/SubMatrix.h"
+}
 #include <iostream>
 
 using namespace Eigen;
-using namespace std;
 
-
-template<class MatrixType >
-struct CustomNicolasAccessor
+void testSubMatrix()
 {
-  typedef typename ei_traits<MatrixType>::Scalar Scalar;
-  static const int idx1[];
-  static const int idx2[];
+  MatrixXi m(4,5);
+  Map<MatrixXi> map(m.data(), m.size(), 1);
+  map = VectorXi::LinSpaced(0, m.size()-1, m.size());
+  std::cout << "original matrix:" << std::endl << std::endl;
+  std::cout << m << std::endl;
 
-  inline
-  const Scalar operator()( int& row, int& col ) const
-  {
-    return mat.coeff(idx1[row], idx2[col]);
-  }
+  SubMatrix<MatrixXi> p(m);
+  std::cout << "creating a permuted matrix with default permutation" << std::endl;
+  std::cout << p << std::endl << std::endl;
 
-  inline
-  Scalar& operator()( int& row, int& col )
-  {
-    return mat.coeffRef(idx1[row], idx2[col]);
-  }
+  std::cout << "permuting row 1 and 2" << std::endl;
+  p.permuteRow(1,2);
+  std::cout << p << std::endl << std::endl;
+  
+  std::cout << "permuting col 2 and 4 then 1 and 4" << std::endl;
+  p.permuteCol(2,4);
+  p.permuteCol(1,4);
+  std::cout << "col permutation indices are " << p.getColIndices().transpose() << " and the permuted matrix is" << std::endl;
+  std::cout << p << std::endl << std::endl;
 
-  inline
-  const Scalar operator()( int& idx ) const
-  {
-    return mat.coeff(idx1[idx%9], idx2[idx/9]);
-  }
-
-  inline
-  Scalar& operator()( int& idx )
-  {
-    return mat.coeffRef(idx1[idx%9], idx2[idx/9]);
-  }
+  std::cout << "*****Read access******" << std::endl;
+  std::cout << "coef (1,4) is " << p(1,4) << std::endl;
+  std::cout << "top right corner of size (2,2) is " << std::endl;
+  std::cout << p.topRightCorner(2,2) << std::endl;
+  std::cout << "and a triangular lower view" << std::endl;
+  MatrixXi pt = p.triangularView<Lower>();
+  std::cout << pt << std::endl;
 
 
+  std::cout << std::endl << std::endl;
+  std::cout << "----Now a row permuted only----" << std::endl;
+  SubMatrix<MatrixXi, RowPermutation> pr(m);
+  std::cout << "creating a row permuted matrix with default permutation" << std::endl;
+  std::cout << pr << std::endl << std::endl;
 
-  MatrixType& mat;
+  std::cout << "permuting row 1 and 2" << std::endl;
+  pr.permuteRow(1,2);
+  std::cout << pr << std::endl << std::endl;
 
-  CustomNicolasAccessor( MatrixType& m )
-  :mat( m )
-  {}
-};
+  std::cout << "*****Read access******" << std::endl;
+  std::cout << "coef (1,4) is " << pr(1,4) << std::endl;
+  std::cout << "top right corner of size (2,2) is " << std::endl;
+  std::cout << pr.topRightCorner(2,2) << std::endl;
+  std::cout << "and a triangular lower view" << std::endl;
+  pt = pr.triangularView<Lower>();
+  std::cout << pt << std::endl;
 
-template<class MatrixType >
-const int CustomNicolasAccessor<MatrixType>::idx1[] = { 0,1,2,3,4,5,6,7,8 };
-template<class MatrixType >
-const int CustomNicolasAccessor<MatrixType>::idx2[] = { 0,1,2,3,4,5,6,7,8 };
-
-namespace Eigen {
-  template<class MatrixType>
-    struct ei_functor_traits< CustomNicolasAccessor<MatrixType> >
-    {
-      enum {
-        Cost = 10,
-        PacketAccess = false,
-        IsRepeatable = false
-      };
-    };
+  std::cout << std::endl << std::endl;
+  std::cout << "----Now a col submatrix----" << std::endl;
+  SubMatrix<MatrixXi, ColPermutation>::ColIndices ind(3);
+  ind << 2,4,1;
+  SubMatrix<MatrixXi, ColPermutation> pc(m, ind);
+  std::cout << "original matrix:" << std::endl << std::endl;
+  std::cout << m << std::endl;
+  std::cout << "sub matrix" << std::endl;
+  std::cout << pc << std::endl << std::endl;
 }
 
 
-void testSubmatrix()
-{
-
-  MatrixXf orig(9,9);
-  int k=0;
-  for( int i=0; i<9; ++i )
-  {
-    for( int j=0; j<9; ++j ){
-      orig(i,j) = static_cast<float>(k++); }
-  }
-  cout << orig << endl << endl;
-
-  typedef CustomNicolasAccessor<MatrixXf> MatrixIdxOp;
-  MatrixIdxOp acc( orig );
-  CwiseNullaryOp<MatrixIdxOp, MatrixXf> Midx = MatrixXf::NullaryExpr( 5, 4, acc );
-
-  cout << Midx;
-  cout << endl << endl;
-  //Midx(1,1)=-5;
-  MatrixXf o2(5,5); o2 = MatrixXf::Ones(5,5);
-  cout << o2 << endl << endl;
-  cout << o2*Midx << endl<<endl;
-
-  //Midx = MatrixXf::Random(5,4);
-}
-
-
-int main( void )
-{
-  testSubmatrix();
-}
-
-/*
- CwiseNullaryOp< CustomNullaryOp, Derived > NullaryExpr  	(  	Index   	 rows,
-		Index  	cols,
-		const CustomNullaryOp &  	func	
-	)
- */
-
-
-
-
-
-
-
-
-
-
-/**
- * Petit main pour construire le tableau map, il fait l'hypothèse suivante:
- * quand tu écris en matlab Mat([1,3,2...],1:3:9) ta matrice de départ est 9x9,
- * stockée en column major mode (le mode par défault en Eigen) et en fait
- * ton indice 1, fair référence à la ligne 0 ou la colonne 0.
-*/
-
-/*
 int main()
 {
-  Matrix<int,5,1> rows;
-  rows << 1,3,2,5,8;
-  Vector4i cols;
-  cols << 1, 3, 6, 9;
-
-  for( int j=0; j<4; ++j )
-  {
-    for( int i=0; i<5; ++i )
-    {
-      cout << (cols[j]-1)*9+rows[i]-1 << ", ";
-    }
-  }
-  cout << endl;
+  testSubMatrix();
 }
-*/

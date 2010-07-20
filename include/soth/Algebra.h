@@ -52,9 +52,9 @@ namespace soth
     {
       std::ostringstream os; os << "[ ";
       std::ostringstream ostmp;
-      for( unsigned int i=0;i<m1.rows();++i )
+      for(int i=0;i<m1.rows();++i )
 	{
-	  for( unsigned int j=0;j<m1.cols();++j )
+	  for(int j=0;j<m1.cols();++j )
 	    {
 	      if( m1(i,j)<0 ) ostmp << "-"; else ostmp << " ";
 	      if(MATLAB::fullPrec||fabs(m1(i,j))>1e-6) ostmp <<  fabs(m1(i,j));

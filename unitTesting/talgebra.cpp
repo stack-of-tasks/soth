@@ -5,7 +5,6 @@
 #include "soth/Algebra.h"
 #include <iostream>
 
-bool soth::MATLAB::fullPrec = true;
 
 int main (int argc, char** argv)
 {
