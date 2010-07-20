@@ -1,7 +1,8 @@
 #ifndef __SOTH_ROTATION_HOUSEHOLDER__
 #define __SOTH_ROTATION_HOUSEHOLDER__
 
-
+#include "soth/Algebra.h"
+#include <iostream>
 #include <vector>
 
 namespace soth
@@ -61,6 +62,7 @@ namespace soth
   public:
     template< typename Derived,typename VectorGen >
     HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorGen & coeff  );
+    HouseholderSequence( void  ) {}
 
     // v := H1*...*Hn*v = v*Hn*...*H1.
     template< typename VectorGen >

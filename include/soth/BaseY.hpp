@@ -14,9 +14,9 @@ namespace soth
 
   protected:
     bool isExplicit;
+    Index size;
     MatrixXd matrixExplicit;
     HouseholderSequence matrixHH;
-    Index size;
 
   public:
     // Empty construction with memory allocation.
@@ -24,12 +24,32 @@ namespace soth
 
     void computeExplicitly();
 
-    // a := Y*a
+  public:
+    /* --- Multiplier --- */
+    /* TODO: when not explicit, it is cheaper to work directly on the
+     * result memory, while it is the opposit when explicit. What
+     * should we do?
+     */
+
+    // v := Y*v = v*Y'.
     template< typename VectorGen >
-    void applyThisOnTheRight( VectorGen & a );
-    // a := Y'*a = a'*Y
+    void applyThisOnVector( VectorGen & v ) const;
+    // v := Y'*v = v*Y.
     template< typename VectorGen >
-    void applyThisOnTheLeft( VectorGen & a );
+    void applyTransposeOnVector( VectorGen & v ) const;
+
+    // M := M*Y.
+    template< typename Derived >
+    void applyThisOnTheLeft( MatrixBase<Derived> & M ) const;
+    // M := M*Y'.
+    template< typename Derived >
+    void applyTransposeOnTheLeft( MatrixBase<Derived> & M ) const;
+    // M := Y*M.
+    template< typename Derived >
+    void applyThisOnTheRight( MatrixBase<Derived> & M ) const;
+    // M := Y'*M.
+    template< typename Derived >
+    void applyTransposeOnTheRight( MatrixBase<Derived> & M ) const;
 
     // Y *= Yup. Carefull: there is some recopy here.
     void composeOnTheRight( const BaseY& Yp );
@@ -37,6 +57,101 @@ namespace soth
     void composeOnTheRight( const HouseholderSequence & hh );
 
   };
+
+
+  /* --- HEAVY CODE --------------------------------------------------------- */
+  /* --- HEAVY CODE --------------------------------------------------------- */
+  /* --- HEAVY CODE --------------------------------------------------------- */
+
+  // v := Y*v = v*Y'.
+  template< typename VectorGen >
+  void BaseY::
+  applyThisOnVector( VectorGen & v ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyThisOnVector(v);
+      }
+  }
+
+  // v := Y'*v = v*Y.
+  template< typename VectorGen >
+  void BaseY::
+  applyTransposeOnVector( VectorGen & v ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyTransposeOnVector(v);
+      }
+  }
+  // M := M*Y.
+  template< typename Derived >
+  void BaseY::
+  applyThisOnTheLeft( MatrixBase<Derived> & M ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyThisOnTheLeft(M);
+      }
+  }
+
+  // M := M*Y'.
+  template< typename Derived >
+  void BaseY::
+  applyTransposeOnTheLeft( MatrixBase<Derived> & M ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyTransposeOnTheLeft(M);
+      }
+  }
+
+  // M := Y*M.
+  template< typename Derived >
+  void BaseY::
+  applyThisOnTheRight( MatrixBase<Derived> & M ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyThisOnTheRight(M);
+      }
+  }
+
+  // M := Y'*M.
+  template< typename Derived >
+  void BaseY::
+  applyTransposeOnTheRight( MatrixBase<Derived> & M ) const
+  {
+    if( isExplicit )
+      {
+	/*TODO*/ throw "TODO";
+      }
+    else
+      {
+	matrixHH.applyTransposeOnTheRight(M);
+      }
+  }
+
 
 };
 

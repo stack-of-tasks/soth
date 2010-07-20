@@ -24,6 +24,8 @@ namespace soth
     double & valTwin;
 
   public:
+    Bound( void );
+    Bound( const Bound& clone );
     Bound( const double & val, bound_t type );
     Bound( const double & inValInf, const double & inValSup );
 
@@ -31,6 +33,9 @@ namespace soth
     /* Return the bound that is violated, NONE if bound are OK.
      * In case of twin-bounds, no check is performed, NONE is always returned. */
     bound_t check( const double & val );
+
+    Bound& operator= ( const Bound& clone );
+    Bound& operator= ( const double & val);
 
   }; // Class Bound
 

@@ -1,3 +1,6 @@
+#ifndef __SOTH_STAGE__
+#define __SOTH_STAGE__
+
 #include "soth/Algebra.h"
 #include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
@@ -39,7 +42,8 @@ namespace soth
     //Indirect& Ir,In; // Ir = L0sq.indirect1() -- In =
     //Indirect unactiveRows;
 
-    unsigned int sizeM,sizeL; // sizeL = card(Ir)
+    unsigned int sizeM,sizeL; // sizeL = card(Ir).
+    unsigned int sizeA; // sizeA = card(Ir) + card(In).
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -220,3 +224,6 @@ namespace soth
 
 
 }; // namespace soth
+
+
+#endif // #ifndef __SOTH_STAGE__

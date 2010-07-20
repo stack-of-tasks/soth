@@ -3,6 +3,15 @@
 
 namespace soth
 {
+  Bound::Bound( void )
+    : type(BOUND_NONE),valInf(0),valSup(0),valTwin(valInf)
+  {
+  }
+
+  Bound::Bound( const Bound & clone )
+    : type(clone.type),valInf(clone.valInf),valSup(clone.valSup),valTwin(valInf)
+  {
+  }
 
   Bound::Bound( const double & val, bound_t inType )
     : type(inType),valInf(val),valSup(val),valTwin(valInf)
@@ -61,7 +70,18 @@ namespace soth
     return BOUND_NONE;
   }
 
+  Bound& Bound::operator= ( const Bound& clone )
+  {
+    valInf=clone.valInf;
+    valSup=clone.valSup;
+    type=clone.type;
+  }
 
+  Bound& Bound::operator= ( const double & val)
+  {
+    valTwin = val;
+    type= BOUND_TWIN;
+  }
 
 
 

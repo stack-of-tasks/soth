@@ -1,3 +1,6 @@
+#ifndef __SOTH_ALGEBRA__
+#define __SOTH_ALGEBRA__
+
 #include <Eigen/Core>
 #include <iostream>
 
@@ -78,3 +81,6 @@ namespace soth
 
 
 }; // namespace soth
+
+
+#endif // #ifndef __SOTH_ALGEBRA__
