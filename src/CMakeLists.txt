@@ -10,6 +10,7 @@ SET(LIBRARY_NAME ${PROJECT_NAME})
 SET(${PROJECT_NAME}_SRC
     soth.cpp
     Algebra.cpp
+    Bound.cpp
 )
 
 

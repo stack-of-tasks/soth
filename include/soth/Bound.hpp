@@ -31,6 +31,10 @@ namespace soth
     bound_t check( const double & val );
 
   }; // Class Bound
+
+
+  typedef std::vector< Bound > bound_vector_t;
+
 }; // namespace soth
 
 #endif // #ifndef __SOTH_BOUND__
