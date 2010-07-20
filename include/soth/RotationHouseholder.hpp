@@ -59,7 +59,6 @@ namespace soth
   }; // class RotationHouseholder
 
   class HouseholderSequence
-    :public std::vector< RotationHouseholder >
   {
   public:
     template< typename Derived,typename VectorBase >
@@ -92,6 +91,8 @@ namespace soth
     typedef base_seq_t::reverse_iterator riterator;
     typedef base_seq_t::const_reverse_iterator const_riterator;
 
+  private:
+    std::vector< RotationHouseholder > hhList;
   };
 
 
@@ -169,9 +170,9 @@ namespace soth
   HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorBase & coeff )
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    resize(mQR.diagonalSize());
+    hhList.resize(mQR.diagonalSize());
     for( int i=0;i<mQR.diagonalSize();++i )
-      at(i).init(mQR,coeff,i);
+      hhList[i].init(mQR,coeff,i);
   }
 
 
@@ -241,7 +242,7 @@ namespace soth
   applyThisOnVector( VectorBase & v ) const
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    for( const_riterator iter=rbegin();iter!=rend();++iter )
+    for( const_riterator iter=hhList.rbegin(); iter!=hhList.rend();++iter )
       {
 	iter->multiplyVector(v);
       }
@@ -252,7 +253,7 @@ namespace soth
   applyTransposeOnVector( VectorBase & v ) const
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    for( const_iterator iter=begin();iter!=end();++iter )
+    for( const_iterator iter=hhList.begin();iter!=hhList.end();++iter )
       {
 	iter->multiplyVector(v);
       }
