@@ -34,9 +34,13 @@ template<typename MatrixType, int PermutationType = RowAndColPermutation> class 
 public:
 
   typedef MatrixBase<SubMatrix> Base;
-  typedef Matrix<Index, MatrixType::RowsAtCompileTime,1> RowIndices;
-  typedef Matrix<Index, MatrixType::ColsAtCompileTime,1> ColIndices;
-  EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix) 
+
+//using Base::Scalar;
+//typedef typename Base::Scalar Scalar;
+//typedef typename Base::Index Index;
+EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
+typedef Matrix<typename Base::Scalar, MatrixType::RowsAtCompileTime,1> RowIndices;
+typedef Matrix<typename Base::Scalar, MatrixType::ColsAtCompileTime,1> ColIndices;
 
   inline SubMatrix(const MatrixType& matrix,
     const RowIndices& rowIndices, const ColIndices& colIndices)
@@ -119,8 +123,8 @@ template<typename MatrixType> class SubMatrix<MatrixType, ColPermutation>
 public:
 
   typedef MatrixBase<SubMatrix> Base;
-  typedef Matrix<Index, MatrixType::ColsAtCompileTime,1> ColIndices;
   EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix) 
+  typedef Matrix<typename Base::Scalar, MatrixType::ColsAtCompileTime,1> ColIndices;
 
   inline SubMatrix(const MatrixType& matrix, const ColIndices& colIndices)
     : m_matrix(matrix), m_colIndices(colIndices)
@@ -180,8 +184,8 @@ protected:
 public:
 
   typedef MatrixBase<SubMatrix> Base;
-  typedef Matrix<Index, MatrixType::RowsAtCompileTime,1> RowIndices;
   EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
+  typedef Matrix<typename Base::Scalar, MatrixType::RowsAtCompileTime,1> RowIndices;
 
   inline SubMatrix(const MatrixType& matrix,
     const RowIndices& rowIndices)
