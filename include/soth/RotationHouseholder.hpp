@@ -110,7 +110,7 @@ namespace soth
   init( const MatrixBase<Derived>& qr, const VectorBase& coeff, Index j )
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    assert( qr.diagonalSize() == coeff.size() );
+    assert( qr.diagonalSize() == coeff.size() ); //CHECK :  coeff.size might be smaller in case the matrix is not full rank ?
     assert( qr.cols()>j );
     assert( j>=0 );
 
