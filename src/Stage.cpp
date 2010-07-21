@@ -13,92 +13,117 @@ namespace soth
     ,M(ML_,false),L(ML_,false),e(e_,false)
     ,isWIdenty(true),W(W_,false)
     ,Ir(L.getRowIndices()),Irn(M.getRowIndices() )
-    ,sizeM(0),sizeL(0)
+    ,sizeM(0),sizeL(0),sizeN(0),sizeA(0)
   {
     assert( bounds.size() == J.rows() );
   }
 
 
+  /* Compute ML=J(initIr,:)*Y. */
   void Stage::
-  computeInitialCOD( const unsigned int previousRank,
-		     const Indirect & initialIr )
+  computeInitalJY( const Indirect & initialIr )
   {
-    std::cout << "J = " << (MATLAB)J << std::endl;
-
+    if( isAllRow(initialIr) ) { computeInitalJY_allRows(); return; }
     if( initialIr.size()==0 )
       {
+	std::cerr << "(#" << __LINE__ << "): TODO: initial IR empty." << std::endl;
 	/*TODO*/throw "TODO";
       }
 
-    /* Compute ML=J(initIr,:)*Y. */
     for( unsigned int i=0;i<initialIr.size();++i )
       {
 	MatrixXd::RowXpr MLrow = ML_.row(i);
 	MLrow = J.row(initialIr(i));
 	Y.applyThisOnTheLeft( MLrow );
       }
-    std::cout << "ML = " << (MATLAB)ML_ << std::endl;
+    std::cout << "JY = " << (MATLAB)ML_ << std::endl;
 
-    /* Fix the size of M and L. L is supposed full rank yet. */
+    /* Set the size of M and L. L is supposed full rank yet. */
     sizeA=initialIr.size();
+  }
+  /* Compute ML=J(:,:)*Y. */
+  void Stage::
+  computeInitalJY_allRows(void)
+  {
+    for( unsigned int i=0;i<nr;++i )
+      {
+	MatrixXd::RowXpr MLrow = ML_.row(i);
+	MLrow = J.row(i);
+	Y.applyThisOnTheLeft( MLrow );
+      }
+
+    sizeA=nr;
+  }
+
+  unsigned int Stage::
+  computeInitialCOD( const unsigned int previousRank,
+		     const Indirect & initialIr )
+  {
+    std::cout << "J = " << (MATLAB)J << std::endl;
+
+    /* Compute ML=J(initIr,:)*Y. */
+    computeInitalJY(initialIr);
+
+    /* Set the size of M and L. L is supposed full rank yet. */
     sizeL=sizeA;
     sizeM=previousRank;
-    std::cout << "sizesAML = [" << sizeA << ", " << sizeM << ", "
-	      << sizeL << "]." << std::endl;
+    //std::cout << "sizesAML = [" << sizeA << ", " << sizeM << ", " << sizeL << "]." << std::endl;
 
-    // M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end);
-    M.setRangeCol(0,previousRank);    M.setRangeRow(0,sizeA);
-    L.setRangeCol(previousRank,nc);   L.setRangeRow(0,sizeA);
-    //M.insertRow(2);
+    /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
+    M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
+    L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
     std::cout << "M = " << (MATLAB)M << std::endl;
     std::cout << "L = " << (MATLAB)L << std::endl;
 
-    // A=columnMajor(L)  // A==L'
+    /* A=L'; mQR=QR(A); */
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> mQR(nr,nc);
-
-    // qr(A);
     mQR.compute(L.transpose());
     const MatrixXd & QR = mQR.matrixQR();
     std::cout << "mQR = " << (MATLAB)QR << std::endl;
+
+    /* L=triu(mQR'); */
     const VectorXi & P = mQR.colsPermutation().indices();
     for( MatrixXd::Index i=0;i<QR.diagonalSize();++i )
       {
 	rowL0(P(i)).head(i+1) =  QR.col(i).head(i+1);
 	rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
       }
-    L.setRowIndices(P);
-    M.setRowIndices(P);
+    L.setRowIndices(P);    M.setRowIndices(P);
     std::cout << "L = " << (MATLAB)L << std::endl;
     std::cout << "M = " << (MATLAB)M << std::endl;
 
-    //W.setRowIndices(Ir);
-    W.setRangeRow(0,sizeL);
-    W.setColIndices(Ir);
+    W.setRowRange(0,sizeL); W.setColIndices(Ir);
     W_.setIdentity(); // DEBUG
-    //std::cout << "W = " << (MATLAB)W << std::endl;
-    std::cout << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
+    std::cout << "W = " << (MATLAB)W << std::endl;
 
-    // for i=rank:-1:1
-    //   if( L(i,i)!= 0 ) break;
-    // 	nullifyLineDeficient( i );
-    //sizeL = mQR.rank();
+    /* for i=rank:-1:1
+     *   if( L(i,i)!= 0 ) break;
+     *     nullifyLineDeficient( i );
+     * sizeL = mQR.rank();
+     */
     const Index rank = mQR.rank();
     while( sizeL>rank )
       {
+	/* Nullify the last line of L, which is of size rank. */
 	nullifyLineDeficient( sizeL-1,rank );
       }
-    L.setRangeCol(sizeM,sizeM+sizeL);
+    L.setColRange(sizeM,sizeM+sizeL);
     std::cout << "Lo = " << (MATLAB)L << std::endl;
     std::cout << "W = " << (MATLAB)W << std::endl;
 
-    // RotationHouseHolder_list_t Yup( A );
+    /* Y=Y*Yup; */
     HouseholderSequence Yup( mQR.matrixQR(),mQR.hCoeffs(),rank );
-    // Y=Y*Yup;
     Y.composeOnTheRight(Yup);
 
+    return previousRank+sizeL;
   }
 
-  // row is the position of the line, r its length
+  /* Nullify the line <row> which is suppose to be length <in_r> (row-1 by
+   * default) by given-rotations comming from the left.
+   * Apply the same transformation on M, L and W. Remove the line from L
+   * and reorder the lines of M and W by the way.
+   * row is the position of the line, in_r its length.
+   */
   void Stage::
   nullifyLineDeficient( const Index row, const Index in_r )
   {
@@ -113,7 +138,7 @@ namespace soth
       In << r;
      */
     const Index r = (in_r<0)?row-1:in_r;
-    std::cout << "r = " << r << " , row = " << row << std::endl;
+    //std::cout << "r = " << r << " , row = " << row << std::endl;
 
     if( isWIdenty )
       {
@@ -121,22 +146,26 @@ namespace soth
 	W_.setIdentity();
       }
 
+    //std::cout << "WLinit = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
     for( Index i=r-1;i>=0;--i )
       {
 	Givensd G1;
 	G1.makeGivens(L(i,i),L(row,i));
 	Block<MatrixXd> ML(ML_,0,0,nr,sizeM+r);
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
-	std::cout << "MLa = " << (MATLAB)ML << std::endl;
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
 	std::cout << "W = " << (MATLAB)W << std::endl;
 	std::cout << "L = " << (MATLAB)L << std::endl;
-	std::cout << "WL = " << (MATLAB)(MatrixXd)(W.transpose()*L) << std::endl;
-      }
+	//std::cout << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
+    }
 
     L.removeRow(row);
-    sizeL--;
+    M.pushRowFront(M.removeRow(row+sizeN));
+    std::cout << "rem = " << row+sizeN << std::endl;
+    W.pushColFront(W.removeCol(row+sizeN));
+    std::cout << "Wr = " << W.getColIndices() << std::endl;
+    sizeL--; sizeN++;
   }
 
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
@@ -148,7 +177,7 @@ namespace soth
      WMLY.block(0,0,sizeA,sizeM) = W*M;
      std::cout << WMLY << std::endl;
      std::cout << "wb = " << W.block(0,0,sizeA,sizeL)*L << std::endl;
-     WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,0,sizeA,sizeL)*L;
+     WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
      std::cout << (MATLAB)WMLY << std::endl;
 
      Y.applyTransposeOnTheLeft(WMLY);
@@ -173,5 +202,8 @@ namespace soth
     return ML_.row(Ir(r)).tail(nc-sizeM);
   }
 
+
+
+  Stage::Indirect Stage::_allRows;
 
 }; // namespace soth

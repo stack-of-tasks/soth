@@ -55,7 +55,8 @@ namespace soth
     Indirect unactiveRows;
 
     unsigned int sizeM,sizeL; // sizeL = card(Ir).
-    unsigned int sizeA; // sizeA = card(Ir) + card(In).
+    unsigned int sizeN; // sizeN = card(In) = sizeA-sizeL.
+    unsigned int sizeA; // A for active: sizeA = card(Ir) + card(In).
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -71,7 +72,8 @@ namespace soth
 
     /* --- INIT ------------------------------------------------------------- */
 
-    void computeInitialCOD( const unsigned int previousRank,
+    /* Return the rank of the current COD = previousRank+size(L). */
+    unsigned int computeInitialCOD( const unsigned int previousRank,
 			    const Indirect & initialIr );
     /*
       ML=J(initIr,:)*Y;
@@ -89,7 +91,6 @@ namespace soth
 
      */
 
-
     void nullifyLineDeficient( const Index row, const Index in_r );
     /*
       Jd = L.row(r);
@@ -105,8 +106,12 @@ namespace soth
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
     void recompose( MatrixXd& WMLY );
 
-    /* --- DOWN ------------------------------------------------------------- */
+  protected:
+    void computeInitalJY( const Indirect & initialIr );
+    void computeInitalJY_allRows(void);
 
+    /* --- DOWN ------------------------------------------------------------- */
+  public:
     // Return true if the rank re-increase operated at the current stage.
     //bool downdate( const unsigned int position,
     //RotationGiven_list_t & Ydown );
@@ -234,6 +239,12 @@ namespace soth
     /* --- MODIFIORS --- */
     // void increaseSizeM();
     // void decreaseSizeM();
+
+  public:
+    static Indirect& allRows() { return _allRows; }
+  protected:
+    static Indirect _allRows;
+    bool isAllRow( const Indirect& idx ) { &idx == &_allRows; }
 
   };
 

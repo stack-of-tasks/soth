@@ -47,13 +47,17 @@ MACRO(LIST2STRING _VAR_ARG _LIST_ARG)
 ENDMACRO(LIST2STRING)
 
 
-# --- EIGEN ---------------------------------------------------
-
+# --- EIGEN ----------------------------------------------------------
 FIND_PACKAGE(Eigen3)
 IF(EIGEN3_FOUND)
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 ENDIF(EIGEN3_FOUND)
 
+# --- BOOST HEADER ---------------------------------------------------
+FIND_PACKAGE( Boost 1.36.0 )
+IF(Boost_FOUND)
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+ENDIF()
 
 #
 # pkg-config file

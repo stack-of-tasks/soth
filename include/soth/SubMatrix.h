@@ -109,14 +109,16 @@ typedef Matrix<typename Base::Index, MatrixType::ColsAtCompileTime,1> ColIndices
     m_colIndices[i] = m_colIndices[j];
     m_colIndices[j] = tmp;
   }
-inline void removeRow( Index irm )
+inline Index removeRow( Index irm )
 {
   assert( irm<m_rowIndices.size() );
+  const Index res = m_rowIndices(irm);
   const Index s = m_rowIndices.size()-irm-1;
   m_rowIndices.segment( irm,s ) = m_rowIndices.tail( s );
   m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+  return res;
 }
-inline void insertRow( Index iadd )
+inline void pushRowBack( Index iadd )
 {
   assert( iadd<m_matrix.rows() );
   // TODO: assert( find(iadd,m_rowIndices) == -1 );
@@ -124,14 +126,25 @@ inline void insertRow( Index iadd )
   m_rowIndices.conservativeResize( s+1 );
   m_rowIndices(s) = iadd;
 }
-inline void removeCol( Index irm )
+inline void pushRowFront( Index iadd )
+{
+  assert( iadd<m_matrix.rows() );
+  // TODO: assert( find(iadd,m_rowIndices) == -1 );
+  const Index s = m_rowIndices.size();
+  m_rowIndices.conservativeResize( s+1 );
+  for( Index i=s;i>0;--i ){ m_rowIndices(i)=m_rowIndices(i-1); }
+  m_rowIndices(0) = iadd;
+}
+inline Index removeCol( Index irm )
 {
   assert( (irm<m_colIndices.size())&&(irm>=0) );
+  const Index res = m_colIndices(irm);
   const Index s = m_colIndices.size()-irm-1;
   m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
   m_colIndices.conservativeResize( m_colIndices.size()-1 );
+  return res;
 }
-inline void insertCol( Index iadd )
+inline void pushColBack( Index iadd )
 {
   assert( iadd<m_matrix.cols() );  assert( 0<=iadd );
   // TODO: assert( find(iadd,m_colIndices) == -1 );
@@ -139,18 +152,27 @@ inline void insertCol( Index iadd )
   m_colIndices.conservativeResize( s+1 );
   m_colIndices(s) = iadd;
 }
-
-inline void setRangeCol( Index start, Index end )
+inline void pushColFront( Index iadd )
 {
-  assert( start<end ); assert( start>=0 );
+  assert( iadd<m_matrix.cols() );
+  // TODO: assert( find(iadd,m_colIndices) == -1 );
+  const Index s = m_colIndices.size();
+  m_colIndices.conservativeResize( s+1 );
+  for( Index i=s;i>0;--i ){ m_colIndices(i)=m_colIndices(i-1); }
+  m_colIndices(0) = iadd;
+}
+
+inline void setColRange( Index start, Index end )
+{
+  assert( start<=end ); assert( start>=0 );
 
   const Index size = end-start;
   m_colIndices.resize(size);
   m_colIndices = VectorXi::LinSpaced(start,end,size);
 }
-inline void setRangeRow( Index start, Index end )
+inline void setRowRange( Index start, Index end )
 {
-  assert( start<end ); assert( start>=0 );
+  assert( start<=end ); assert( start>=0 );
 
   const Index size = end-start;
   m_rowIndices.resize(size);
@@ -218,20 +240,38 @@ public:
     m_colIndices[i] = m_colIndices[j];
     m_colIndices[j] = tmp;
   }
-inline void removeCol( Index irm )
+inline Index removeCol( Index irm )
 {
   assert( irm<m_colIndices.size() );
+  const Index res = m_colIndices(irm);
   const Index s = m_colIndices.size()-irm-1;
   m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
   m_colIndices.conservativeResize( m_colIndices.size()-1 );
 }
-inline void insertCol( Index iadd )
+inline void pushColBack( Index iadd )
 {
   assert( iadd<m_matrix.cols() );
   // TODO: assert( find(iadd,m_colIndices) == -1 );
   const Index s = m_colIndices.size();
   m_colIndices.conservativeResize( s+1 );
   m_colIndices(s) = iadd;
+}
+inline void pushColFront( Index iadd )
+{
+  assert( iadd<m_matrix.cols() );
+  // TODO: assert( find(iadd,m_colIndices) == -1 );
+  const Index s = m_colIndices.size();
+  m_colIndices.conservativeResize( s+1 );
+  for( Index i=s;i>0;--i ){ m_colIndices(i)=m_colIndices(i-1); }
+  m_colIndices(0) = iadd;
+}
+inline void setColRange( Index start, Index end )
+{
+  assert( start<=end ); assert( start>=0 );
+
+  const Index size = end-start;
+  m_colIndices.resize(size);
+  m_colIndices = VectorXi::LinSpaced(start,end,size);
 }
 
 protected:
@@ -295,14 +335,16 @@ public:
     m_rowIndices[i] = m_rowIndices[j];
     m_rowIndices[j] = tmp;
   }
-inline void removeRow( Index irm )
+inline Index removeRow( Index irm )
 {
   assert( irm<m_rowIndices.size() );
+  const Index res = m_rowIndices(irm);
   const Index s = m_rowIndices.size()-irm-1;
   m_rowIndices.segment( irm,s ) = m_rowIndices.tail( s );
   m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+  return res;
 }
-inline void insertRow( Index iadd )
+inline void pushRowBack( Index iadd )
 {
   assert( iadd<m_matrix.rows() );
   // TODO: assert( find(iadd,m_rowIndices) == -1 );
@@ -310,7 +352,23 @@ inline void insertRow( Index iadd )
   m_rowIndices.conservativeResize( s+1 );
   m_rowIndices(s) = iadd;
 }
+inline void pushRowFront( Index iadd )
+{
+  assert( iadd<m_matrix.rows() );
+  // TODO: assert( find(iadd,m_rowIndices) == -1 );
+  const Index s = m_rowIndices.size();
+  m_rowIndices.conservativeResize( s+1 );
+  for( Index i=s;i>0;--i ){ m_rowIndices(i)=m_rowIndices(i-1); }
+  m_rowIndices(0) = iadd;
+}
+inline void setRowRange( Index start, Index end )
+{
+  assert( start<=end ); assert( start>=0 );
 
+  const Index size = end-start;
+  m_rowIndices.resize(size);
+  m_rowIndices = VectorXi::LinSpaced(start,end,size);
+}
 protected:
   const MatrixType& m_matrix;
   RowIndices m_rowIndices;
