@@ -8,6 +8,7 @@ SET(${PROJECT_NAME}_HEADERS
     soth/soth.h
     soth/Algebra.h
 	soth/SubMatrix.h
+	soth/DestructiveColPivQR.h
 )
 
 # Recreate correct path for the headers

@@ -75,12 +75,14 @@ namespace soth
     valInf=clone.valInf;
     valSup=clone.valSup;
     type=clone.type;
+    return *this;
   }
 
   Bound& Bound::operator= ( const double & val)
   {
     valTwin = val;
     type= BOUND_TWIN;
+    return *this;
   }
 
 
