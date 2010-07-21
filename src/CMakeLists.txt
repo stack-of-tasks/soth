@@ -13,6 +13,7 @@ SET(${PROJECT_NAME}_SRC
     Bound.cpp
     Stage.cpp
     BaseY.cpp
+    HCOD.cpp
 )
 
 
