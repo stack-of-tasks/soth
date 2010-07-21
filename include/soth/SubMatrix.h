@@ -374,4 +374,6 @@ protected:
   RowIndices m_rowIndices;
 };
 
+
+
 #endif // EIGEN_PERMUTED_MATRIX_H

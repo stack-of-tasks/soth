@@ -133,13 +133,49 @@ void speedTest()
     total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
     std::cout << "ColPerm*Normal : " << total  << "ms                     dummy=" << dummy << std::endl;
   }
-
-
 }
+
+#include "soth/solvers.h"
+
+void testSolve()
+{
+  const int n = 6;
+  MatrixXd A = MatrixXd::Random(n,n);
+  SubMatrix<MatrixXd> P1(A);
+  MatrixXd P2 = A;
+  for (int i=0; i<5; ++i)
+  {
+    int j = rand()%n;
+    int k = rand()%n;
+    P1.permuteCol(j,k);
+    P2.col(j).swap(P2.col(k));
+  }
+  for (int i=0; i<5; ++i)
+  {
+    int j = rand()%n;
+    int k = rand()%n;
+    P1.permuteRow(j,k);
+    P2.row(j).swap(P2.row(k));
+  }
+  //std::cout << (P1 - P2).isZero() << std::endl;
+
+  VectorXd b = VectorXd::Random(n);
+  VectorXd b1 = b;
+  VectorXd b2 = b;
+
+  soth::solveInPlaceWithLowerTriangular(P1,b1);
+  P2.triangularView<Lower>().solveInPlace(b2);
+  std::cout << b1.transpose() << std::endl;
+  std::cout << b2.transpose() << std::endl;
+  std::cout << ((b1-b2).isZero()? "solution is ok": "there is a problem...") << std::endl;
+}
+
 
 
 int main()
 {
   //testSubMatrix();
-  speedTest();
+  //speedTest();
+
+  testSolve();
 }
