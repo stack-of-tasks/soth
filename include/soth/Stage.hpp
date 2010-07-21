@@ -1,6 +1,11 @@
 #ifndef __SOTH_STAGE__
 #define __SOTH_STAGE__
 
+#include <Eigen/Core>
+namespace Eigen
+{
+  #include "soth/SubMatrix.h"
+}
 #include "soth/Algebra.h"
 #include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
@@ -12,14 +17,18 @@ namespace soth
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
 
-
-
   class Stage
   {
   public:
-    typedef VectorXi Indirect;
+    typedef MatrixXd::Index Index;
+    typedef SubMatrix<MatrixXd> SubMatrixXd;
+    typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
+    typedef SubMatrixXd::RowIndices Indirect;
+    typedef VectorBlock<MatrixXd::RowXpr> RowL;
+    typedef PlanarRotation<double> Givensd;
 
   protected:
+
     const MatrixXd & J;
     const bound_vector_t & bounds;
     BaseY & Y;
@@ -30,8 +39,11 @@ namespace soth
     MatrixXd ML_;
     VectorXd e_;
 
-    //SubMatrixXd M,L;
-    //SubVector e;
+    SubMatrixXd M,L;
+    SubVectorXd e;
+
+    bool isWIdenty;
+    SubMatrixXd W;
 
     //SubMatrixXd L0sq;
     //TriSubMatrixXd L0; // L0 = tri(L0sq)
@@ -39,8 +51,8 @@ namespace soth
     //TriMatrixXd Ldamp;
 
     // fullRankRows = Ir. defRankRows = In.
-    //Indirect& Ir,In; // Ir = L0sq.indirect1() -- In =
-    //Indirect unactiveRows;
+    const Indirect& Ir, &Irn; // Ir = L0sq.indirect1() -- Irn = M.indirect1()
+    Indirect unactiveRows;
 
     unsigned int sizeM,sizeL; // sizeL = card(Ir).
     unsigned int sizeA; // sizeA = card(Ir) + card(In).
@@ -78,7 +90,7 @@ namespace soth
      */
 
 
-    //void nullifyLineDeficient( const unsigned int r );
+    void nullifyLineDeficient( const Index row, const Index in_r );
     /*
       Jd = L.row(r);
       foreach i in rank:-1:1
@@ -89,6 +101,9 @@ namespace soth
       Ir >> r;
       In << r;
      */
+
+    /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
+    void recompose( MatrixXd& WMLY );
 
     /* --- DOWN ------------------------------------------------------------- */
 
@@ -209,6 +224,8 @@ namespace soth
     // const_SubMatrixXd M() const ;
     // const_SubMatrixXd L() const ;
     // const_SubMatrixXd Lo() const ;
+
+    RowL rowL0( const unsigned int r ); 
 
     // SubRowXd row( const unsigned int r );
     // SubRowXd rown( const unsigned int r ); // row rank def

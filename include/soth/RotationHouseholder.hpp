@@ -63,10 +63,13 @@ namespace soth
   {
   public:
     template< typename Derived,typename VectorBase >
-    HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorBase & coeff  );
+    HouseholderSequence( const MatrixBase<Derived> & mQR,
+			 const VectorBase & coeff,
+			 const typename Derived::Index& rank  );
     HouseholderSequence( void  ) {}
 
     void reserve( unsigned int size ) { hhList.reserve(size); }
+    void append( const HouseholderSequence& hh );
 
     // v := H1*...*Hn*v = v*Hn*...*H1.
     template< typename VectorBase >
@@ -94,7 +97,6 @@ namespace soth
     typedef base_seq_t::const_iterator const_iterator;
     typedef base_seq_t::reverse_iterator riterator;
     typedef base_seq_t::const_reverse_iterator const_riterator;
-
   private:
     std::vector< RotationHouseholder > hhList;
   };
@@ -171,12 +173,21 @@ namespace soth
   /* --- HEAVY CODE --------------------------------------------------------- */
   template< typename Derived, typename VectorBase >
   HouseholderSequence::
-  HouseholderSequence( const MatrixBase<Derived> & mQR, const VectorBase & coeff )
+  HouseholderSequence( const MatrixBase<Derived> & mQR,
+		       const VectorBase & coeff,
+		       const typename Derived::Index& rank )
   {
-    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    hhList.resize(mQR.diagonalSize());
-    for( int i=0;i<mQR.diagonalSize();++i )
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
+    assert( mQR.diagonalSize()>rank );
+    hhList.resize(rank);
+    for( int i=0;i<rank;++i )
       hhList[i].init(mQR,coeff,i);
+  }
+
+  inline void HouseholderSequence::
+  append( const HouseholderSequence& hh )
+  {
+    hhList.insert( hhList.end(),hh.hhList.begin(),hh.hhList.end() );
   }
 
 

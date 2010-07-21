@@ -36,7 +36,7 @@ int main (int argc, char** argv)
 
   Eigen::MatrixXd Jt = J.transpose();
 
-  soth::HouseholderSequence hh( mQR,coeff );
+  soth::HouseholderSequence hh( mQR,coeff,Aqr.rank() );
   hh.applyThisOnTheLeft(J);
   hh.applyTransposeOnTheRight(Jt);
 

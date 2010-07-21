@@ -65,6 +65,9 @@ void testSubMatrix()
   std::cout << m << std::endl;
   std::cout << "sub matrix" << std::endl;
   std::cout << pc << std::endl << std::endl;
+
+
+
 }
 
 

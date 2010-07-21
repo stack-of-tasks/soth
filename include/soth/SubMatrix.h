@@ -39,8 +39,8 @@ public:
 //typedef typename Base::Scalar Scalar;
 //typedef typename Base::Index Index;
 EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
-typedef Matrix<typename Base::Scalar, MatrixType::RowsAtCompileTime,1> RowIndices;
-typedef Matrix<typename Base::Scalar, MatrixType::ColsAtCompileTime,1> ColIndices;
+typedef Matrix<typename Base::Index, MatrixType::RowsAtCompileTime,1> RowIndices;
+typedef Matrix<typename Base::Index, MatrixType::ColsAtCompileTime,1> ColIndices;
 
   inline SubMatrix(const MatrixType& matrix,
     const RowIndices& rowIndices, const ColIndices& colIndices)
@@ -109,6 +109,53 @@ typedef Matrix<typename Base::Scalar, MatrixType::ColsAtCompileTime,1> ColIndice
     m_colIndices[i] = m_colIndices[j];
     m_colIndices[j] = tmp;
   }
+inline void removeRow( Index irm )
+{
+  assert( irm<m_rowIndices.size() );
+  const Index s = m_rowIndices.size()-irm-1;
+  m_rowIndices.segment( irm,s ) = m_rowIndices.tail( s );
+  m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+}
+inline void insertRow( Index iadd )
+{
+  assert( iadd<m_matrix.rows() );
+  // TODO: assert( find(iadd,m_rowIndices) == -1 );
+  const Index s = m_rowIndices.size();
+  m_rowIndices.conservativeResize( s+1 );
+  m_rowIndices(s) = iadd;
+}
+inline void removeCol( Index irm )
+{
+  assert( (irm<m_colIndices.size())&&(irm>=0) );
+  const Index s = m_colIndices.size()-irm-1;
+  m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
+  m_colIndices.conservativeResize( m_colIndices.size()-1 );
+}
+inline void insertCol( Index iadd )
+{
+  assert( iadd<m_matrix.cols() );  assert( 0<=iadd );
+  // TODO: assert( find(iadd,m_colIndices) == -1 );
+  const Index s = m_colIndices.size();
+  m_colIndices.conservativeResize( s+1 );
+  m_colIndices(s) = iadd;
+}
+
+inline void setRangeCol( Index start, Index end )
+{
+  assert( start<end ); assert( start>=0 );
+
+  const Index size = end-start;
+  m_colIndices.resize(size);
+  m_colIndices = VectorXi::LinSpaced(start,end,size);
+}
+inline void setRangeRow( Index start, Index end )
+{
+  assert( start<end ); assert( start>=0 );
+
+  const Index size = end-start;
+  m_rowIndices.resize(size);
+  m_rowIndices = VectorXi::LinSpaced(start,end,size);
+}
 
 protected:
   const MatrixType& m_matrix;
@@ -124,7 +171,7 @@ public:
 
   typedef MatrixBase<SubMatrix> Base;
   EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix) 
-  typedef Matrix<typename Base::Scalar, MatrixType::ColsAtCompileTime,1> ColIndices;
+  typedef Matrix<typename Base::Index, MatrixType::ColsAtCompileTime,1> ColIndices;
 
   inline SubMatrix(const MatrixType& matrix, const ColIndices& colIndices)
     : m_matrix(matrix), m_colIndices(colIndices)
@@ -171,6 +218,21 @@ public:
     m_colIndices[i] = m_colIndices[j];
     m_colIndices[j] = tmp;
   }
+inline void removeCol( Index irm )
+{
+  assert( irm<m_colIndices.size() );
+  const Index s = m_colIndices.size()-irm-1;
+  m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
+  m_colIndices.conservativeResize( m_colIndices.size()-1 );
+}
+inline void insertCol( Index iadd )
+{
+  assert( iadd<m_matrix.cols() );
+  // TODO: assert( find(iadd,m_colIndices) == -1 );
+  const Index s = m_colIndices.size();
+  m_colIndices.conservativeResize( s+1 );
+  m_colIndices(s) = iadd;
+}
 
 protected:
   const MatrixType& m_matrix;
@@ -185,7 +247,7 @@ public:
 
   typedef MatrixBase<SubMatrix> Base;
   EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
-  typedef Matrix<typename Base::Scalar, MatrixType::RowsAtCompileTime,1> RowIndices;
+  typedef Matrix<typename Base::Index, MatrixType::RowsAtCompileTime,1> RowIndices;
 
   inline SubMatrix(const MatrixType& matrix,
     const RowIndices& rowIndices)
@@ -233,6 +295,21 @@ public:
     m_rowIndices[i] = m_rowIndices[j];
     m_rowIndices[j] = tmp;
   }
+inline void removeRow( Index irm )
+{
+  assert( irm<m_rowIndices.size() );
+  const Index s = m_rowIndices.size()-irm-1;
+  m_rowIndices.segment( irm,s ) = m_rowIndices.tail( s );
+  m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+}
+inline void insertRow( Index iadd )
+{
+  assert( iadd<m_matrix.rows() );
+  // TODO: assert( find(iadd,m_rowIndices) == -1 );
+  const Index s = m_rowIndices.size();
+  m_rowIndices.conservativeResize( s+1 );
+  m_rowIndices(s) = iadd;
+}
 
 protected:
   const MatrixType& m_matrix;

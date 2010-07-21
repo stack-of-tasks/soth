@@ -32,8 +32,16 @@ namespace soth
   void BaseY::
   composeOnTheRight( const HouseholderSequence & hh )
   {
-    /* TODO */
-    throw "TODO";
+    if( isExplicit )
+      {
+	/* TODO */
+	throw "TODO";
+      }
+    else
+      {
+	matrixHH.append(hh);
+      }
+
   }
 
 }; // namespace soth
