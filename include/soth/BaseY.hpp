@@ -16,6 +16,7 @@ namespace soth
     bool isExplicit;
     Index size;
     MatrixXd matrixExplicit;
+    MatrixXd householderEssential;
     HouseholderSequence matrixHH;
 
   public:
@@ -25,6 +26,11 @@ namespace soth
     void computeExplicitly();
 
   public:
+    /* --- Accessor --- */
+    MatrixXd& getHouseholderEssential() {return householderEssential;}
+    const MatrixXd& getHouseholderEssential() const {return householderEssential;}
+
+
     /* --- Multiplier --- */
     /* TODO: when not explicit, it is cheaper to work directly on the
      * result memory, while it is the opposit when explicit. What

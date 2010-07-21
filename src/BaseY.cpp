@@ -7,9 +7,11 @@ namespace soth
     :isExplicit(false)
     ,size(insize)
     ,matrixExplicit(size,size)
+    ,householderEssential(size,size)
     ,matrixHH()
   {
     matrixHH.reserve(size);
+    householderEssential.setZero();
   }
 
   void BaseY::
