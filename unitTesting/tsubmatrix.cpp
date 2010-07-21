@@ -4,6 +4,7 @@ namespace Eigen
   #include "soth/SubMatrix.h"
 }
 #include <iostream>
+#include <time.h>
 
 using namespace Eigen;
 
@@ -65,7 +66,73 @@ void testSubMatrix()
   std::cout << m << std::endl;
   std::cout << "sub matrix" << std::endl;
   std::cout << pc << std::endl << std::endl;
+}
 
+void speedTest()
+{
+  int N=10000;
+  int n[] = {5,10,50,100,250};
+  for (int i=0; i<5; ++i)
+  {
+    std::cout << "size " << n[i] << std::endl; 
+    MatrixXd A = MatrixXd::Random(n[i],n[i]);
+    MatrixXd B = MatrixXd::Random(n[i],n[i]);
+    MatrixXd C1(n[i],n[i]);
+    MatrixXd C2(n[i],n[i]);
+    MatrixXd C3(n[i],n[i]);
+    MatrixXd C4(n[i],n[i]);
+    SubMatrix<MatrixXd> Prc(A);
+    SubMatrix<MatrixXd, RowPermutation> Pr(A);
+    SubMatrix<MatrixXd, ColPermutation> Pc(A);
+
+    double dummy;
+    clock_t start, stop;
+    double total;
+
+    dummy = 0;
+    start = clock();
+    for (int j=0; j<N; ++j)
+    {
+      C1.noalias() = A*B;
+      dummy += C1(0,0);
+    }
+    stop = clock();
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
+    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+
+    dummy = 0;
+    start = clock();
+    for (int j=0; j<N; ++j)
+    {
+      C2.noalias() = Prc*B;
+      dummy += C2(0,0);
+    }
+    stop = clock();
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
+    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+
+    dummy = 0;
+    start = clock();
+    for (int j=0; j<N; ++j)
+    {
+      C3.noalias() = Pr*B;
+      dummy += C3(0,0);
+    }
+    stop = clock();
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
+    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+
+    dummy = 0;
+    start = clock();
+    for (int j=0; j<N; ++j)
+    {
+      C4.noalias() = Pc*B;
+      dummy += C4(0,0);
+    }
+    stop = clock();
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
+    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+  }
 
 
 }
@@ -73,5 +140,6 @@ void testSubMatrix()
 
 int main()
 {
-  testSubMatrix();
+  //testSubMatrix();
+  speedTest();
 }
