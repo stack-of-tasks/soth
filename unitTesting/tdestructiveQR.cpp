@@ -3,7 +3,7 @@
 #include <Eigen/QR>
 namespace Eigen
 {
-  #include "DestructiveColPivQR.h"
+  #include "soth/DestructiveColPivQR.h"
 }
 #include <iostream>
 
