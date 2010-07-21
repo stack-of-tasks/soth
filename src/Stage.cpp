@@ -19,6 +19,10 @@ namespace soth
   }
 
 
+  /* --- INITIALISATION OF THE COD ------------------------------------------ */
+  /* --- INITIALISATION OF THE COD ------------------------------------------ */
+  /* --- INITIALISATION OF THE COD ------------------------------------------ */
+
   /* Compute ML=J(initIr,:)*Y. */
   void Stage::
   computeInitalJY( const Indirect & initialIr )
@@ -72,8 +76,8 @@ namespace soth
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
-    std::cout << "M = " << (MATLAB)M << std::endl;
-    std::cout << "L = " << (MATLAB)L << std::endl;
+    std::cout << "MY = " << (MATLAB)M << std::endl;
+    std::cout << "LY = " << (MATLAB)L << std::endl;
 
     /* A=L'; mQR=QR(A); */
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> mQR(nr,nc);
@@ -127,16 +131,16 @@ namespace soth
   void Stage::
   nullifyLineDeficient( const Index row, const Index in_r )
   {
-   /*
+    /*
       Jd = L.row(r);
       foreach i in rank:-1:1
-        if( Jd(i)==0 ) continue;
-	gr= GR(L(Ir(i),i),Jd(i),i,r );
-	L=gr*L;
-	W=W*gr';
+      if( Jd(i)==0 ) continue;
+      gr= GR(L(Ir(i),i),Jd(i),i,r );
+      L=gr*L;
+      W=W*gr';
       Ir >> r;
       In << r;
-     */
+    */
     const Index r = (in_r<0)?row-1:in_r;
     //std::cout << "r = " << r << " , row = " << row << std::endl;
 
@@ -155,49 +159,40 @@ namespace soth
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
-	std::cout << "W = " << (MATLAB)W << std::endl;
-	std::cout << "L = " << (MATLAB)L << std::endl;
+	//std::cout << "W = " << (MATLAB)W << std::endl;
+	//std::cout << "L = " << (MATLAB)L << std::endl;
 	//std::cout << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
-    }
+      }
 
     L.removeRow(row);
     M.pushRowFront(M.removeRow(row+sizeN));
-    std::cout << "rem = " << row+sizeN << std::endl;
     W.pushColFront(W.removeCol(row+sizeN));
-    std::cout << "Wr = " << W.getColIndices() << std::endl;
     sizeL--; sizeN++;
   }
 
-    /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
+
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+
+  /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
   void Stage::
-   recompose( MatrixXd& WMLY )
-   {
-     WMLY.resize(sizeA,nc); WMLY.setZero();
-     std::cout << WMLY << std::endl;
-     WMLY.block(0,0,sizeA,sizeM) = W*M;
-     std::cout << WMLY << std::endl;
-     std::cout << "wb = " << W.block(0,0,sizeA,sizeL)*L << std::endl;
-     WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
-     std::cout << (MATLAB)WMLY << std::endl;
+  recompose( MatrixXd& WMLY )
+  {
+    WMLY.resize(sizeA,nc); WMLY.setZero();
+    WMLY.block(0,0,sizeA,sizeM) = W*M;
+    WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
+    std::cout << "WML = " << (MATLAB)WMLY << std::endl;
 
-     std::cout << "Y... " << std::endl;
-     Y.applyTransposeOnTheLeft(WMLY);
-     std::cout << (MATLAB)WMLY << std::endl;
-   }
+    Y.applyTransposeOnTheLeft(WMLY);
+    std::cout << "WMLY = " << (MATLAB)WMLY << std::endl;
+  }
 
+  /* --- ACCESSORS ---------------------------------------------------------- */
+  /* --- ACCESSORS ---------------------------------------------------------- */
+  /* --- ACCESSORS ---------------------------------------------------------- */
 
-  // void Stage::
-  // applyLeftGiven( const Givensd& gr )
-  // {
-    // Apply on L.
-
-    // Apply on M.
-
-    // Apply on W.
-
-  //}
-
-
+  /* Get line <r> of the matrix [ 0 ... 0 ; L 0 .. 0 ]. */
   Stage::RowL Stage::rowL0( const unsigned int r )
   {
     return ML_.row(Ir(r)).tail(nc-sizeM);

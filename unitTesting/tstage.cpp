@@ -17,9 +17,9 @@ int main (int argc, char** argv)
   // const int NC = 20;
 
   const int NB_STAGE = 3;
-  const int RANK[] = { 3, 5, 3, 5, 3 };
-  const int NR[] = { 5, 5, 5, 5, 8 };
-  const int NC = 11;
+  const int RANK[] = { 3, 4, 3, 5, 3 };
+  const int NR[] = { 5, 4, 5, 5, 8 };
+  const int NC = 12;
   /* Initialize J and b. */
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
   std::vector<soth::bound_vector_t> b(NB_STAGE);
