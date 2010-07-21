@@ -13,7 +13,7 @@ void testColPivForCod()
 {
   const int n=7;
   const int m=6;
-  MatrixXd M = MatrixXd::Random(m,n);
+  MatrixXd M = MatrixXd::Random(m,m-2)*MatrixXd::Random(m-2,n);
   MatrixXd Y = MatrixXd::Zero(n,n);
 
   std::cout << "initial matrix M: " << std::endl;
@@ -28,9 +28,11 @@ void testColPivForCod()
   std::cout << "householder essential H_ref= " << std::endl;
   std::cout << resQ << std::endl << std::endl;
 
-  
+
   std::cout << "***** Tested Decomposition of M' *****" << std::endl;
-  DestructiveColPivQR<Transpose<MatrixXd>, Block<MatrixXd> > qr(M.transpose(),Y.block(0,0,n,m));
+  Transpose<MatrixXd> Mt = M.transpose();
+  Block<MatrixXd> Yse = Y.block(0,0,n,m);
+  DestructiveColPivQR<Transpose<MatrixXd>, Block<MatrixXd> > qr(Mt,Yse);
   std::cout << "R (in place, no transposition) = " << std::endl;
   std::cout << M.transpose() << std::endl<<std::endl;
   std::cout << "permuted R = " << std::endl;
@@ -41,16 +43,17 @@ void testColPivForCod()
   std::cout << qr.householderQ()*M.transpose() << std::endl << std::endl;
 
   std::cout  << std::endl << "***** Check *****" << std::endl;
-  std::cout << "correct R (R_ref*P_ref' = R): " 
+  std::cout << "correct R (R_ref*P_ref' = R): "
             << ((resR*ref.colsPermutation().transpose()-M.transpose()).isZero()? "true" : "false") << std::endl;
-  std::cout << "correct householder (Href = H): " 
+  std::cout << "correct householder (Href = H): "
             << ((resQ-Y.block(0,0,n,m)).isZero()? "true" : "false") << std::endl;
-  std::cout << "correct permutations (P_ref*P = I): " 
+  std::cout << "correct permutations (P_ref*P = I): "
             << ((ref.colsPermutation().transpose()*qr.colsPermutation()).toDenseMatrix().isIdentity()? "true" : "false") << std::endl;
 }
 
 
-void main()
+int main()
 {
   testColPivForCod();
+  return 0;
 }

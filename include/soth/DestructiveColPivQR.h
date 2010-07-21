@@ -5,7 +5,7 @@
   * MP = QR with R*P' directly stored in the input matrix M and the householder vectors essential parts stored in the
   * column of a different matrix given by the user.
   */
-template<typename _MatrixType, typename _HouseholderStorageType= typename ei_plain_matrix_type<_MatrixType>::type> 
+template<typename _MatrixType, typename _HouseholderStorageType= typename ei_plain_matrix_type<_MatrixType>::type>
 class DestructiveColPivQR
 {
   public:
@@ -22,7 +22,7 @@ class DestructiveColPivQR
     typedef typename MatrixType::RealScalar RealScalar;
     typedef typename MatrixType::Index Index;
     //typedef Matrix<Scalar, RowsAtCompileTime, RowsAtCompileTime, Options, MaxRowsAtCompileTime, MaxRowsAtCompileTime> MatrixQType;
-    typedef _HouseholderStorageType  MatrixQType;    
+    typedef _HouseholderStorageType  MatrixQType;
     typedef typename ei_plain_diag_type<MatrixType>::type HCoeffsType;
     typedef PermutationMatrix<ColsAtCompileTime, MaxColsAtCompileTime> PermutationType;
     typedef typename ei_plain_row_type<MatrixType, Index>::type IntRowVectorType;
@@ -300,7 +300,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     // first, we look up in our table m_colSqNorms which column has the biggest squared norm
     Index biggest_col_index;
     RealScalar biggest_col_sq_norm = m_colSqNorms.tail(cols-k).maxCoeff(&biggest_col_index);
-    
+
     biggest_col_index += k;
 
     // since our table m_colSqNorms accumulates imprecision at every step, we must now recompute
@@ -340,7 +340,8 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     // generate the householder vector, store it below the diagonal
     RealScalar beta;
     //m_qr.col(k).tail(rows-k).makeHouseholderInPlace(m_hCoeffs.coeffRef(k), beta);
-    m_r.col(m_colsIntTranspositions[k]).tail(rows-k).makeHouseholder(m_q.col(k).tail(rows-k-1), m_hCoeffs.coeffRef(k), beta);
+    VectorBlock<typename MatrixQType::ColXpr> colk = m_q.col(k).tail(rows-k-1);
+    m_r.col(m_colsIntTranspositions[k]).tail(rows-k).makeHouseholder(colk, m_hCoeffs.coeffRef(k), beta);
 
     // apply the householder transformation to the diagonal coefficient
     m_r.coeffRef(k,m_colsIntTranspositions[k]) = beta;
