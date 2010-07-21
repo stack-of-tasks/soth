@@ -28,7 +28,7 @@ namespace soth
   }
 
   const double& Bound::
-  getBound( bound_t inType )
+  getBound( bound_t inType ) const
   {
     assert( inType != BOUND_NONE );
     assert( inType != BOUND_DOUBLE );

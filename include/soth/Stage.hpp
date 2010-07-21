@@ -26,7 +26,8 @@ namespace soth
     typedef SubMatrixXd::RowIndices Indirect;
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
     typedef PlanarRotation<double> Givensd;
-
+    typedef std::pair<Index,Bound::bound_t> ConstraintRef;
+    typedef std::vector<ConstraintRef> ActiveSet;
   protected:
 
     const MatrixXd & J;
@@ -34,6 +35,7 @@ namespace soth
     BaseY & Y;
 
     unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
+    ActiveSet activeSet;
 
     MatrixXd W_;
     MatrixXd ML_;
@@ -74,7 +76,7 @@ namespace soth
 
     /* Return the rank of the current COD = previousRank+size(L). */
     unsigned int computeInitialCOD( const unsigned int previousRank,
-			    const Indirect & initialIr );
+				    const ActiveSet & initialIr );
     /*
       ML=J(initIr,:)*Y;
       rank=Ir.size();  Ir=1:rank;
@@ -91,6 +93,7 @@ namespace soth
 
      */
 
+  protected:
     void nullifyLineDeficient( const Index row, const Index in_r );
     /*
       Jd = L.row(r);
@@ -103,11 +106,7 @@ namespace soth
       In << r;
      */
 
-    /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
-    void recompose( MatrixXd& WMLY );
-
-  protected:
-    void computeInitalJY( const Indirect & initialIr );
+    void computeInitalJY( const ActiveSet & initialIr );
     void computeInitalJY_allRows(void);
 
     /* --- DOWN ------------------------------------------------------------- */
@@ -214,10 +213,16 @@ namespace soth
 
     /* --- SOLVE ------------------------------------------------------------ */
 
-    //void solve( const VectorXd & e, VectorXd res );
+    /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
+    void solve( VectorXd& Yu );
     //void solveTranspose( const VectorXd & e, VectorXd res );
 
     //void damp( const double & damping );
+
+
+    /* --- CHECK ------------------------------------------------------------ */
+    /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
+    void recompose( MatrixXd& WMLY );
 
   public:
     /* --- ACCESSORS --- */
@@ -241,10 +246,10 @@ namespace soth
     // void decreaseSizeM();
 
   public:
-    static Indirect& allRows() { return _allRows; }
+    static ActiveSet& allRows() { return _allRows; }
   protected:
-    static Indirect _allRows;
-    bool isAllRow( const Indirect& idx ) { return (&idx == &_allRows); }
+    static ActiveSet _allRows;
+    bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }
 
   };
 

@@ -9,6 +9,7 @@ namespace soth
     : J(inJ), bounds(inbounds)
     ,Y(inY)
     ,nr(J.rows()),nc(J.cols())
+    ,activeSet(0)
     ,W_(nr,nr),ML_(nr,nc),e_(nr)
     ,M(ML_,false),L(ML_,false),e(e_,false)
     ,isWIdenty(true),W(W_,false)
@@ -16,6 +17,7 @@ namespace soth
     ,sizeM(0),sizeL(0),sizeN(0),sizeA(0)
   {
     assert( bounds.size() == J.rows() );
+    activeSet.reserve(nr);
   }
 
 
@@ -25,7 +27,7 @@ namespace soth
 
   /* Compute ML=J(initIr,:)*Y. */
   void Stage::
-  computeInitalJY( const Indirect & initialIr )
+  computeInitalJY( const ActiveSet & initialIr )
   {
     if( isAllRow(initialIr) ) { computeInitalJY_allRows(); return; }
     if( initialIr.size()==0 )
@@ -34,34 +36,45 @@ namespace soth
 	/*TODO*/throw "TODO";
       }
 
-    for( unsigned int i=0;i<initialIr.size();++i )
+    sizeA=initialIr.size();
+    activeSet.resize(sizeA);
+    for( unsigned int i=0;i<sizeA;++i )
       {
+	const Index & idx = initialIr[i].first;
+
 	MatrixXd::RowXpr MLrow = ML_.row(i);
-	MLrow = J.row(initialIr(i));
+	MLrow = J.row(idx);
 	Y.applyThisOnTheLeft( MLrow );
+
+	e_(i) = bounds[idx].getBound( initialIr[i].second );
+	activeSet[i] = initialIr[i];
       }
     std::cout << "JY = " << (MATLAB)ML_ << std::endl;
-
-    /* Set the size of M and L. L is supposed full rank yet. */
-    sizeA=initialIr.size();
   }
   /* Compute ML=J(:,:)*Y. */
   void Stage::
   computeInitalJY_allRows(void)
   {
+    sizeA=0;
     for( unsigned int i=0;i<nr;++i )
       {
+	if( bounds[i].getType() != Bound::BOUND_TWIN ) continue;
+	activeSet.resize(activeSet.size()+1);
+
 	MatrixXd::RowXpr MLrow = ML_.row(i);
 	MLrow = J.row(i);
 	Y.applyThisOnTheLeft( MLrow );
-      }
 
-    sizeA=nr;
+	e_(i) = bounds[i].getBound( Bound::BOUND_TWIN );
+	activeSet[i] = ConstraintRef( i,Bound::BOUND_TWIN );
+	sizeA++;
+     }
+
   }
 
   unsigned int Stage::
   computeInitialCOD( const unsigned int previousRank,
-		     const Indirect & initialIr )
+		     const ActiveSet & initialIr )
   {
     std::cout << "J = " << (MATLAB)J << std::endl;
 
@@ -76,8 +89,10 @@ namespace soth
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
+    e.setRowRange(0,sizeL);
     std::cout << "MY = " << (MATLAB)M << std::endl;
     std::cout << "LY = " << (MATLAB)L << std::endl;
+    std::cout << "e = " << (MATLAB)e << std::endl;
 
     /* A=L'; mQR=QR(A); */
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> mQR(nr,nc);
@@ -188,6 +203,29 @@ namespace soth
     std::cout << "WMLY = " << (MATLAB)WMLY << std::endl;
   }
 
+  /* --- SOLVER ------------------------------------------------------------- */
+  /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
+  void Stage::solve( VectorXd& Yu )
+  {
+    VectorBlock<VectorXd> Ue = Yu.segment( sizeM,sizeL );
+    if( isWIdenty )
+      {	  Ue = e;      }
+    else
+      {
+	SubMatrixXd U( W_,W.getRowIndices(),Ir );
+	Ue = U.transpose()*e;
+      }
+
+    SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
+    Ue -= Mr*Yu.tail(sizeM);
+
+    //L.triangularView<Lower>();
+
+    //L.triangularView<Lower>().solveInPlace(Ue);
+  }
+
+
+
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */
@@ -200,6 +238,6 @@ namespace soth
 
 
 
-  Stage::Indirect Stage::_allRows;
+  Stage::ActiveSet Stage::_allRows;
 
 }; // namespace soth
