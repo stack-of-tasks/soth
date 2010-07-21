@@ -179,9 +179,6 @@ inline void setRowRange( Index start, Index end )
   m_rowIndices = VectorXi::LinSpaced(start,end,size);
 }
 
-  template<typename Derived>
-  void solveInPlaceWithLowerTriangular(MatrixBase<Derived>& other);
-
 protected:
   const MatrixType& m_matrix;
   RowIndices m_rowIndices;
@@ -376,24 +373,6 @@ protected:
   const MatrixType& m_matrix;
   RowIndices m_rowIndices;
 };
-
-
-template<typename MatrixType, int PermutationType>
-template<typename Derived>
-void SubMatrix<MatrixType, PermutationType>::solveInPlaceWithLowerTriangular(MatrixBase<Derived>& other)
-{
-  EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<Derived>)
-  assert(rows() == cols());
-  assert(other.size() == rows());
-  //forward substituation, colum version
-  const int n = rows();
-  for (int i=0; i<n-1; ++i)
-  {
-    other[i] /= (*this)(i,i);
-    other.tail(n-i-1) = other.tail(n-i-1) - other[i]* (*this).col(i).tail(n-i-1);
-  }
-  other[n-1] /= (*this)(n-1,n-1);
-}
 
 
 

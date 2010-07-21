@@ -135,6 +135,8 @@ void speedTest()
   }
 }
 
+#include "soth/solvers.h"
+
 void testSolve()
 {
   const int n = 6;
@@ -161,11 +163,11 @@ void testSolve()
   VectorXd b1 = b;
   VectorXd b2 = b;
 
-  P1.solveInPlaceWithLowerTriangular(b1);
+  soth::solveInPlaceWithLowerTriangular(P1,b1);
   P2.triangularView<Lower>().solveInPlace(b2);
   std::cout << b1.transpose() << std::endl;
   std::cout << b2.transpose() << std::endl;
-  std::cout << (b1-b2).isZero() << std::endl;
+  std::cout << ((b1-b2).isZero()? "solution is ok": "there is a problem...") << std::endl;
 }
 
 
