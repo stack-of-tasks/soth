@@ -1,4 +1,5 @@
 #include "soth/Stage.hpp"
+#include "soth/solvers.h"
 #include <Eigen/QR>
 
 namespace soth
@@ -195,7 +196,7 @@ namespace soth
   {
     VectorBlock<VectorXd> Ue = Yu.segment( sizeM,sizeL );
     if( isWIdenty )
-      {	  Ue = e;      }
+      {	  Ue = Transpositions<-1,-1>(W.getColIndices())*(e);      }
     else
       {
 	SubMatrixXd U( W_,W.getRowIndices(),Ir );
@@ -205,7 +206,11 @@ namespace soth
     SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
     Ue -= Mr*Yu.tail(sizeM);
 
-    //L.triangularView<Lower>();
+
+    std::cout << "ue = " << (MATLAB)Ue << std::endl;
+    std::cout << "L = " << (MATLAB)L << std::endl;
+    soth::solveInPlaceWithLowerTriangular(L,Ue);
+    std::cout << "LiUe = " << (MATLAB)Ue << std::endl;
 
     //L.triangularView<Lower>().solveInPlace(Ue);
   }

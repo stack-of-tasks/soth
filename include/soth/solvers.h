@@ -4,6 +4,10 @@ using namespace Eigen;
 
 namespace soth
 {
+
+  /* Solve x in the problem Ax=b, with A and b any matrix and vector (including
+   * permuted submatrix), with A=<lhs> and b=<rhs>.
+   * A should be lower triangular (ie 0 in the strict upper part) and full rank (ie non zero on the diagonal). */
   template<typename Derived1, typename Derived2>
   inline void solveInPlaceWithLowerTriangular(const MatrixBase<Derived1>& lhs, MatrixBase<Derived2>& rhs)
   {

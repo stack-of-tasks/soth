@@ -81,11 +81,14 @@ namespace soth
       }
 
     /* Initial solve. */
+    solution.setZero();
     for( unsigned int i=0;i<stages.size();++i )
       {
 	stages[i]->solve(solution);
-	Y.applyThisOnVector( solution );
       }
+    std::cout << "Yu = " << (MATLAB)solution << std::endl;
+    Y.applyThisOnVector( solution );
+    std::cout << "u = " << (MATLAB)solution << std::endl;
 
     /* --- RECOMPOSE FOR TEST --- */
     for( unsigned int i=0;i<stages.size();++i )
