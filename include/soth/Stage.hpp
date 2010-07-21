@@ -244,7 +244,7 @@ namespace soth
     static Indirect& allRows() { return _allRows; }
   protected:
     static Indirect _allRows;
-    bool isAllRow( const Indirect& idx ) { &idx == &_allRows; }
+    bool isAllRow( const Indirect& idx ) { return (&idx == &_allRows); }
 
   };
 
