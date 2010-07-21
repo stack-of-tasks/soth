@@ -70,7 +70,7 @@ void testSubMatrix()
 
 void speedTest()
 {
-  int N=10000;
+  int N=1000;
   int n[] = {5,10,50,100,250};
   for (int i=0; i<5; ++i)
   {
@@ -97,8 +97,8 @@ void speedTest()
       dummy += C1(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
-    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    std::cout << "normal mult : " << total  << "ms                     dummy=" << dummy << std::endl;
 
     dummy = 0;
     start = clock();
@@ -108,8 +108,8 @@ void speedTest()
       dummy += C2(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
-    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    std::cout << "Perm*Normal: " << total  << "ms                     dummy=" << dummy << std::endl;
 
     dummy = 0;
     start = clock();
@@ -119,8 +119,8 @@ void speedTest()
       dummy += C3(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
-    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    std::cout << "RowPerm*Normal : " << total  << "ms                     dummy=" << dummy << std::endl;
 
     dummy = 0;
     start = clock();
@@ -130,8 +130,8 @@ void speedTest()
       dummy += C4(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N);
-    std::cout << "normal mult : " << total  << "s                     dummy=" << dummy << std::endl;
+    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    std::cout << "ColPerm*Normal : " << total  << "ms                     dummy=" << dummy << std::endl;
   }
 
 
