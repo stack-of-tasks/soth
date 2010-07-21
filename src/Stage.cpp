@@ -69,7 +69,6 @@ namespace soth
 	activeSet[i] = ConstraintRef( i,Bound::BOUND_TWIN );
 	sizeA++;
      }
-
   }
 
   unsigned int Stage::
@@ -186,24 +185,11 @@ namespace soth
   }
 
 
-  /* --- TEST RECOMPOSE ----------------------------------------------------- */
-  /* --- TEST RECOMPOSE ----------------------------------------------------- */
-  /* --- TEST RECOMPOSE ----------------------------------------------------- */
-
-  /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
-  void Stage::
-  recompose( MatrixXd& WMLY )
-  {
-    WMLY.resize(sizeA,nc); WMLY.setZero();
-    WMLY.block(0,0,sizeA,sizeM) = W*M;
-    WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
-    std::cout << "WML = " << (MATLAB)WMLY << std::endl;
-
-    Y.applyTransposeOnTheLeft(WMLY);
-    std::cout << "WMLY = " << (MATLAB)WMLY << std::endl;
-  }
 
   /* --- SOLVER ------------------------------------------------------------- */
+  /* --- SOLVER ------------------------------------------------------------- */
+  /* --- SOLVER ------------------------------------------------------------- */
+
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::solve( VectorXd& Yu )
   {
@@ -237,6 +223,44 @@ namespace soth
   }
 
 
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+  /* --- TEST RECOMPOSE ----------------------------------------------------- */
+
+  /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
+  void Stage::
+  recompose( MatrixXd& WMLY )
+  {
+    WMLY.resize(sizeA,nc); WMLY.setZero();
+    WMLY.block(0,0,sizeA,sizeM) = W*M;
+    WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
+    std::cout << "WML = " << (MATLAB)WMLY << std::endl;
+
+    Y.applyTransposeOnTheLeft(WMLY);
+    std::cout << "WMLY = " << (MATLAB)WMLY << std::endl;
+  }
+
+
+  void Stage::
+  show( std::ostream& os, unsigned int stageRef, bool check )
+  {
+    Indirect idx(sizeA);
+    for( unsigned int i=0;i<sizeA;++i )
+      {	idx(i) = activeSet[i].first;      }
+    os << "J"<<stageRef<<" = " << (MATLAB)SubMatrix<MatrixXd,RowPermutation>(J,idx) << std::endl;
+    os << "e"<<stageRef<<" = " << (MATLAB)e << std::endl;
+
+    os << "W"<<stageRef<<" = " << (MATLAB)W << std::endl;
+    os << "M"<<stageRef<<" = " << (MATLAB)M << std::endl;
+    os << "L"<<stageRef<<" = " << (MATLAB)L << std::endl;
+
+    if( check )
+      {
+	MatrixXd Jrec; recompose(Jrec);
+	if((Jrec-J).norm()>1e-6) os << "Jrec"<<stageRef<<" = " << (MATLAB)Jrec << std::endl;
+	else os <<"% Recomposition OK. " << std::endl;
+      }
+  }
 
   Stage::ActiveSet Stage::_allRows;
 

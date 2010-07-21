@@ -37,5 +37,5 @@ int main (int argc, char** argv)
     }
 
   hcod.solve();
-
+  hcod.show(std::cout,true);
 }

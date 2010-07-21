@@ -216,7 +216,6 @@ namespace soth
     for( Index i=0;i<nr;++i )
       {
 	typename Derived::RowXpr Mrow = M.row(i);
-	std::cout << Mrow << std::endl;
 	/* Apply on left vector is equivalent to apply transpose on right. */
 	applyThisOnVector( Mrow );
       }

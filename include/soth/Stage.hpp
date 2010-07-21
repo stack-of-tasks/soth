@@ -223,6 +223,7 @@ namespace soth
     /* --- CHECK ------------------------------------------------------------ */
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
     void recompose( MatrixXd& WMLY );
+    void show( std::ostream& os, unsigned int stageRef, bool check=false );
 
   public:
     /* --- ACCESSORS --- */

@@ -26,6 +26,7 @@ namespace soth
     void reset( void );
     void solve( void );
 
+    void show( std::ostream& os, bool check=false );
 
   protected:
     HCOD( void ) : Y(0) {};
@@ -36,6 +37,7 @@ namespace soth
     typedef std::vector<VectorXi> activeset_sequence_t;
 
   protected:
+    unsigned int sizeProblem;
     soth::BaseY Y;
     stage_sequence_t stages;
     activeset_sequence_t initialActiveSets;

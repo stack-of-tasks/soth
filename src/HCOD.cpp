@@ -7,9 +7,10 @@ namespace soth
 
 
   HCOD::
-  HCOD( unsigned int sizeProblem, unsigned int nbStage )
+  HCOD( unsigned int inSizeProblem, unsigned int nbStage )
   :
-    Y(sizeProblem)
+    sizeProblem(inSizeProblem)
+    ,Y(sizeProblem)
     ,stages(0),initialActiveSets(0)
     ,solution(sizeProblem)
   {
@@ -63,6 +64,7 @@ namespace soth
   void HCOD::
   reset( void )
   {
+    solution.setZero();
     throw "TODO";
   }
   void HCOD::
@@ -78,6 +80,14 @@ namespace soth
 	previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows());
       }
 
+    /* Initial solve. */
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	stages[i]->solve(solution);
+	Y.applyThisOnVector( solution );
+      }
+
+    /* --- RECOMPOSE FOR TEST --- */
     for( unsigned int i=0;i<stages.size();++i )
       {
 	Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
@@ -88,6 +98,18 @@ namespace soth
   }
 
 
+  void HCOD::
+  show( std::ostream& os, bool check )
+  {
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	stages[i]->show(os,i,check);
+      }
+
+    MatrixXd Yex(sizeProblem,sizeProblem); Yex.setIdentity();
+    Y.applyThisOnTheLeft(Yex);
+    os<<"Y = " << (MATLAB)Yex << std::endl;
+  }
 
 
 

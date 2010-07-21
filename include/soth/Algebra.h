@@ -50,6 +50,68 @@ namespace soth
     template< typename Derived >
     MATLAB( const MatrixBase<Derived> & m1 )
     {
+      if( m1.rows()==0 ) initMatrixRowNull( m1.cols() );
+      else if( m1.cols()==0 ) initMatrixColNull( m1.rows() );
+      else if( m1.cols()==1 ) initVector( m1.col(0) );
+      else if( m1.rows()==1 ) initVector( m1.row(0) );
+      else initMatrix(m1);
+    }
+
+    template< typename Derived >
+    void initMatrix( const MatrixBase<Derived> & m1 );
+    template< typename VectorGen >
+    void initVector( const VectorGen & v );
+    inline void initMatrixNull( void );
+    inline void initMatrixColNull( unsigned int size );
+    inline void initMatrixRowNull( unsigned int size );
+
+
+    static bool fullPrec;
+    std::string str;
+
+  };
+
+
+}; // namespace soth
+
+
+// --- HEAVY CODE ---
+namespace soth
+{
+  template< typename VectorGen >
+    void MATLAB::initVector( const VectorGen & m1 )
+    {
+      std::ostringstream os; os << "[ ";
+      std::ostringstream ostmp;
+      for(int i=0;i<m1.size();++i )
+	{
+	  if( m1[i]<0 ) ostmp << "-"; else ostmp << " ";
+	  if(MATLAB::fullPrec||fabs(m1[i])>1e-6) ostmp <<  fabs(m1[i]);
+	  else { ostmp << "0"; }
+	  if( m1.size()!=i+1 )
+	    {
+	      ostmp << ",";
+	      const int size = ostmp.str().length();
+	      for( unsigned int i=size;i<8;++i) ostmp<<" ";
+	      ostmp << "\t";
+	    }
+	  os << ostmp.str(); ostmp.str("") ;
+	}
+      os << "  ]';";
+      str = os.str();
+    }
+
+
+  void MATLAB::initMatrixNull( void ) { str = "[];"; }
+  void MATLAB::initMatrixColNull( unsigned int size )
+  {   std::ostringstream os;  os << "zeros("<<size<<",0);";  str = os.str();  }
+  void MATLAB::initMatrixRowNull( unsigned int size )
+  {   std::ostringstream os;  os << "zeros(0,"<<size<<");";  str = os.str();  }
+
+
+  template< typename Derived >
+    void MATLAB::initMatrix( const MatrixBase<Derived> & m1 )
+    {
       std::ostringstream os; os << "[ ";
       std::ostringstream ostmp;
       for(int i=0;i<m1.rows();++i )
@@ -74,13 +136,11 @@ namespace soth
       str = os.str();
     }
 
-    static bool fullPrec;
-    std::string str;
-
-  };
-
 
 }; // namespace soth
+
+
+
 
 
 #endif // #ifndef __SOTH_ALGEBRA__
