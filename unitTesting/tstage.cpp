@@ -50,9 +50,8 @@ int main (int argc, char** argv)
       previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows());
       Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
       std::cout << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
-
     }
 
   Eigen::MatrixXd rec;
-  stages[0]->recompose(rec);
+  //stages[0]->recompose(rec);
 }

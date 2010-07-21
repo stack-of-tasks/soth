@@ -134,14 +134,14 @@ namespace soth
     /* Compute g'*v. */
     const Index vstart = nv-nh;
     double gv = v(vstart-1);
-    gv+= h.dot( v.tail(nh) );
+    if(nh>0) gv+= h.dot( v.tail(nh) );
 
     /* Compute b*g'*v. */
     gv *= factor;
 
     /* Apply v -= h*bgv. */
     v(vstart-1) -= gv;
-    v.tail(nh) -= gv*h;
+    if(nh>0) v.tail(nh) -= gv*h;
   }
 
   // M := H*M;
@@ -178,7 +178,7 @@ namespace soth
 		       const typename Derived::Index& rank )
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
-    assert( mQR.diagonalSize()>rank );
+    assert( mQR.diagonalSize()>=rank );
     hhList.resize(rank);
     for( int i=0;i<rank;++i )
       hhList[i].init(mQR,coeff,i);
@@ -200,8 +200,8 @@ namespace soth
     const Index nr = M.rows();
     for( Index i=0;i<nr;++i )
       {
-	std::cout << "i = " << i << std::endl;
 	typename Derived::RowXpr Mrow = M.row(i);
+	/* Apply on left vector is equivalent to apply transpose on right. */
 	applyTransposeOnVector( Mrow );
       }
   }
@@ -215,8 +215,9 @@ namespace soth
     const Index nr = M.rows();
     for( Index i=0;i<nr;++i )
       {
-	std::cout << "i = " << i << std::endl;
 	typename Derived::RowXpr Mrow = M.row(i);
+	std::cout << Mrow << std::endl;
+	/* Apply on left vector is equivalent to apply transpose on right. */
 	applyThisOnVector( Mrow );
       }
   }
@@ -231,7 +232,6 @@ namespace soth
     const Index nr = M.cols();
     for( Index i=0;i<nr;++i )
       {
-	std::cout << "i = " << i << std::endl;
 	typename Derived::ColXpr Mcol = M.col(i);
 	applyThisOnVector( Mcol );
       }
@@ -245,7 +245,6 @@ namespace soth
     const Index nr = M.cols();
     for( Index i=0;i<nr;++i )
       {
-	std::cout << "i = " << i << std::endl;
 	typename Derived::ColXpr Mcol = M.col(i);
 	applyTransposeOnVector( Mcol );
       }

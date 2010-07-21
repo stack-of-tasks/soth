@@ -89,12 +89,12 @@ namespace soth
 	rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
       }
     L.setRowIndices(P);    M.setRowIndices(P);
-    std::cout << "L = " << (MATLAB)L << std::endl;
-    std::cout << "M = " << (MATLAB)M << std::endl;
+    std::cout << "L0 = " << (MATLAB)L << std::endl;
+    std::cout << "M0 = " << (MATLAB)M << std::endl;
 
     W.setRowRange(0,sizeL); W.setColIndices(Ir);
     W_.setIdentity(); // DEBUG
-    std::cout << "W = " << (MATLAB)W << std::endl;
+    std::cout << "W0 = " << (MATLAB)W << std::endl;
 
     /* for i=rank:-1:1
      *   if( L(i,i)!= 0 ) break;
@@ -108,7 +108,7 @@ namespace soth
 	nullifyLineDeficient( sizeL-1,rank );
       }
     L.setColRange(sizeM,sizeM+sizeL);
-    std::cout << "Lo = " << (MATLAB)L << std::endl;
+    std::cout << "L = " << (MATLAB)L << std::endl;
     std::cout << "W = " << (MATLAB)W << std::endl;
 
     /* Y=Y*Yup; */
@@ -180,6 +180,7 @@ namespace soth
      WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
      std::cout << (MATLAB)WMLY << std::endl;
 
+     std::cout << "Y... " << std::endl;
      Y.applyTransposeOnTheLeft(WMLY);
      std::cout << (MATLAB)WMLY << std::endl;
    }
