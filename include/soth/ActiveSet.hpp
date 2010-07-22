@@ -25,7 +25,7 @@ namespace soth
     {
       assert( ref<v.size() );
       assert( v[ref].first == Bound::BOUND_NONE );
-      assert( row<nr );
+      assert( row<v.size() );
       assert( freerow[row] );
       assert( type!=Bound::BOUND_NONE );
 
@@ -50,7 +50,7 @@ namespace soth
     /* Unactive the constraint at line <row> of ML and frees the corresponding line. */
     void unactiveRow( unsigned int row )
     {
-      assert( row<nr );
+      assert( row<v.size() );
       assert( ! freerow[row] );
       for( unsigned int i=0;i<v.size();++i )
 	{
@@ -97,7 +97,7 @@ namespace soth
     {
       VectorXi res(nba);
       int row = 0;
-      for( unsigned int i=0;i<nba;++i )
+      for( unsigned int i=0;i<v.size();++i )
 	if(! freerow[i] ) res(row++) = whichConstraint(i);
       // for( unsigned int i=0;i<v.size();++i )
       // 	if( isActive(i) ) res( where(i) ) = i;
