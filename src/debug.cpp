@@ -37,7 +37,7 @@
 #include <ios>
 
 #ifdef WIN32
-const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "c:/tmp/traces.txt";
+const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "traces.txt";
 #else	/*WIN32*/
 const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "/tmp/traces.txt";
 #endif	/*WIN32*/
@@ -45,11 +45,7 @@ const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "/tmp/traces.txt";
 
 
 #ifdef SOTH_DEBUG
- #ifdef WIN32
-  std::ofstream debugfile( "C:/tmp/traces.txt", std::ios::trunc&std::ios::out );
- #else	/*WIN32*/
-  std::ofstream debugfile( "/tmp/traces.txt", std::ios::trunc&std::ios::out );
-#endif	/*WIN32*/
+  std::ofstream debugfile( sotDebugTrace::DEBUG_FILENAME_DEFAULT, std::ios::trunc&std::ios::out );
 #else
 std::ofstream debugfile; //( "/dev/null", std::ios::trunc&std::ios::out );
  class __sotDebug_init
