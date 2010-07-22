@@ -176,31 +176,30 @@ namespace soth
     */
 
     // Return true if the rank re-decrease operated at the current stage.
-    bool update( const VectorXd & Jup,
+    bool update( unsigned int cst,
 		 givensd_sequence_t & Yup );
     /*
-      Inew = Unused.pop();
-      Row JupY = row(Inew);
-      JupU = Jup*Y;
-      double norm2=0; double rankJ=0;
-      for i=n:-1:1
-      norm2+=JupY(i)^2;
-      if norm2!=0 rankJ=i; break;
-
-      Ir << Inew
-      W(Inew,Inew)=1;
-      if rankJ>sizeM+rank
-      // Rank increase
-      for i=rankJ:-1:sizeM+rank+1
-      Gr gr; gr.init( JupY,i,i-1,0 ); prod(JupY,gr);
-      Yup.push_back( gr );
-      return false;
-      else
-      // No rank increase;
-      nullifyLineDeficient(Inew);
-      return true;
-    */
-
+     * Inew = Unused.pop();
+     * Row JupY = row(Inew);
+     * JupU = Jup*Y;
+     * double norm2=0; double rankJ=0;
+     * for i=n:-1:1
+     *   norm2+=JupY(i)^2;
+     *   if norm2!=0 rankJ=i; break;
+     *
+     * Ir << Inew
+     * W(Inew,Inew)=1;
+     * if rankJ>sizeM+rank
+     *   // Rank increase
+     *   for i=rankJ:-1:sizeM+rank+1
+     *     Gr gr; gr.init( JupY,i,i-1,0 ); prod(JupY,gr);
+     *     Yup.push_back( gr );
+     *     return false;
+     * else
+     *   // No rank increase;
+     *   nullifyLineDeficient(Inew);
+     *   return true;
+     */
 
     // Return true if the rank decrease operated at the current stage.
     //bool propagateUpdate( RotationGiven_list_t & Yup,
@@ -248,7 +247,6 @@ namespace soth
     RowML rowMrL0( const unsigned int r );
     RowL rowML( const unsigned int r );
     unsigned int rowSize( const unsigned int r );
-
 
     int sizeA( void ) const { return activeSet.nbActive(); }
 

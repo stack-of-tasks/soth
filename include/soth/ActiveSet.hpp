@@ -54,6 +54,8 @@ namespace soth
       assert( ! freerow[row] );
       for( unsigned int i=0;i<v.size();++i )
 	{
+	  // if( v[i].second>row ) v[i].second--;
+	  // else
 	  if( v[i].second == row )
 	    {
 	      assert( v[i].first != Bound::BOUND_NONE );
@@ -90,13 +92,15 @@ namespace soth
     }
 
 
+    /* Return a compact of the active line, ordered by row values. */
     operator VectorXi (void) const
     {
       VectorXi res(nba);
-      // for( unsigned int i=0;i<nba;++i )
-      // 	res(i) = whichConstraint(i);
-      for( unsigned int i=0;i<v.size();++i )
-	if( isActive(i) ) res( where(i) ) = i;
+      int row = 0;
+      for( unsigned int i=0;i<nba;++i )
+	if(! freerow[i] ) res(row++) = whichConstraint(i);
+      // for( unsigned int i=0;i<v.size();++i )
+      // 	if( isActive(i) ) res( where(i) ) = i;
       return res;
     }
 

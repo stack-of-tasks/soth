@@ -405,7 +405,70 @@ namespace soth
   }
 
   /* --- UPDATE ------------------------------------------------------------- */
+  /* --- UPDATE ------------------------------------------------------------- */
+  /* --- UPDATE ------------------------------------------------------------- */
 
+  bool Stage::update( unsigned int cst,
+		      givensd_sequence_t & Yup )
+  {
+    /*
+     * Inew = Unused.pop();
+     * Row JupY = row(Inew);
+     * JupU = Jup*Y;
+     * double norm2=0; double rankJ=0;
+     * for i=n:-1:1
+     *   norm2+=JupY(i)^2;
+     *   if norm2!=0 rankJ=i; break;
+     *
+     * Ir << Inew
+     * W(Inew,Inew)=1;
+     * if rankJ>sizeM+rank
+     *   // Rank increase
+     *   for i=rankJ:-1:sizeM+rank+1
+     *     Gr gr; gr.init( JupY,i,i-1,0 ); prod(JupY,gr);
+     *     Yup.push_back( gr );
+     *     return false;
+     * else
+     *   // No rank increase;
+     *   nullifyLineDeficient(Inew);
+     *   return true;
+     */
+    Index rowup = activeSet.activeRow( cst,bounds[cst].getType() );
+    RowML JupY = ML_.row(rowup);
+    JupY = J.row(cst); Y.applyThisOnTheLeft(JupY);
+    double norm2=0; int rankJ=sizeM-1;
+    for( Index i=nc-1;i>=sizeM;--i )
+      {
+	norm2+=JupY(i)*JupY(i);
+	if( norm2>EPSILON )
+	  { rankJ=i; break; }
+      }
+
+    if( rankJ>sizeM+sizeL )
+      { // Rank increase
+	/* Remove the tail of JuY. */
+	for( Index i=rankJ;i>sizeM+sizeL;--i )
+	  {
+	    Givensd G1;
+	    G1.makeGivens(JupY(i-1),JupY(i),&JupY(i-1));
+	    JupY(i)=0;
+	    // TODO: store in Y.
+	    Yup.push_back(G1);
+
+	    L.pushRowBack( rowup );
+	    M.pushRowBack( rowup );
+	    W.pushColBack( rowup );
+	    W.pushRowBack( rowup );
+	    // TODO: clean W.
+	    W_.row( rowup ) .setZero();
+	    W_.col( rowup ) .setZero();
+	    W_(rowup,rowup ) = 1.0;
+	  }
+      }
+
+
+    return false;
+  }
 
   /* --- SOLVER ------------------------------------------------------------- */
   /* --- SOLVER ------------------------------------------------------------- */
