@@ -1,4 +1,5 @@
 #include "soth/HCOD.hpp"
+#include "soth/debug.h"
 
 
 
@@ -76,7 +77,7 @@ namespace soth
       {
 	assert( stages[i]!=0 );
 
-	std::cout <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
+	sotDEBUG(5) <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
 	previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows());
       }
 
@@ -86,20 +87,25 @@ namespace soth
       {
 	stages[i]->solve(solution);
       }
-    std::cout << "Yu = " << (MATLAB)solution << std::endl;
+    sotDEBUG(5) << "Yu = " << (MATLAB)solution << std::endl;
     Y.applyThisOnVector( solution );
-    std::cout << "u = " << (MATLAB)solution << std::endl;
+    sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
 
     show(std::cout,true);
 
-    Stage::givensd_sequence_t GR;
-    stages[0]->downdate(3,GR);
+    const unsigned int TO_DOWN = 0;
+    Stage::givensd_sequence_t Ydown;
+    bool propag=stages[TO_DOWN]->downdate(3,Ydown);
+    for( unsigned int i=TO_DOWN+1;i<stages.size();++i )
+      {
+	propag = stages[i]->propagateDowndate(Ydown,propag);
+      }
 
     /* --- RECOMPOSE FOR TEST --- */
     // for( unsigned int i=0;i<stages.size();++i )
     //   {
     // 	Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
-    // 	std::cout << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
+    // 	sotDEBUG(5) << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
     //   }
 
 

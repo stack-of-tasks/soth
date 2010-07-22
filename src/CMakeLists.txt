@@ -14,7 +14,8 @@ SET(${PROJECT_NAME}_SRC
     Stage.cpp
     BaseY.cpp
     HCOD.cpp
-	Givens.cpp
+    Givens.cpp
+    debug.cpp
 )
 
 

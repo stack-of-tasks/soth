@@ -1,5 +1,6 @@
 #include "soth/Stage.hpp"
 #include "soth/solvers.h"
+#include "soth/sotDebug.h"
 #include <Eigen/QR>
 namespace Eigen
 {
@@ -54,7 +55,7 @@ namespace soth
 	e_(i) = bounds[idx].getBound( initialIr[i].second );
 	activeSet[i] = initialIr[i];
       }
-    std::cout << "JY = " << (MATLAB)ML_ << std::endl;
+    sotDEBUG(5) << "JY = " << (MATLAB)ML_ << std::endl;
   }
   /* Compute ML=J(:,:)*Y. */
   void Stage::
@@ -80,7 +81,7 @@ namespace soth
   computeInitialCOD( const unsigned int previousRank,
 		     const ActiveSet & initialIr )
   {
-    std::cout << "J = " << (MATLAB)J << std::endl;
+    sotDEBUG(5) << "J = " << (MATLAB)J << std::endl;
 
     /* Compute ML=J(initIr,:)*Y. */
     computeInitalJY(initialIr);
@@ -88,23 +89,23 @@ namespace soth
     /* Set the size of M and L. L is supposed full rank yet. */
     sizeL=sizeA;
     sizeM=previousRank;
-    //std::cout << "sizesAML = [" << sizeA << ", " << sizeM << ", " << sizeL << "]." << std::endl;
+    //sotDEBUG(5) << "sizesAML = [" << sizeA << ", " << sizeM << ", " << sizeL << "]." << std::endl;
 
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
     e.setRowRange(0,sizeL);
-    std::cout << "MY = " << (MATLAB)M << std::endl;
-    std::cout << "LY = " << (MATLAB)L << std::endl;
-    std::cout << "e = " << (MATLAB)e << std::endl;
+    sotDEBUG(5) << "MY = " << (MATLAB)M << std::endl;
+    sotDEBUG(5) << "LY = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
 
     /* A=L'; mQR=QR(A); */
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
     Block<MatrixXd> subY = Y.getHouseholderEssential().bottomRightCorner(subL.rows(), subL.cols());
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> > mQR(subL,subY);
     const MatrixXd & R = mQR.matrixR();
-    std::cout << "mR = " << (MATLAB)R << std::endl;
-    std::cout << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
+    sotDEBUG(5) << "mR = " << (MATLAB)R << std::endl;
+    sotDEBUG(5) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
 
     /* L=triu(mQR'); */
    const VectorXi & P = mQR.colsPermutation().indices();
@@ -114,12 +115,12 @@ namespace soth
 	//rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
  //     }
     L.setRowIndices(P);    M.setRowIndices(P);
-    std::cout << "L0 = " << (MATLAB)L << std::endl;
-    std::cout << "M0 = " << (MATLAB)M << std::endl;
+    sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
 
     W.setRowRange(0,sizeL); W.setColIndices(Ir);
     W_.setIdentity(); // DEBUG
-    std::cout << "W0 = " << (MATLAB)W << std::endl;
+    sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
 
     /* for i=rank:-1:1
      *   if( L(i,i)!= 0 ) break;
@@ -133,10 +134,10 @@ namespace soth
 	nullifyLineDeficient( sizeL-1,rank );
       }
     L.setColRange(sizeM,sizeM+sizeL);
-    std::cout << "L = " << (MATLAB)L << std::endl;
-    std::cout << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 
-    //std::cout << "check" << std::endl << W* << std::endl;
+    //sotDEBUG(5) << "check" << std::endl << W* << std::endl;
 
     /* Y=Y*Yup; */
     //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
@@ -166,7 +167,7 @@ namespace soth
       In << r;
     */
     const Index r = (in_r<0)?row-1:in_r;
-    //std::cout << "r = " << r << " , row = " << row << std::endl;
+    //sotDEBUG(5) << "r = " << r << " , row = " << row << std::endl;
 
     if( isWIdenty )
       {
@@ -174,7 +175,7 @@ namespace soth
 	W_.setIdentity();
       }
 
-    //std::cout << "WLinit = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
+    //sotDEBUG(5) << "WLinit = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
     for( Index i=r-1;i>=0;--i )
       {
 	Givensd G1;
@@ -183,9 +184,9 @@ namespace soth
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
-	//std::cout << "W = " << (MATLAB)W << std::endl;
-	//std::cout << "L = " << (MATLAB)L << std::endl;
-	//std::cout << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
+	//sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	//sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+	//sotDEBUG(5) << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
       }
 
     L.removeRow(row);
@@ -219,7 +220,7 @@ namespace soth
   downdate( const unsigned int position,
 	    givensd_sequence_t & Ydown )
   {
-    std::cout << " --- DOWNDATE ---------------------------- " << std::endl;
+    sotDEBUG(5) << " --- DOWNDATE ---------------------------- " << std::endl;
     removeInW( position );
     e.removeRow( position );
     /* TODO: remove the component in activeSet. */
@@ -228,7 +229,7 @@ namespace soth
     //  and rank promotion, or full-rank removed and no promotion.
     if( position < sizeN ) // Rank-def line removed.
       {
-	std::cout << "Nothing to do." << std::endl;
+	sotDEBUG(5) << "Nothing to do." << std::endl;
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position); // No row to remove in L.
 	sizeN--; sizeA--;
@@ -236,18 +237,18 @@ namespace soth
       }
     else if( (sizeN>0)&&(std::abs(ML_( Irn(sizeN-1),sizeM ))>EPSILON) )
       { // Apparition of a none zero coeff on the first deficient L-row.
-	// std::cout << "ML_ = " << (MATLAB)ML_ << std::endl;
-	// std::cout << "Irn = " << (MATLAB)Irn << std::endl;
+	// sotDEBUG(5) << "ML_ = " << (MATLAB)ML_ << std::endl;
+	// sotDEBUG(5) << "Irn = " << (MATLAB)Irn << std::endl;
 
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position);
-	std::cout << "W = " << (MATLAB)W << std::endl;
-	std::cout << "M = " << (MATLAB)M << std::endl;
+	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
 
-	//std::cout << "Lnt = " << (MATLAB)L << std::endl;
+	//sotDEBUG(5) << "Lnt = " << (MATLAB)L << std::endl;
 	L.removeRow(position-sizeN);
 	L.pushRowFront(Irn(sizeN-1));
-	std::cout << "L = " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 	sizeN--; sizeA--;
 	return true;
       }
@@ -256,11 +257,11 @@ namespace soth
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position);
 	L.removeRow(position-sizeN); sizeL--; sizeA--;
-	//std::cout << "Lhss = " << (MATLAB)L << std::endl;
+	//sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
 	regularizeHessenberg(Ydown);
 	L.removeCol(sizeL);
 	sizeL--; sizeA--;
-	std::cout << "L = " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 	return false;
      }
   }
@@ -309,8 +310,8 @@ namespace soth
 	    /* Commute the lines in L. */
 	    L.pushRowFront(Irn(i)); sizeL++;
 	    M.permuteRow(i,sizeN-1);
-	    std::cout << "M = " << (MATLAB)L << std::endl;
-	    std::cout << "L = " << (MATLAB)L << std::endl;
+	    sotDEBUG(5) << "M = " << (MATLAB)L << std::endl;
+	    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 
 	    return true;
 	  }
@@ -319,7 +320,7 @@ namespace soth
     /* No rank upgrade, resorbe hessenberg. */
     regularizeHessenberg(Ydown);
     L.popColBack();
-    std::cout << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 
   }
 
@@ -328,7 +329,7 @@ namespace soth
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
-	std::cout << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
+	sotDEBUG(5) << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
 	Givensd G1;
 	G1.makeGivens(MLi(sizeM+i),MLi(sizeM+i+1),&MLi(sizeM+i));
 	MLi(sizeM+i+1)=0;
@@ -355,9 +356,9 @@ namespace soth
   /* Rotate W so that W is 1 on position,position and L|position is at worst hessenberg. */
   void Stage::removeInW( const  unsigned int position )
   {
-    // std::cout << "W0 = " << (MATLAB)W << std::endl;
-    // std::cout << "M0 = " << (MATLAB)M << std::endl;
-    // std::cout << "L0 = " << (MATLAB)L << std::endl;
+    // sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
+    // sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
+    // sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
 
     for( unsigned int i=0;i<position;++i )
       {
@@ -393,9 +394,9 @@ namespace soth
 	ML.applyOnTheLeft( Irn(position),Irn(i),G1.transpose());
      }
 
-    std::cout << "W = " << (MATLAB)W << std::endl;
-    std::cout << "M = " << (MATLAB)M << std::endl;
-    std::cout << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
   }
 
   /* --- SOLVER ------------------------------------------------------------- */
@@ -417,10 +418,10 @@ namespace soth
     SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
     Ue -= Mr*Yu.tail(sizeM);
 
-    //std::cout << "ue = " << (MATLAB)Ue << std::endl;
-    //std::cout << "L = " << (MATLAB)L << std::endl;
+    //sotDEBUG(5) << "ue = " << (MATLAB)Ue << std::endl;
+    //sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     soth::solveInPlaceWithLowerTriangular(L,Ue);
-    //std::cout << "LiUe = " << (MATLAB)Ue << std::endl;
+    //sotDEBUG(5) << "LiUe = " << (MATLAB)Ue << std::endl;
   }
 
 
@@ -462,10 +463,10 @@ namespace soth
     WMLY.resize(sizeA,nc); WMLY.setZero();
     WMLY.block(0,0,sizeA,sizeM) = W*M;
     WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
-    std::cout << "WML = " << (MATLAB)WMLY << std::endl;
+    sotDEBUG(5) << "WML = " << (MATLAB)WMLY << std::endl;
 
     Y.applyTransposeOnTheLeft(WMLY);
-    std::cout << "WMLY = " << (MATLAB)WMLY << std::endl;
+    sotDEBUG(5) << "WMLY = " << (MATLAB)WMLY << std::endl;
   }
 
 
