@@ -18,6 +18,7 @@ namespace soth
   {
     isExplicit = true;
     matrixExplicit = getHouseholderSequence();
+    //std::cout << matrixExplicit << std::endl; exit(0);
   }
 
   BaseY& BaseY::operator*= (const Givens& g)

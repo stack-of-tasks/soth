@@ -2,7 +2,6 @@
 #define __SOTH_STAGE__
 
 #include <Eigen/Core>
-#include <Eigen/Jacobi>
 #include <list>
 namespace Eigen
 {
@@ -12,6 +11,7 @@ namespace Eigen
 #include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
 #include "soth/ActiveSet.hpp"
+#include "soth/Givens.h"
 
 namespace soth
 {
@@ -35,7 +35,6 @@ namespace soth
     typedef std::pair<Index,Bound::bound_t> ConstraintRef;
 
     typedef PlanarRotation<double> Givensd;
-    typedef std::list<Givensd> givensd_sequence_t;
 
   protected:
 
@@ -65,7 +64,6 @@ namespace soth
     const Indirect& Ir, &Irn; // Ir = L0sq.indirect1() -- Irn = M.indirect1()
 
     unsigned int sizeM,sizeL; // sizeL = card(Ir).
-    unsigned int sizeN; // sizeN = card(In) = sizeA-sizeL.
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -120,7 +118,7 @@ namespace soth
   public:
     // Return true if the rank re-increase operated at the current stage.
     bool downdate( const unsigned int position,
-		   givensd_sequence_t & Ydown );
+		   GivensSequence & Ydown );
     /*
       gr = Neutralize row <position> in W <position>
       L=gr'*L
@@ -140,7 +138,7 @@ namespace soth
 
 
     // Return true if the rank decrease operated at the current stage.
-    bool propagateDowndate( givensd_sequence_t & Ydown,
+    bool propagateDowndate( GivensSequence & Ydown,
 			    bool decreasePreviousRank );
     /*
      * M=M*Ydown;
@@ -156,7 +154,7 @@ namespace soth
      * return false
      */
 
-    void regularizeHessenberg( givensd_sequence_t & Ydown );
+    void regularizeHessenberg( GivensSequence & Ydown );
     /*
       for i=i0:rank-1
       gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
@@ -177,7 +175,7 @@ namespace soth
 
     // Return true if the rank re-decrease operated at the current stage.
     bool update( unsigned int cst,
-		 givensd_sequence_t & Yup );
+		 GivensSequence & Yup );
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -249,6 +247,8 @@ namespace soth
     unsigned int rowSize( const unsigned int r );
 
     int sizeA( void ) const { return activeSet.nbActive(); }
+    // sizeN = card(In) = sizeA-sizeL.
+    int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
 
     // SubRowXd row( const unsigned int r );
     // SubRowXd rown( const unsigned int r ); // row rank def

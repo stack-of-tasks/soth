@@ -92,14 +92,21 @@ namespace soth
 
     show(std::cout,true);
 
+    Y.computeExplicitly();
+
+    std::cout << " === DOWN ================================ " << std::endl;
     const unsigned int TO_DOWN = 0;
     const unsigned int ROW_DOWN = 1;
-    Stage::givensd_sequence_t Ydown;
+    GivensSequence Ydown;
+
     bool propag=stages[TO_DOWN]->downdate(ROW_DOWN,Ydown);
+
     for( unsigned int i=TO_DOWN+1;i<stages.size();++i )
       {
-	propag = stages[i]->propagateDowndate(Ydown,propag);
+     	propag = stages[i]->propagateDowndate(Ydown,propag);
       }
+
+    show(std::cout,true);
 
     /* --- RECOMPOSE FOR TEST --- */
     // for( unsigned int i=0;i<stages.size();++i )

@@ -188,7 +188,7 @@ class DestructiveColPivQR
       */
     DestructiveColPivQR& setEpsilon(const RealScalar& epsilon)
     {
-      ei_assert(epsilon > 0.)
+      ei_assert(epsilon > 0.);
       m_usePrescribedEpsilon = true;
       m_prescribedEpsilon = epsilon;
       return *this;

@@ -29,7 +29,7 @@ namespace soth
     void makeGivens(const VectorBase & v, int i, int j, double* z=0);
 
     template<typename VectorBase>
-    void makeGivensAndApply(VectorBase & v, int i, int j, double* z=0);
+    void makeGivensAndApply(VectorBase & v, int i, int j);
 
     // M := M*G.
     template<typename Derived>
@@ -136,12 +136,11 @@ namespace soth
   }
 
   template<typename VectorBase>
-  inline void Givens::makeGivensAndApply(VectorBase & v, int i, int j, double* z)
+  inline void Givens::makeGivensAndApply(VectorBase & v, int i, int j)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
-    makeGivens(v(i), v(j), i, j, v(i));
+    makeGivens(v(i), v(j), i, j, &v(i));
     v(j) = 0;
-    if (z) z = v(i);
   }
 }
 

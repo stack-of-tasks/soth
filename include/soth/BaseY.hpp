@@ -126,12 +126,11 @@ namespace soth
   {
     if( isExplicit )
       {
-	/*TODO*/ throw "TODO";
+	MatrixXd tmp = M;
+	M = tmp*matrixExplicit;
       }
     else
-      {
-	      M.applyOnTheRight(getHouseholderSequence());
-      }
+      {	      M.applyOnTheRight(getHouseholderSequence());      }
   }
 
   // M := M*Y'.
@@ -141,12 +140,10 @@ namespace soth
   {
     if( isExplicit )
       {
-	/*TODO*/ throw "TODO";
+	M = M*matrixExplicit.transpose();
       }
     else
-    {
-	      M.applyOnTheRight(getHouseholderSequence().transpose());
-    }
+      {	      M.applyOnTheRight(getHouseholderSequence().transpose());    }
   }
 
   // M := Y*M.
@@ -156,7 +153,7 @@ namespace soth
   {
     if( isExplicit )
       {
-	/*TODO*/ throw "TODO";
+	M = matrixExplicit*M;
       }
     else
       {
@@ -171,7 +168,7 @@ namespace soth
   {
     if( isExplicit )
       {
-	/*TODO*/ throw "TODO";
+	M = matrixExplicit.transpose()*M;
       }
     else
       {
