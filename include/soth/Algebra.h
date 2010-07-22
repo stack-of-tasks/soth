@@ -115,7 +115,7 @@ namespace soth
   template< typename Derived >
     void MATLAB::initMatrix( const MatrixBase<Derived> & m1 )
     {
-      std::ostringstream os; os << "... \n[ ";
+      std::ostringstream os; os << "...\n[ ";
       std::ostringstream ostmp;
       for(int i=0;i<m1.rows();++i )
 	{

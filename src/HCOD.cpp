@@ -3,11 +3,8 @@
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
 
-
-
 namespace soth
 {
-
 
   HCOD::
   HCOD( unsigned int inSizeProblem, unsigned int nbStage )
