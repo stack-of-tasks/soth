@@ -23,7 +23,8 @@ class DestructiveColPivQR
     typedef typename MatrixType::Index Index;
     //typedef Matrix<Scalar, RowsAtCompileTime, RowsAtCompileTime, Options, MaxRowsAtCompileTime, MaxRowsAtCompileTime> MatrixQType;
     typedef _HouseholderStorageType  MatrixQType;
-    typedef typename ei_plain_diag_type<MatrixType>::type HCoeffsType;
+    //typedef typename ei_plain_diag_type<MatrixType>::type HCoeffsType;
+    typedef Diagonal<MatrixQType,0> HCoeffsType;
     typedef PermutationMatrix<ColsAtCompileTime, MaxColsAtCompileTime> PermutationType;
     typedef typename ei_plain_row_type<MatrixType, Index>::type IntRowVectorType;
     typedef typename ei_plain_row_type<MatrixType>::type RowVectorType;
@@ -34,7 +35,8 @@ class DestructiveColPivQR
     DestructiveColPivQR(MatrixType& matrix, MatrixQType& householderEssentialStorage)
       : m_r(matrix),
         m_q(householderEssentialStorage),
-        m_hCoeffs(std::min(matrix.rows(),matrix.cols())),
+        //m_hCoeffs(std::min(matrix.rows(),matrix.cols())),
+        m_hCoeffs(householderEssentialStorage.diagonal()),
         m_colsPermutation(matrix.cols()),
         m_colsTranspositions(matrix.cols()),
         m_colsIntTranspositions(matrix.cols()),
@@ -108,11 +110,7 @@ class DestructiveColPivQR
     inline Index rank() const
     {
       ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
-      RealScalar premultiplied_threshold = ei_abs(m_maxpivot) * threshold();
-      Index result = 0;
-      for(Index i = 0; i < m_nonzero_pivots; ++i)
-        result += (ei_abs(m_r.coeff(i,i)) > premultiplied_threshold);
-      return result;
+      return m_nonzero_pivots;
     }
 
     /** \returns the dimension of the kernel of the matrix of which *this is the QR decomposition.
@@ -277,7 +275,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   Index cols = m_r.cols();
   Index size = m_r.diagonalSize();
 
-  m_hCoeffs.resize(size);
+  //m_hCoeffs.resize(size);
 
   m_temp.resize(cols);
 
