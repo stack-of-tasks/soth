@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Jacobi>
+#include <vector>
 
 
 namespace soth
@@ -18,6 +19,10 @@ namespace soth
     Givens();
     Givens(double a, double b, int i, int j, double* z=0);
 
+    template<typename VectorBase>
+    Givens(const VectorBase & v, int i, int j, double* z=0);
+
+  public:
     void makeGivens(double a, double b, int i, int j, double* z=0);
 
     template<typename VectorBase>
@@ -61,15 +66,77 @@ namespace soth
   };
 
 
+
+
+
+
+
+
+
+  class GivensSequence
+  {
+  public:
+    GivensSequence& push(const Givens& g)
+    {
+      G.push_back(g);
+      return *this;
+    }
+
+
+    // M := M*G.
+    template<typename Derived>
+    void applyThisOnTheLeft(MatrixBase<Derived> & M) const
+    {
+      for (size_t i=0; i<G.size(); ++i)
+        G[i].applyThisOnTheLeft(M);
+    }
+
+    // M := M*G'.
+    template<typename Derived>
+    void applyTransposeOnTheLeft(MatrixBase<Derived> & M) const
+    {
+      for (size_t i=0; i<G.size(); ++i)
+        G[i].applyTransposeOnTheLeft(M);
+    }
+
+    // M := G*M.
+    template<typename Derived>
+    void applyThisOnTheRight(MatrixBase<Derived> & M) const
+    {
+      for (size_t i=0; i<G.size(); ++i)
+        G[i].applyThisOnTheRight(M);
+    }
+
+    // M := G'*M.
+    template<typename Derived>
+    void applyTransposeOnTheRight(MatrixBase<Derived> & M) const
+    {
+      for (size_t i=0; i<G.size(); ++i)
+        G[i].applyTransposeOnTheRight(M);
+    }
+
+  private:
+    std::vector<Givens> G;
+  };
+
+
   template<typename VectorBase>
-  void Givens::makeGivens(const VectorBase & v, int i, int j, double* z)
+  inline Givens::Givens(const VectorBase & v, int i, int j, double* z)
+    :i(i), j(j)
+  {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
+    makeGivens(v, i, j, z);
+  }
+
+  template<typename VectorBase>
+  inline void Givens::makeGivens(const VectorBase & v, int i, int j, double* z)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     makeGivens(v(i), v(j), i, j, z);
   }
 
   template<typename VectorBase>
-  void Givens::makeGivensAndApply(VectorBase & v, int i, int j, double* z)
+  inline void Givens::makeGivensAndApply(VectorBase & v, int i, int j, double* z)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase)
     makeGivens(v(i), v(j), i, j, v(i));
