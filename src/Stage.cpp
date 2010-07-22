@@ -117,7 +117,7 @@ namespace soth
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
     Block<MatrixXd> subY = Y.getNextHouseholderEssential();
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
-      mQR(subL,subY);
+      mQR(subL,subY, EPSILON);
     const MatrixXd & R = mQR.matrixR();
     sotDEBUG(25) << "mR = " << (MATLAB)R << std::endl;
     sotDEBUG(25) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
@@ -195,8 +195,7 @@ namespace soth
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
-	//sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-	//sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 	//sotDEBUG(5) << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
       }
 
@@ -204,6 +203,7 @@ namespace soth
     M.pushRowFront(M.removeRow(row+sizeN));
     W.pushColFront(W.removeCol(row+sizeN));
     sizeL--; sizeN++;
+	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
   }
 
   /* --- DOWNDATE ----------------------------------------------------------- */
