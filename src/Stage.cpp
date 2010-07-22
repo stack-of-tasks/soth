@@ -83,10 +83,7 @@ namespace soth
 
 	MatrixXd::RowXpr MLrow = ML_.row(i);
 	MLrow = J.row(i);
-	sotDEBUG(1) << "MLrow_before =" << (MATLAB)MLrow << std::endl;
 	Y.applyThisOnTheLeft( MLrow );
-	sotDEBUG(1) << "MLrow_after =" << (MATLAB)MLrow << std::endl;
-	sotDEBUG(1) << "rank =" << Y.rank << std::endl;
 
 	e_(i) = bounds[i].getBound( Bound::BOUND_TWIN );
 	activeSet[i] = ConstraintRef( i,Bound::BOUND_TWIN );
@@ -144,6 +141,7 @@ namespace soth
     while( sizeL>rank )
       {
 	/* Nullify the last line of L, which is of size rank. */
+	sotDEBUG(5) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
 	nullifyLineDeficient( sizeL-1,rank );
       }
     L.setColRange(sizeM,sizeM+sizeL);
@@ -270,7 +268,7 @@ namespace soth
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position);
 	L.removeRow(position-sizeN); sizeL--; sizeA--;
-	//sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
 	regularizeHessenberg(Ydown);
 	L.removeCol(sizeL);
 	sizeL--; sizeA--;
@@ -300,10 +298,14 @@ namespace soth
     EI_FOREACH( i,Irn )
       {
 	//TODO rowML(i)*=Ydown;
-	if( decreasePreviousRank ) return true;
       }
+    if( decreasePreviousRank ) return true;
+    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     L.pushColFront( M.popColBack() );
     sizeM--;
+    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 
     /* Check is one of the M's grown. */
     for( Index i=0;i<sizeN;++i )
@@ -311,6 +313,7 @@ namespace soth
 	if( std::abs(ML_(Irn(i),sizeM)) > EPSILON )
 	  {
 	    /* Remove all the non-zero compononent of ML(i+1:end,sizeM). */
+	    sotDEBUG(5) << "Found a non zero at "<<i << std::endl;
 	    Block<MatrixXd> ML(ML_,0,0,nr,sizeM+1);
 	    for( Index j=i+1;j<sizeN;++j )
 	      {
@@ -323,7 +326,7 @@ namespace soth
 	    /* Commute the lines in L. */
 	    L.pushRowFront(Irn(i)); sizeL++;
 	    M.permuteRow(i,sizeN-1);
-	    sotDEBUG(5) << "M = " << (MATLAB)L << std::endl;
+	    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
 	    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 
 	    return true;
@@ -342,7 +345,7 @@ namespace soth
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
-	sotDEBUG(5) << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
+	sotDEBUG(25) << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
 	Givensd G1;
 	G1.makeGivens(MLi(sizeM+i),MLi(sizeM+i+1),&MLi(sizeM+i));
 	MLi(sizeM+i+1)=0;

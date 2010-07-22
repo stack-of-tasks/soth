@@ -96,8 +96,9 @@ namespace soth
     show(std::cout,true);
 
     const unsigned int TO_DOWN = 0;
+    const unsigned int ROW_DOWN = 1;
     Stage::givensd_sequence_t Ydown;
-    bool propag=stages[TO_DOWN]->downdate(3,Ydown);
+    bool propag=stages[TO_DOWN]->downdate(ROW_DOWN,Ydown);
     for( unsigned int i=TO_DOWN+1;i<stages.size();++i )
       {
 	propag = stages[i]->propagateDowndate(Ydown,propag);
