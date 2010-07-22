@@ -1,12 +1,12 @@
 #define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 15
+#define SOTH_DEBUG_MODE 45
 //SOTH_OPEN_DEBUG;
 #include "soth/debug.h"
 namespace soth
 {
   class stage__INIT
   {
-  public:stage__INIT( void ) { sotDebugTrace::openFile(); }
+  public:stage__INIT( void ) {  sotDebugTrace::openFile();  }
   };
   stage__INIT sotSOT_initiator;
 };
@@ -28,16 +28,15 @@ namespace soth
     : J(inJ), bounds(inbounds)
     ,Y(inY)
     ,nr(J.rows()),nc(J.cols())
-    ,activeSet(0)
+    ,activeSet(nr)
     ,W_(nr,nr),ML_(nr,nc),e_(nr)
     ,M(ML_,false),L(ML_,false),e(e_,false)
       //,isWIdenty(true)
     ,W(W_,false)
     ,Ir(L.getRowIndices()),Irn(M.getRowIndices() )
-    ,sizeM(0),sizeL(0),sizeN(0),sizeA(0)
+    ,sizeM(0),sizeL(0),sizeN(0)
   {
     assert( bounds.size() == J.rows() );
-    activeSet.reserve(nr);
   }
 
 
@@ -50,45 +49,39 @@ namespace soth
   computeInitalJY( const ActiveSet & initialIr )
   {
     if( isAllRow(initialIr) ) { computeInitalJY_allRows(); return; }
-    if( initialIr.size()==0 )
+    if( initialIr.nbActive()==0 )
       {
 	sotERROR << "TODO: initial IR empty." << std::endl;
 	/*TODO*/throw "TODO";
       }
 
-    sizeA=initialIr.size();
-    activeSet.resize(sizeA);
-    for( unsigned int i=0;i<sizeA;++i )
+    activeSet=initialIr;
+    SubMatrix<MatrixXd,RowPermutation> Jact( J,activeSet );
+    Block<MatrixXd> ML = ML_.topRows(activeSet.nbActive()); //(ML_,0,0,activeSet.nbActive(),nc );
+    ML = Jact;
+    Y.applyThisOnTheLeft( ML );
+
+    for( unsigned int i=0;i<activeSet.nbActive();++i )
       {
-	const Index & idx = initialIr[i].first;
-
-	MatrixXd::RowXpr MLrow = ML_.row(i);
-	MLrow = J.row(idx);
-	Y.applyThisOnTheLeft( MLrow );
-
-	e_(i) = bounds[idx].getBound( initialIr[i].second );
-	activeSet[i] = initialIr[i];
+	if( activeSet.isActive(i) )
+	    e_( activeSet.where(i) ) = bounds[i].getBound( activeSet.whichBound(i) );
       }
+
     sotDEBUG(15) << "JY = " << (MATLAB)ML_ << std::endl;
+    sotDEBUG(15) << "e = " << (MATLAB)e_ << std::endl;
   }
   /* Compute ML=J(:,:)*Y. */
   void Stage::
   computeInitalJY_allRows(void)
   {
-    sizeA=0;
+    ActiveSet Ir(nr);
     for( unsigned int i=0;i<nr;++i )
       {
 	if( bounds[i].getType() != Bound::BOUND_TWIN ) continue;
-	activeSet.resize(activeSet.size()+1);
-
-	MatrixXd::RowXpr MLrow = ML_.row(i);
-	MLrow = J.row(i);
-	Y.applyThisOnTheLeft( MLrow );
-
-	e_(i) = bounds[i].getBound( Bound::BOUND_TWIN );
-	activeSet[i] = ConstraintRef( i,Bound::BOUND_TWIN );
-	sizeA++;
+	int r = Ir.activeRow( i,Bound::BOUND_TWIN );
+	assert( r==Ir.nbActive()-1 );
      }
+    computeInitalJY( Ir );
   }
 
   unsigned int Stage::
@@ -101,20 +94,17 @@ namespace soth
     computeInitalJY(initialIr);
 
     /* Set the size of M and L. L is supposed full rank yet. */
-    sizeL=sizeA;
-    sizeM=previousRank;
-    //sotDEBUG(5) << "sizesAML = [" << sizeA << ", " << sizeM << ", " << sizeL << "]." << std::endl;
-
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
-    M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
-    L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
+    M.setColRange(0,previousRank);    M.setRowRange(0,sizeA());  sizeM=previousRank;
+    L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA());  sizeL=sizeA();
     e.setRowRange(0,sizeL);
     sotDEBUG(15) << "MY = " << (MATLAB)M << std::endl;
     sotDEBUG(15) << "LY = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
+    sotDEBUG(25) << "sizesAML = [" << sizeA() << ", " << sizeM << ", " << sizeL << "]." << std::endl;
 
     /* A=L'; mQR=QR(A); */
-    Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
+    Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA(), nc-previousRank).transpose();
     Block<MatrixXd> subY = Y.getNextHouseholderEssential();
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
       mQR(subL,subY);
@@ -137,13 +127,17 @@ namespace soth
      *     nullifyLineDeficient( i );
      * sizeL = mQR.rank();
      */
+    sotDEBUG(5) << "VAL = " << L(2,2) << std::endl;
+    sotDEBUG(5) << "VAL = " << L.diagonal() << std::endl;
     const Index rank = mQR.rank();
     while( sizeL>rank )
       {
 	/* Nullify the last line of L, which is of size rank. */
 	sotDEBUG(5) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
+    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 	nullifyLineDeficient( sizeL-1,rank );
-      }
+     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+     }
     L.setColRange(sizeM,sizeM+sizeL);
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
@@ -178,25 +172,17 @@ namespace soth
       In << r;
     */
     const Index r = (in_r<0)?row-1:in_r;
-    //sotDEBUG(5) << "r = " << r << " , row = " << row << std::endl;
-
-    // if( isWIdenty )
-    //   {
-    // 	isWIdenty = false;
-    // 	W_.setIdentity();
-    //   }
-
-    //sotDEBUG(5) << "WLinit = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
     for( Index i=r-1;i>=0;--i )
       {
+	if( std::abs(L(row,i))<EPSILON ) continue;
 	Givensd G1;
 	G1.makeGivens(L(i,i),L(row,i));
 	Block<MatrixXd> ML(ML_,0,0,nr,sizeM+r);
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
-	//sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-	//sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 	//sotDEBUG(5) << "WL = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
       }
 
@@ -243,7 +229,8 @@ namespace soth
 	sotDEBUG(5) << "Nothing to do." << std::endl;
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position); // No row to remove in L.
-	sizeN--; sizeA--;
+	activeSet.unactiveRow(position);
+	sizeN--;
 	return true;
       }
     else if( (sizeN>0)&&(std::abs(ML_( Irn(sizeN-1),sizeM ))>EPSILON) )
@@ -260,18 +247,20 @@ namespace soth
 	L.removeRow(position-sizeN);
 	L.pushRowFront(Irn(sizeN-1));
 	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
-	sizeN--; sizeA--;
+	activeSet.unactiveRow(position);
+	sizeN--;
 	return true;
       }
     else // Full-rank line removed and no rank promotion: resorbe Hessenberg and propagate.
       {
 	W.removeRow(position);	W.removeCol(position);
 	M.removeRow(position);
-	L.removeRow(position-sizeN); sizeL--; sizeA--;
+	L.removeRow(position-sizeN); sizeL--;
+	activeSet.unactiveRow(position);
 	sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
 	regularizeHessenberg(Ydown);
 	L.removeCol(sizeL);
-	sizeL--; sizeA--;
+	sizeL--;
 	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
 	return false;
      }
@@ -393,7 +382,7 @@ namespace soth
 	ML.applyOnTheLeft( Irn(i+1),Irn(i),G1.transpose());
       }
 
-    for( unsigned int i=position+1;i<sizeA;++i )
+    for( unsigned int i=position+1;i<sizeA();++i )
       {
 	if( std::abs(W(position,i))< EPSILON ) continue;
 
@@ -414,6 +403,9 @@ namespace soth
     sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
   }
+
+  /* --- UPDATE ------------------------------------------------------------- */
+
 
   /* --- SOLVER ------------------------------------------------------------- */
   /* --- SOLVER ------------------------------------------------------------- */
@@ -481,9 +473,9 @@ namespace soth
   void Stage::
   recompose( MatrixXd& WMLY )
   {
-    WMLY.resize(sizeA,nc); WMLY.setZero();
-    WMLY.block(0,0,sizeA,sizeM) = W*M;
-    WMLY.block(0,sizeM,sizeA,sizeL) = W.block(0,sizeN,sizeA,sizeL)*L;
+    WMLY.resize(sizeA(),nc); WMLY.setZero();
+    WMLY.block(0,0,sizeA(),sizeM) = W*M;
+    WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN,sizeA(),sizeL)*L;
     sotDEBUG(5) << "WML = " << (MATLAB)WMLY << std::endl;
 
     Y.applyTransposeOnTheLeft(WMLY);
@@ -494,12 +486,8 @@ namespace soth
   void Stage::
   show( std::ostream& os, unsigned int stageRef, bool check )
   {
-    Indirect idx(sizeA);
-    for( unsigned int i=0;i<sizeA;++i )
-      {	idx(i) = activeSet[i].first;      }
-    os << "J"<<stageRef<<" = " << (MATLAB)SubMatrix<MatrixXd,RowPermutation>(J,idx) << std::endl;
+    os << "J"<<stageRef<<" = " << (MATLAB)SubMatrix<MatrixXd,RowPermutation>(J,activeSet) << std::endl;
     os << "e"<<stageRef<<" = " << (MATLAB)e << std::endl;
-
     os << "W"<<stageRef<<" = " << (MATLAB)W << std::endl;
     os << "M"<<stageRef<<" = " << (MATLAB)M << std::endl;
     os << "L"<<stageRef<<" = " << (MATLAB)L << std::endl;
@@ -512,7 +500,7 @@ namespace soth
       }
   }
 
-  Stage::ActiveSet Stage::_allRows;
+  ActiveSet Stage::_allRows(0);
   double Stage::EPSILON = 1e-6;
 
 }; // namespace soth
