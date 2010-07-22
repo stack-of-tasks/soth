@@ -299,12 +299,19 @@ namespace soth
 		W_.applyOnTheRight( Irn(i),Irn(j),G1);
 	      }
 	    /* Commute the lines in L. */
-	    L.pushRowFront(Irn(i));
+	    L.pushRowFront(Irn(i)); sizeL++;
 	    M.permuteRow(i,sizeN-1);
+	    std::cout << "M = " << (MATLAB)L << std::endl;
+	    std::cout << "L = " << (MATLAB)L << std::endl;
 
 	    return true;
 	  }
       }
+
+    /* No rank upgrade, resorbe hessenberg. */
+    regularizeHessenberg(Ydown);
+    L.popColBack();
+    std::cout << "L = " << (MATLAB)L << std::endl;
 
   }
 
