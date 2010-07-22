@@ -100,7 +100,7 @@ namespace soth
 
     /* A=L'; mQR=QR(A); */
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
-    Block<MatrixXd> subY = Y.getHouseholderEssential().bottomRightCorner(subL.rows(), subL.rows());
+    Block<MatrixXd> subY = Y.getHouseholderEssential().bottomRightCorner(subL.rows(), subL.cols());
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> > mQR(subL,subY);
     const MatrixXd & R = mQR.matrixR();
     std::cout << "mR = " << (MATLAB)R << std::endl;
@@ -136,9 +136,12 @@ namespace soth
     std::cout << "L = " << (MATLAB)L << std::endl;
     std::cout << "W = " << (MATLAB)W << std::endl;
 
+    //std::cout << "check" << std::endl << W* << std::endl;
+
     /* Y=Y*Yup; */
-    //HouseholderSequence Yup( mQR.matrixQR(),mQR.hCoeffs(),rank );
+    //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
     //Y.composeOnTheRight(Yup);
+    Y.updateRank(previousRank+sizeL);
 
     return previousRank+sizeL;
   }

@@ -6,11 +6,10 @@ namespace soth
   BaseY::BaseY( const unsigned int & insize )
     :isExplicit(false)
     ,size(insize)
+    ,rank(0)
     ,matrixExplicit(size,size)
     ,householderEssential(size,size)
-    ,matrixHH()
   {
-    matrixHH.reserve(size);
     householderEssential.setZero();
   }
 
@@ -22,28 +21,29 @@ namespace soth
   }
 
 
-  // Y *= Yup. Carefull: there is some recopy here.
-  void BaseY::
-  composeOnTheRight( const BaseY& Yp )
-  {
-    /* TODO */
-    throw "TODO";
-  }
-  // Y *= HHup.
+  //// Y *= Yup. Carefull: there is some recopy here.
+  //void BaseY::
+  //composeOnTheRight( const BaseY& Yp )
+  //{
+  //  /* TODO */
+  //  throw "TODO";
+  //}
+  //// Y *= HHup.
 
-  void BaseY::
-  composeOnTheRight( const HouseholderSequence & hh )
-  {
-    if( isExplicit )
-      {
-	/* TODO */
-	throw "TODO";
-      }
-    else
-      {
-	matrixHH.append(hh);
-      }
+  
+ // void BaseY::
+ // composeOnTheRight( const HouseholderSequence & hh )
+ // {
+ //   if( isExplicit )
+ //     {
+	///* TODO */
+	//throw "TODO";
+ //     }
+ //   else
+ //     {
+	//matrixHH.append(hh);
+ //     }
 
-  }
+ // }
 
 }; // namespace soth

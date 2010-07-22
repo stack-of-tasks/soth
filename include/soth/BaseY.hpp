@@ -2,7 +2,8 @@
 #define __SOTH_BASEY__
 
 
-#include "soth/RotationHouseholder.hpp"
+#include "soth/Algebra.h"
+#include <Eigen/Householder>
 
 namespace soth
 {
@@ -11,13 +12,15 @@ namespace soth
   {
   protected:
     typedef MatrixXd::Index Index;
+    typedef Diagonal<MatrixXd,0> HCoeffsType;
+    typedef HouseholderSequence<MatrixXd,HCoeffsType> HouseholderSequenceType;
 
   protected:
     bool isExplicit;
     Index size;
+    Index rank;
     MatrixXd matrixExplicit;
     MatrixXd householderEssential;
-    HouseholderSequence matrixHH;
 
   public:
     // Empty construction with memory allocation.
@@ -30,6 +33,15 @@ namespace soth
     MatrixXd& getHouseholderEssential() {return householderEssential;}
     const MatrixXd& getHouseholderEssential() const {return householderEssential;}
 
+    void updateRank(Index r)
+    {
+      rank = r;
+    }
+
+    HouseholderSequenceType getHouseholderSequence() const
+    {
+      return HouseholderSequenceType(householderEssential, householderEssential.diagonal(), false, rank, 0);
+    }
 
     /* --- Multiplier --- */
     /* TODO: when not explicit, it is cheaper to work directly on the
@@ -39,10 +51,10 @@ namespace soth
 
     // v := Y*v = v*Y'.
     template< typename VectorGen >
-    void applyThisOnVector( VectorGen & v ) const;
+    void applyThisOnVector( VectorGen & v ) const {applyThisOnTheRight(v);}
     // v := Y'*v = v*Y.
     template< typename VectorGen >
-    void applyTransposeOnVector( VectorGen & v ) const;
+    void applyTransposeOnVector( VectorGen & v ) const {applyThisOnTheLeft(v);}
 
     // M := M*Y.
     template< typename Derived >
@@ -58,9 +70,9 @@ namespace soth
     void applyTransposeOnTheRight( MatrixBase<Derived> & M ) const;
 
     // Y *= Yup. Carefull: there is some recopy here.
-    void composeOnTheRight( const BaseY& Yp );
+//    void composeOnTheRight( const BaseY& Yp );
     // Y *= HHup.
-    void composeOnTheRight( const HouseholderSequence & hh );
+//    void composeOnTheRight( const HouseholderSequence & hh );
 
   };
 
@@ -69,35 +81,37 @@ namespace soth
   /* --- HEAVY CODE --------------------------------------------------------- */
   /* --- HEAVY CODE --------------------------------------------------------- */
 
-  // v := Y*v = v*Y'.
-  template< typename VectorGen >
-  void BaseY::
-  applyThisOnVector( VectorGen & v ) const
-  {
-    if( isExplicit )
-      {
-	/*TODO*/ throw "TODO";
-      }
-    else
-      {
-	matrixHH.applyThisOnVector(v);
-      }
-  }
+ // // v := Y*v = v*Y'.
+ // template< typename VectorGen >
+ // void BaseY::
+ // applyThisOnVector( VectorGen & v ) const
+ // {
+ //   if( isExplicit )
+ //     {
+	///*TODO*/ throw "TODO";
+ //     }
+ //   else
+ //     {
+	//matrixHH.applyThisOnVector(v);
+ //     }
+ // }
 
-  // v := Y'*v = v*Y.
-  template< typename VectorGen >
-  void BaseY::
-  applyTransposeOnVector( VectorGen & v ) const
-  {
-    if( isExplicit )
-      {
-	/*TODO*/ throw "TODO";
-      }
-    else
-      {
-	matrixHH.applyTransposeOnVector(v);
-      }
-  }
+ // // v := Y'*v = v*Y.
+ // template< typename VectorGen >
+ // void BaseY::
+ // applyTransposeOnVector( VectorGen & v ) const
+ // {
+ //   if( isExplicit )
+ //     {
+	///*TODO*/ throw "TODO";
+ //     }
+ //   else
+ //     {
+	//matrixHH.applyTransposeOnVector(v);
+ //     }
+ // }
+
+
   // M := M*Y.
   template< typename Derived >
   void BaseY::
@@ -109,7 +123,7 @@ namespace soth
       }
     else
       {
-	matrixHH.applyThisOnTheLeft(M);
+	      M.applyOnTheRight(getHouseholderSequence());
       }
   }
 
@@ -123,9 +137,9 @@ namespace soth
 	/*TODO*/ throw "TODO";
       }
     else
-      {
-	matrixHH.applyTransposeOnTheLeft(M);
-      }
+    {
+	      M.applyOnTheRight(getHouseholderSequence().transpose());
+    }
   }
 
   // M := Y*M.
@@ -139,7 +153,7 @@ namespace soth
       }
     else
       {
-	matrixHH.applyThisOnTheRight(M);
+	      M.applyOnTheLeft(getHouseholderSequence());
       }
   }
 
@@ -154,7 +168,7 @@ namespace soth
       }
     else
       {
-	matrixHH.applyTransposeOnTheRight(M);
+	      M.applyOnTheLeft(getHouseholderSequence().transpose());
       }
   }
 
