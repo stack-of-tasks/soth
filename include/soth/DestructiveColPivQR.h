@@ -32,7 +32,7 @@ class DestructiveColPivQR
     typedef typename HouseholderSequence<MatrixQType,HCoeffsType>::ConjugateReturnType HouseholderSequenceType;
 
 
-    DestructiveColPivQR(MatrixType& matrix, MatrixQType& householderEssentialStorage)
+    DestructiveColPivQR(MatrixType& matrix, MatrixQType& householderEssentialStorage, RealScalar epsilon=0.)
       : m_r(matrix),
         m_q(householderEssentialStorage),
         //m_hCoeffs(std::min(matrix.rows(),matrix.cols())),
@@ -43,8 +43,10 @@ class DestructiveColPivQR
         m_temp(matrix.cols()),
         m_colSqNorms(matrix.cols()),
         m_isInitialized(false),
-        m_usePrescribedThreshold(false)
+        m_usePrescribedEpsilon((epsilon==0.)? false : true),
+        m_prescribedEpsilon(epsilon)
     {
+      ei_assert(epsilon >= 0.);
       compute();
     }
 
@@ -184,10 +186,11 @@ class DestructiveColPivQR
       *
       * If you want to come back to the default behavior, call setThreshold(Default_t)
       */
-    DestructiveColPivQR& setThreshold(const RealScalar& threshold)
+    DestructiveColPivQR& setEpsilon(const RealScalar& epsilon)
     {
-      m_usePrescribedThreshold = true;
-      m_prescribedThreshold = threshold;
+      ei_assert(epsilon > 0.)
+      m_usePrescribedEpsilon = true;
+      m_prescribedEpsilon = epsilon;
       return *this;
     }
 
@@ -199,9 +202,9 @@ class DestructiveColPivQR
       *
       * See the documentation of setThreshold(const RealScalar&).
       */
-    DestructiveColPivQR& setThreshold(Default_t)
+    DestructiveColPivQR& setEpsilon(Default_t)
     {
-      m_usePrescribedThreshold = false;
+      m_usePrescribedEpsilon = false;
       return *this;
     }
 
@@ -209,10 +212,9 @@ class DestructiveColPivQR
       *
       * See the documentation of setThreshold(const RealScalar&).
       */
-    RealScalar threshold() const
+    RealScalar epsilon() const
     {
-      ei_assert(m_isInitialized || m_usePrescribedThreshold);
-      return m_usePrescribedThreshold ? m_prescribedThreshold
+      return m_usePrescribedEpsilon ? m_prescribedEpsilon * m_r.diagonalSize()
       // this formula comes from experimenting (see "LU precision tuning" thread on the list)
       // and turns out to be identical to Higham's formula used already in LDLt.
                                       : NumTraits<Scalar>::epsilon() * m_r.diagonalSize();
@@ -245,8 +247,8 @@ class DestructiveColPivQR
     IntRowVectorType m_colsIntTranspositions;
     RowVectorType m_temp;
     RealRowVectorType m_colSqNorms;
-    bool m_isInitialized, m_usePrescribedThreshold;
-    RealScalar m_prescribedThreshold, m_maxpivot;
+    bool m_isInitialized, m_usePrescribedEpsilon;
+    RealScalar m_prescribedEpsilon, m_maxpivot;
     Index m_nonzero_pivots;
     Index m_det_pq;
 };
@@ -288,7 +290,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   for(Index k = 0; k < cols; ++k)
     m_colSqNorms.coeffRef(k) = m_r.col(k).squaredNorm();
 
-  RealScalar threshold_helper = m_colSqNorms.maxCoeff() * ei_abs2(NumTraits<Scalar>::epsilon()) / rows;
+  RealScalar threshold_helper = m_colSqNorms.maxCoeff() * ei_abs2(epsilon()) /rows;
 
   m_nonzero_pivots = size; // the generic case is that in which all pivots are nonzero (invertible case)
   m_maxpivot = RealScalar(0);
