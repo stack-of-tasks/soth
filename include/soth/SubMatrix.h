@@ -190,7 +190,7 @@ inline void setColRange( Index start, Index end )
 
   const Index size = end-start;
   m_colIndices.resize(size);
-  m_colIndices = VectorXi::LinSpaced(start,end,size);
+  m_colIndices = VectorXi::LinSpaced(start,end-1,size);
 }
 inline void setRowRange( Index start, Index end )
 {
@@ -198,7 +198,7 @@ inline void setRowRange( Index start, Index end )
 
   const Index size = end-start;
   m_rowIndices.resize(size);
-  m_rowIndices = VectorXi::LinSpaced(start,end,size);
+  m_rowIndices = VectorXi::LinSpaced(start,end-1,size);
 }
 
 protected:
@@ -304,7 +304,7 @@ inline void setColRange( Index start, Index end )
 
   const Index size = end-start;
   m_colIndices.resize(size);
-  m_colIndices = VectorXi::LinSpaced(start,end,size);
+  m_colIndices = VectorXi::LinSpaced(start,end-1,size);
 }
 
 protected:
@@ -411,7 +411,7 @@ inline void setRowRange( Index start, Index end )
 
   const Index size = end-start;
   m_rowIndices.resize(size);
-  m_rowIndices = VectorXi::LinSpaced(start,end,size);
+  m_rowIndices = VectorXi::LinSpaced(start,end-1,size);
 }
 protected:
   const MatrixType& m_matrix;
