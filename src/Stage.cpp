@@ -1,6 +1,19 @@
+#define SOTH_DEBUG
+#define SOTH_DEBUG_MODE 15
+//SOTH_OPEN_DEBUG;
+#include "soth/debug.h"
+namespace soth
+{
+  class stage__INIT
+  {
+  public:stage__INIT( void ) { sotDebugTrace::openFile(); }
+  };
+  stage__INIT sotSOT_initiator;
+};
+
+
 #include "soth/Stage.hpp"
 #include "soth/solvers.h"
-#include "soth/sotDebug.h"
 #include <Eigen/QR>
 namespace Eigen
 {
@@ -38,7 +51,7 @@ namespace soth
     if( isAllRow(initialIr) ) { computeInitalJY_allRows(); return; }
     if( initialIr.size()==0 )
       {
-	std::cerr << "(#" << __LINE__ << "): TODO: initial IR empty." << std::endl;
+	sotERROR << "TODO: initial IR empty." << std::endl;
 	/*TODO*/throw "TODO";
       }
 
@@ -55,7 +68,7 @@ namespace soth
 	e_(i) = bounds[idx].getBound( initialIr[i].second );
 	activeSet[i] = initialIr[i];
       }
-    sotDEBUG(5) << "JY = " << (MATLAB)ML_ << std::endl;
+    sotDEBUG(15) << "JY = " << (MATLAB)ML_ << std::endl;
   }
   /* Compute ML=J(:,:)*Y. */
   void Stage::
@@ -69,7 +82,10 @@ namespace soth
 
 	MatrixXd::RowXpr MLrow = ML_.row(i);
 	MLrow = J.row(i);
+	sotDEBUG(1) << "MLrow_before =" << (MATLAB)MLrow << std::endl;
 	Y.applyThisOnTheLeft( MLrow );
+	sotDEBUG(1) << "MLrow_after =" << (MATLAB)MLrow << std::endl;
+	sotDEBUG(1) << "rank =" << Y.rank << std::endl;
 
 	e_(i) = bounds[i].getBound( Bound::BOUND_TWIN );
 	activeSet[i] = ConstraintRef( i,Bound::BOUND_TWIN );
@@ -95,17 +111,18 @@ namespace soth
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA);
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA);
     e.setRowRange(0,sizeL);
-    sotDEBUG(5) << "MY = " << (MATLAB)M << std::endl;
-    sotDEBUG(5) << "LY = " << (MATLAB)L << std::endl;
+    sotDEBUG(15) << "MY = " << (MATLAB)M << std::endl;
+    sotDEBUG(15) << "LY = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
 
     /* A=L'; mQR=QR(A); */
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
-    Block<MatrixXd> subY = Y.getHouseholderEssential().bottomRightCorner(subL.rows(), subL.cols());
-    Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> > mQR(subL,subY);
+    Block<MatrixXd> subY = Y.getNextHouseholderEssential();
+    Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
+      mQR(subL,subY);
     const MatrixXd & R = mQR.matrixR();
-    sotDEBUG(5) << "mR = " << (MATLAB)R << std::endl;
-    sotDEBUG(5) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
+    sotDEBUG(25) << "mR = " << (MATLAB)R << std::endl;
+    sotDEBUG(25) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
 
     /* L=triu(mQR'); */
    const VectorXi & P = mQR.colsPermutation().indices();
@@ -115,8 +132,8 @@ namespace soth
 	//rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
  //     }
     L.setRowIndices(P);    M.setRowIndices(P);
-    sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
-    sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
+    sotDEBUG(7) << "L0 = " << (MATLAB)L << std::endl;
+    sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
     W.setRowRange(0,sizeL); W.setColIndices(Ir);
     W_.setIdentity(); // DEBUG
@@ -142,7 +159,7 @@ namespace soth
     /* Y=Y*Yup; */
     //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
     //Y.composeOnTheRight(Yup);
-    Y.updateRank(previousRank+sizeL);
+    Y.increaseRank(sizeL);
 
     return previousRank+sizeL;
   }

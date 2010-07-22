@@ -104,8 +104,8 @@ extern sotDebugTrace sotDEBUGFLOW;
 extern sotDebugTrace sotERRORFLOW;
 
 #ifdef SOTH_DEBUG
-#define sotPREDEBUG  __FILE__ << ": " <<__FUNCTION__  \
-                              << "(#" << __LINE__ << ") :" 
+#define sotPREDEBUG  "% " << __FILE__ << ": " <<__FUNCTION__  \
+                              << "(#" << __LINE__ << ") : \n" 
 #define sotPREERROR  "\t!! "<<__FILE__ << ": " <<__FUNCTION__  \
                             << "(#" << __LINE__ << ") :" 
 

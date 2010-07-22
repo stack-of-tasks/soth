@@ -15,7 +15,7 @@ namespace soth
     typedef Diagonal<MatrixXd,0> HCoeffsType;
     typedef HouseholderSequence<MatrixXd,HCoeffsType> HouseholderSequenceType;
 
-  protected:
+  protected:public:
     bool isExplicit;
     Index size;
     Index rank;
@@ -33,10 +33,12 @@ namespace soth
     MatrixXd& getHouseholderEssential() {return householderEssential;}
     const MatrixXd& getHouseholderEssential() const {return householderEssential;}
 
-    void updateRank(Index r)
-    {
-      rank = r;
-    }
+    Block<MatrixXd> getNextHouseholderEssential()
+    {return householderEssential.bottomRightCorner(size-rank,size-rank);}
+
+
+    void updateRank(Index r)      {      rank = r;    }
+    void increaseRank(Index r)    {      rank += r;    }
 
     HouseholderSequenceType getHouseholderSequence() const
     {

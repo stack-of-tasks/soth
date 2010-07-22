@@ -32,7 +32,7 @@
  * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 
-#include <soth/sotDebug.h>
+#include <soth/debug.h>
 #include <fstream>
 #include <ios>
 
