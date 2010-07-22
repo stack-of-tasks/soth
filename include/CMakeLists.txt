@@ -1,8 +1,6 @@
-# 
-#  Copyright 2010 CNRS 
 #
-#  Florent Lamiraux
-# 
+#  Copyright 2010 CNRS
+#
 
 SET(${PROJECT_NAME}_HEADERS
     soth/soth.h
@@ -10,6 +8,7 @@ SET(${PROJECT_NAME}_HEADERS
     soth/SubMatrix.h
     soth/DestructiveColPivQR.h
     soth/debug.h
+    soth/ActiveSet.h
 )
 
 # Recreate correct path for the headers
@@ -17,7 +16,7 @@ SET(${PROJECT_NAME}_HEADERS
 
 SET(fullpath_${PROJECT_NAME}_HEADERS)
 FOREACH(lHeader ${${PROJECT_NAME}_HEADERS})
-  SET(fullpath_${PROJECT_NAME}_HEADERS 
+  SET(fullpath_${PROJECT_NAME}_HEADERS
     ${fullpath_${PROJECT_NAME}_HEADERS}
     ${lHeader}
   )
