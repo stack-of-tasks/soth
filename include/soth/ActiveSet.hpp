@@ -78,12 +78,12 @@ namespace soth
     }
     unsigned int where( unsigned int ref ) const
     {
-      assert( v[ref].first == Bound::BOUND_NONE );
+      assert( v[ref].first != Bound::BOUND_NONE );
       return v[ref].second;
     }
     Bound::bound_t whichBound( unsigned int ref ) const
     {
-      assert( v[ref].first == Bound::BOUND_NONE );
+      assert( v[ref].first != Bound::BOUND_NONE );
       return v[ref].first;
     }
     bool isActive( unsigned int ref ) const
