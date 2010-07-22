@@ -23,7 +23,7 @@ int main (int argc, char** argv)
       soth::randMatrix(Jfr,RANK[i],NC);
       J[i]=Xhi*Jfr;
       b[i].resize(NR[i]);
-      for( unsigned int j=0;j<NR[i];++j ) b[i][j] = j*i*0.5;
+      for( unsigned int j=0;j<NR[i];++j ) b[i][j] = j*(i+1)*0.5;
 
       std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
     }

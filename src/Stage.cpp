@@ -31,7 +31,8 @@ namespace soth
     ,activeSet(0)
     ,W_(nr,nr),ML_(nr,nc),e_(nr)
     ,M(ML_,false),L(ML_,false),e(e_,false)
-    ,isWIdenty(true),W(W_,false)
+      //,isWIdenty(true)
+    ,W(W_,false)
     ,Ir(L.getRowIndices()),Irn(M.getRowIndices() )
     ,sizeM(0),sizeL(0),sizeN(0),sizeA(0)
   {
@@ -125,18 +126,13 @@ namespace soth
     sotDEBUG(25) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
 
     /* L=triu(mQR'); */
-   const VectorXi & P = mQR.colsPermutation().indices();
- //   for( MatrixXd::Index i=0;i<R.diagonalSize();++i )
- //     {
-	//rowL0(P(i)).head(i+1) =  QR.col(i).head(i+1);
-	//rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
- //     }
+    const VectorXi & P = mQR.colsPermutation().indices();
     L.setRowIndices(P);    M.setRowIndices(P);
     sotDEBUG(7) << "L0 = " << (MATLAB)L << std::endl;
     sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
     W.setRowRange(0,sizeL); W.setColIndices(Ir);
-    W_.setIdentity(); // DEBUG
+    W_.setIdentity();
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
 
     /* for i=rank:-1:1
@@ -186,11 +182,11 @@ namespace soth
     const Index r = (in_r<0)?row-1:in_r;
     //sotDEBUG(5) << "r = " << r << " , row = " << row << std::endl;
 
-    if( isWIdenty )
-      {
-	isWIdenty = false;
-	W_.setIdentity();
-      }
+    // if( isWIdenty )
+    //   {
+    // 	isWIdenty = false;
+    // 	W_.setIdentity();
+    //   }
 
     //sotDEBUG(5) << "WLinit = " << (MATLAB)(MatrixXd)(W*L) << std::endl;
     for( Index i=r-1;i>=0;--i )
@@ -423,22 +419,27 @@ namespace soth
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::solve( VectorXd& Yu )
   {
+    sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
+
     VectorBlock<VectorXd> Ue = Yu.segment( sizeM,sizeL );
-    if( isWIdenty )
-      {	  Ue = Transpositions<-1,-1>(W.getColIndices())*(e);      }
-    else
+    // if( isWIdenty )
+    //   {	Ue = e; }//  Ue = Transpositions<-1,-1>(W.getColIndices()).transpose()*(e);      }
+    // else
+
+    /* TODO: when L0 is full rank, a permuation of e should be enough. */
       {
 	SubMatrixXd U( W_,W.getRowIndices(),Ir );
 	Ue = U.transpose()*e;
       }
 
+    sotDEBUG(5) << "Ue = " << (MATLAB)Ue << std::endl;
     SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
-    Ue -= Mr*Yu.tail(sizeM);
+    Ue -= Mr*Yu.head(sizeM);
 
-    //sotDEBUG(5) << "ue = " << (MATLAB)Ue << std::endl;
-    //sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "Uem = " << (MATLAB)Ue << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     soth::solveInPlaceWithLowerTriangular(L,Ue);
-    //sotDEBUG(5) << "LiUe = " << (MATLAB)Ue << std::endl;
+    sotDEBUG(5) << "LiUe = " << (MATLAB)Ue << std::endl;
   }
 
 
