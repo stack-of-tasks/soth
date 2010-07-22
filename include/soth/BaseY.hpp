@@ -4,6 +4,7 @@
 
 #include "soth/Algebra.h"
 #include <Eigen/Householder>
+#include "soth/Givens.h"
 
 namespace soth
 {
@@ -70,6 +71,10 @@ namespace soth
     // M := Y'*M.
     template< typename Derived >
     void applyTransposeOnTheRight( MatrixBase<Derived> & M ) const;
+
+    BaseY& operator*= (const Givens& g);
+    BaseY& operator*= (const GivensSequence& G);
+
 
     // Y *= Yup. Carefull: there is some recopy here.
 //    void composeOnTheRight( const BaseY& Yp );

@@ -16,8 +16,22 @@ namespace soth
   void BaseY::
   computeExplicitly()
   {
-    /* TODO */
-    throw "TODO";
+    isExplicit = true;
+    matrixExplicit = getHouseholderSequence();
+  }
+
+  BaseY& BaseY::operator*= (const Givens& g)
+  {
+    assert(isExplicit && "you can't add Givens rotation to Y if the householder rotation matrix has not been explicitly computed");
+    g.applyThisOnTheLeft(matrixExplicit);
+    return *this;
+  }
+
+  BaseY& BaseY::operator*= (const GivensSequence& G)
+  {
+    assert(isExplicit && "you can't add Givens rotation to Y if the householder rotation matrix has not been explicitly computed");
+    G.applyThisOnTheLeft(matrixExplicit);
+    return *this;
   }
 
 
