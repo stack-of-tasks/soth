@@ -2,6 +2,8 @@
 #define __SOTH_STAGE__
 
 #include <Eigen/Core>
+#include <Eigen/Jacobi>
+#include <list>
 namespace Eigen
 {
   #include "soth/SubMatrix.h"
@@ -24,10 +26,16 @@ namespace soth
     typedef SubMatrix<MatrixXd> SubMatrixXd;
     typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
     typedef SubMatrixXd::RowIndices Indirect;
+
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
-    typedef PlanarRotation<double> Givensd;
+    typedef MatrixXd::RowXpr RowML;
+
     typedef std::pair<Index,Bound::bound_t> ConstraintRef;
     typedef std::vector<ConstraintRef> ActiveSet;
+
+    typedef PlanarRotation<double> Givensd;
+    typedef std::list<Givensd> givensd_sequence_t;
+
   protected:
 
     const MatrixXd & J;
@@ -112,8 +120,8 @@ namespace soth
     /* --- DOWN ------------------------------------------------------------- */
   public:
     // Return true if the rank re-increase operated at the current stage.
-    //bool downdate( const unsigned int position,
-    //RotationGiven_list_t & Ydown );
+    bool downdate( const unsigned int position,
+		   givensd_sequence_t & Ydown );
     /*
       gr = Neutralize row <position> in W <position>
       L=gr'*L
@@ -133,33 +141,34 @@ namespace soth
 
 
     // Return true if the rank decrease operated at the current stage.
-    //bool propagateDowndate( RotationGiven_list_t & Ydown,
-    //bool decreasePreviousRank );
+    bool propagateDowndate( givensd_sequence_t & Ydown,
+			    bool decreasePreviousRank );
     /*
-      M=M*Ydown;
-      if(! decreasePreviousRank ) return true;
-      L.indices2().push_front( M.indice2().pop_back() );
-
-      foreach i in In
-        if( L(i,0) == 0 continue;
-	Ir << i; In >> i;
-        return true;
-
-      Ydown += regularizeHessenberg
-      return false
+     * M=M*Ydown;
+     * if(! decreasePreviousRank ) return true;
+     * L.indices2().push_front( M.indice2().pop_back() );
+     *
+     * foreach i in In
+     *   if( L(i,0) == 0 continue;
+     *   Ir << i; In >> i;
+     *   return true;
+     *
+     * Ydown += regularizeHessenberg
+     * return false
      */
 
-    //void regularizeHessenberg( RotationGiven_list_t & Ydown,
-    //unsigned int i0 = 0 );
+    void regularizeHessenberg( givensd_sequence_t & Ydown );
     /*
       for i=i0:rank-1
         gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
 	L = L*GR;
 	Ydown.push_back( gr );
      */
+  protected:
+    void removeInW( const  unsigned int position );
 
     /* --- UPD -------------------------------------------------------------- */
-
+  public:
     /* TODO
       if stage(sup).update( Jup,Yup )
         while stage(sup++).propagateUpdate( Yup,false
@@ -236,7 +245,10 @@ namespace soth
     // const_SubMatrixXd L() const ;
     // const_SubMatrixXd Lo() const ;
 
-    RowL rowL0( const unsigned int r ); 
+    RowL rowL0( const unsigned int r );
+    RowML rowMrL0( const unsigned int r );
+    RowL rowML( const unsigned int r );
+    unsigned int rowSize( const unsigned int r );
 
     // SubRowXd row( const unsigned int r );
     // SubRowXd rown( const unsigned int r ); // row rank def
@@ -248,6 +260,7 @@ namespace soth
 
   public:
     static ActiveSet& allRows() { return _allRows; }
+    static double EPSILON;
   protected:
     static ActiveSet _allRows;
     bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }

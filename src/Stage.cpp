@@ -1,6 +1,7 @@
 #include "soth/Stage.hpp"
 #include "soth/solvers.h"
 #include <Eigen/QR>
+#include <Eigen/QR>
 
 namespace soth
 {
@@ -185,7 +186,202 @@ namespace soth
     sizeL--; sizeN++;
   }
 
+  /* --- DOWNDATE ----------------------------------------------------------- */
+  /* --- DOWNDATE ----------------------------------------------------------- */
+  /* --- DOWNDATE ----------------------------------------------------------- */
 
+  // Return true if the rank re-increase operated at the current stage.
+  /*
+   *   gr = Neutralize row <position> in W <position>
+   *   L=gr'*L
+   *   bool res;
+   *   if( L(In.last(),0) == 0
+   *     // Rank deficience: regularize Hessenberg
+   *	 Ydown = regularizeHessenberg
+   *     res=false;
+   *   else
+   *     // No rank dec: quit
+   *	 Ir << In.pop();
+   *	 res=true;
+   *   Ir >> r; In >> r;
+   *   Unused << r;
+   *   return res;
+   */
+  bool Stage::
+  downdate( const unsigned int position,
+	    givensd_sequence_t & Ydown )
+  {
+    std::cout << " --- DOWNDATE ---------------------------- " << std::endl;
+    removeInW( position );
+    e.removeRow( position );
+    /* TODO: remove the component in activeSet. */
+
+    // b. Three possibles cases: rank-deficient line removed, or full-rank remove
+    //  and rank promotion, or full-rank removed and no promotion.
+    if( position < sizeN ) // Rank-def line removed.
+      {
+	std::cout << "Nothing to do." << std::endl;
+	W.removeRow(position);	W.removeCol(position);
+	M.removeRow(position); // No row to remove in L.
+	sizeN--; sizeA--;
+	return true;
+      }
+    else if( (sizeN>0)&&(std::abs(ML_( Irn(sizeN-1),sizeM ))>EPSILON) )
+      { // Apparition of a none zero coeff on the first deficient L-row.
+	// std::cout << "ML_ = " << (MATLAB)ML_ << std::endl;
+	// std::cout << "Irn = " << (MATLAB)Irn << std::endl;
+
+	W.removeRow(position);	W.removeCol(position);
+	M.removeRow(position);
+	std::cout << "W = " << (MATLAB)W << std::endl;
+	std::cout << "M = " << (MATLAB)M << std::endl;
+
+	//std::cout << "Lnt = " << (MATLAB)L << std::endl;
+	L.removeRow(position-sizeN);
+	L.pushRowFront(Irn(sizeN-1));
+	std::cout << "L = " << (MATLAB)L << std::endl;
+	sizeN--; sizeA--;
+	return true;
+      }
+    else // Full-rank line removed and no rank promotion: resorbe Hessenberg and propagate.
+      {
+	W.removeRow(position);	W.removeCol(position);
+	M.removeRow(position);
+	L.removeRow(position-sizeN); sizeL--; sizeA--;
+	//std::cout << "Lhss = " << (MATLAB)L << std::endl;
+	regularizeHessenberg(Ydown);
+	L.removeCol(sizeL);
+	sizeL--; sizeA--;
+	std::cout << "L = " << (MATLAB)L << std::endl;
+	return false;
+     }
+  }
+
+  // Return true if the rank decrease operated at the current stage.
+  bool Stage::propagateDowndate( givensd_sequence_t & Ydown,
+				 bool decreasePreviousRank )
+  {
+    /*
+     * M=M*Ydown;
+     * if(! decreasePreviousRank ) return true;
+     * L.indices2().push_front( M.indice2().pop_back() );
+     *
+     * foreach i in In
+     *   if( L(i,0) == 0 continue;
+     *   Ir << i; In >> i;
+     *   return true;
+     *
+     * Ydown += regularizeHessenberg
+     * return false
+     */
+
+    EI_FOREACH( i,Irn )
+      {
+	//TODO rowML(i)*=Ydown;
+	if( decreasePreviousRank ) return true;
+      }
+    L.pushColFront( M.popColBack() );
+    sizeM--;
+
+    /* Check is one of the M's grown. */
+    for( Index i=0;i<sizeN;++i )
+      {
+	if( std::abs(ML_(Irn(i),sizeM)) > EPSILON )
+	  {
+	    /* Remove all the non-zero compononent of ML(i+1:end,sizeM). */
+	    Block<MatrixXd> ML(ML_,0,0,nr,sizeM+1);
+	    for( Index j=i+1;j<sizeN;++j )
+	      {
+		if( std::abs(ML_(Irn(j),sizeM))<=EPSILON ) continue;
+		Givensd G1;
+		G1.makeGivens(ML_(Irn(i),sizeM),ML_(Irn(j),sizeM));
+		ML.applyOnTheLeft( Irn(i),Irn(j),G1.transpose());
+		W_.applyOnTheRight( Irn(i),Irn(j),G1);
+	      }
+	    /* Commute the lines in L. */
+	    L.pushRowFront(Irn(i));
+	    M.permuteRow(i,sizeN-1);
+
+	    return true;
+	  }
+      }
+
+  }
+
+  void Stage::regularizeHessenberg( givensd_sequence_t & Ydown )
+  {
+    for( unsigned int i=0;i<sizeL;++i )
+      {
+	RowML MLi = rowMrL0(i);
+	std::cout << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
+	Givensd G1;
+	G1.makeGivens(MLi(sizeM+i),MLi(sizeM+i+1),&MLi(sizeM+i));
+	MLi(sizeM+i+1)=0;
+
+	// SubMatrix<MatrixXd,RowPermutation> MrL( ML_,Ir );
+	// MrL.applyOnTheLeft( sizeM+i,sizeM+i+1,G1 );
+	for( unsigned r=i+1;r<sizeL;++r )
+	  {
+	    rowMrL0(r).applyOnTheRight( sizeM+i,sizeM+i+1,G1 );
+	  }
+
+	// TODO: store in Y.
+	// Y.
+      }
+  }
+
+
+  /*
+   * for i=i0:rank-1
+   *   gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
+   *   L = L*GR;
+   *   Ydown.push_back( gr );
+   */
+  /* Rotate W so that W is 1 on position,position and L|position is at worst hessenberg. */
+  void Stage::removeInW( const  unsigned int position )
+  {
+    // std::cout << "W0 = " << (MATLAB)W << std::endl;
+    // std::cout << "M0 = " << (MATLAB)M << std::endl;
+    // std::cout << "L0 = " << (MATLAB)L << std::endl;
+
+    for( unsigned int i=0;i<position;++i )
+      {
+	if( std::abs(W(position,i))< EPSILON ) continue;
+
+	/* Wt(i,position) VS Wt(i+1,position) */
+	Givensd G1;
+	G1.makeGivens(W(position,i+1),W(position,i));
+
+	W_.applyOnTheRight( Irn(i+1),Irn(i),G1 );
+
+	const int rs = rowSize(i+1);
+	assert(rs>0);
+	/* Apply on 2 specific lines of ML, so ML_ is OK. */
+	Block<MatrixXd> ML(ML_,0,0,nr,rs);
+	ML.applyOnTheLeft( Irn(i+1),Irn(i),G1.transpose());
+      }
+
+    for( unsigned int i=position+1;i<sizeA;++i )
+      {
+	if( std::abs(W(position,i))< EPSILON ) continue;
+
+	/* Wt(i,position) VS Wt(position,position) */
+	Givensd G1;
+	G1.makeGivens(W(position,position),W(position,i));
+
+	W_.applyOnTheRight( Irn(position),Irn(i),G1 );
+
+	const int rs = rowSize(i);
+	assert(rs>0);
+	/* Apply on 2 specific lines of ML, so ML_ is OK. */
+	Block<MatrixXd> ML(ML_,0,0,nr,rs);
+	ML.applyOnTheLeft( Irn(position),Irn(i),G1.transpose());
+     }
+
+    std::cout << "W = " << (MATLAB)W << std::endl;
+    std::cout << "M = " << (MATLAB)M << std::endl;
+    std::cout << "L = " << (MATLAB)L << std::endl;
+  }
 
   /* --- SOLVER ------------------------------------------------------------- */
   /* --- SOLVER ------------------------------------------------------------- */
@@ -206,13 +402,10 @@ namespace soth
     SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
     Ue -= Mr*Yu.tail(sizeM);
 
-
-    std::cout << "ue = " << (MATLAB)Ue << std::endl;
-    std::cout << "L = " << (MATLAB)L << std::endl;
+    //std::cout << "ue = " << (MATLAB)Ue << std::endl;
+    //std::cout << "L = " << (MATLAB)L << std::endl;
     soth::solveInPlaceWithLowerTriangular(L,Ue);
-    std::cout << "LiUe = " << (MATLAB)Ue << std::endl;
-
-    //L.triangularView<Lower>().solveInPlace(Ue);
+    //std::cout << "LiUe = " << (MATLAB)Ue << std::endl;
   }
 
 
@@ -221,12 +414,27 @@ namespace soth
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */
 
-  /* Get line <r> of the matrix [ 0 ... 0 ; L 0 .. 0 ]. */
+  /* Get line <r> of the matrix [ L 0 .. 0 ]. */
   Stage::RowL Stage::rowL0( const unsigned int r )
   {
     return ML_.row(Ir(r)).tail(nc-sizeM);
   }
 
+
+  /* Get line <r> of the matrix [ Mr L 0 .. 0 ] (- Mr = M(Ir,:) -)*/
+  Stage::RowML Stage::rowMrL0( const unsigned int r )
+  {
+    return ML_.row(Ir(r));
+  }
+
+  /* Get line <r> of the matrix [ M [0;L] 0 ], headed to the non zero part. */
+  Stage::RowL Stage::rowML( const unsigned int r )
+  {
+    return ML_.row(Ir(r)).head(rowSize(r));
+  }
+
+  unsigned int Stage::rowSize( const unsigned int r )
+  { return (r<sizeN)?sizeM:sizeM+r-sizeN; }
 
   /* --- TEST RECOMPOSE ----------------------------------------------------- */
   /* --- TEST RECOMPOSE ----------------------------------------------------- */
@@ -268,5 +476,6 @@ namespace soth
   }
 
   Stage::ActiveSet Stage::_allRows;
+  double Stage::EPSILON = 1e-6;
 
 }; // namespace soth

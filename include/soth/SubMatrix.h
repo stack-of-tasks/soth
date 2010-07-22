@@ -118,6 +118,17 @@ inline Index removeRow( Index irm )
   m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
   return res;
 }
+inline Index popRowBack()
+{
+  assert( m_rowIndices.size()>0 );
+  Index res = m_rowIndices(m_rowIndices.size()-1);
+  m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+  return res;
+}
+inline Index popRowFront()
+{
+  return removeRow(0);
+}
 inline void pushRowBack( Index iadd )
 {
   assert( iadd<m_matrix.rows() );
@@ -143,6 +154,17 @@ inline Index removeCol( Index irm )
   m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
   m_colIndices.conservativeResize( m_colIndices.size()-1 );
   return res;
+}
+inline Index popColBack()
+{
+  Index res = m_colIndices(m_colIndices.size()-1);
+  assert( m_colIndices.size()>0 );
+  m_colIndices.conservativeResize( m_colIndices.size()-1 );
+  return res;
+}
+inline Index popColFront()
+{
+  return removeCol(0);
 }
 inline void pushColBack( Index iadd )
 {
@@ -248,6 +270,17 @@ inline Index removeCol( Index irm )
   m_colIndices.segment( irm,s ) = m_colIndices.tail( s );
   m_colIndices.conservativeResize( m_colIndices.size()-1 );
 }
+inline Index popColBack()
+{
+  Index res = m_colIndices(m_colIndices.size()-1);
+  assert( m_colIndices.size()>0 );
+  m_colIndices.conservativeResize( m_colIndices.size()-1 );
+  return res;
+}
+inline Index popColFront()
+{
+  return removeCol(0);
+}
 inline void pushColBack( Index iadd )
 {
   assert( iadd<m_matrix.cols() );
@@ -343,6 +376,17 @@ inline Index removeRow( Index irm )
   m_rowIndices.segment( irm,s ) = m_rowIndices.tail( s );
   m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
   return res;
+}
+inline Index popRowBack()
+{
+  assert( m_rowIndices.size()>0 );
+  Index res = m_rowIndices(m_rowIndices.size()-1);
+  m_rowIndices.conservativeResize( m_rowIndices.size()-1 );
+  return res;
+}
+inline Index popRowFront()
+{
+  return removeRow(0);
 }
 inline void pushRowBack( Index iadd )
 {

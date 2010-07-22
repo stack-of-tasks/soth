@@ -25,7 +25,10 @@ namespace soth
 
 namespace soth
 {
+#define EI_FOREACH(a,b)  for( Index a=0;a<b.size();++a )
 
+
+  /* TODO : remove this two functions and replace them in the test by the rand of Eigen. */
   template< typename MatrixGen >
     void randMatrix( MatrixGen &A, unsigned int r, unsigned int c )
     {
@@ -112,7 +115,7 @@ namespace soth
   template< typename Derived >
     void MATLAB::initMatrix( const MatrixBase<Derived> & m1 )
     {
-      std::ostringstream os; os << "[ ";
+      std::ostringstream os; os << ".. \n[ ";
       std::ostringstream ostmp;
       for(int i=0;i<m1.rows();++i )
 	{

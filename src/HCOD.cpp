@@ -90,12 +90,17 @@ namespace soth
     Y.applyThisOnVector( solution );
     std::cout << "u = " << (MATLAB)solution << std::endl;
 
+    show(std::cout,true);
+
+    Stage::givensd_sequence_t GR;
+    stages[0]->downdate(3,GR);
+
     /* --- RECOMPOSE FOR TEST --- */
-    for( unsigned int i=0;i<stages.size();++i )
-      {
-	Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
-	std::cout << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
-      }
+    // for( unsigned int i=0;i<stages.size();++i )
+    //   {
+    // 	Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
+    // 	std::cout << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
+    //   }
 
 
   }
