@@ -1,7 +1,10 @@
 #include "soth/Stage.hpp"
 #include "soth/solvers.h"
 #include <Eigen/QR>
-#include <Eigen/QR>
+namespace Eigen
+{
+  #include "soth/DestructiveColPivQR.h"
+}
 
 namespace soth
 {
@@ -96,18 +99,20 @@ namespace soth
     std::cout << "e = " << (MATLAB)e << std::endl;
 
     /* A=L'; mQR=QR(A); */
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> mQR(nr,nc);
-    mQR.compute(L.transpose());
-    const MatrixXd & QR = mQR.matrixQR();
-    std::cout << "mQR = " << (MATLAB)QR << std::endl;
+    Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA, nc-previousRank).transpose();
+    Block<MatrixXd> subY = Y.getHouseholderEssential().bottomRightCorner(subL.rows(), subL.cols());
+    Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> > mQR(subL,subY);
+    const MatrixXd & R = mQR.matrixR();
+    std::cout << "mR = " << (MATLAB)R << std::endl;
+    std::cout << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
 
     /* L=triu(mQR'); */
-    const VectorXi & P = mQR.colsPermutation().indices();
-    for( MatrixXd::Index i=0;i<QR.diagonalSize();++i )
-      {
-	rowL0(P(i)).head(i+1) =  QR.col(i).head(i+1);
-	rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
-      }
+   const VectorXi & P = mQR.colsPermutation().indices();
+ //   for( MatrixXd::Index i=0;i<R.diagonalSize();++i )
+ //     {
+	//rowL0(P(i)).head(i+1) =  QR.col(i).head(i+1);
+	//rowL0(P(i)).tail(nc-sizeM-i-1).setZero();
+ //     }
     L.setRowIndices(P);    M.setRowIndices(P);
     std::cout << "L0 = " << (MATLAB)L << std::endl;
     std::cout << "M0 = " << (MATLAB)M << std::endl;
@@ -131,9 +136,12 @@ namespace soth
     std::cout << "L = " << (MATLAB)L << std::endl;
     std::cout << "W = " << (MATLAB)W << std::endl;
 
+    //std::cout << "check" << std::endl << W* << std::endl;
+
     /* Y=Y*Yup; */
-    HouseholderSequence Yup( mQR.matrixQR(),mQR.hCoeffs(),rank );
-    Y.composeOnTheRight(Yup);
+    //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
+    //Y.composeOnTheRight(Yup);
+    Y.updateRank(previousRank+sizeL);
 
     return previousRank+sizeL;
   }
