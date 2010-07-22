@@ -3,11 +3,12 @@
  */
 
 #include "soth/HCOD.hpp"
+#include "soth/debug.h"
 
 
 int main (int argc, char** argv)
 {
-
+  sotDebugTrace::openFile(); 
   const int NB_STAGE = 3;
   const int RANK[] = { 3, 4, 3, 5, 3 };
   const int NR[] = { 5, 4, 5, 5, 8 };

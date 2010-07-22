@@ -6,7 +6,7 @@ namespace soth
 {
   class stage__INIT
   {
-  public:stage__INIT( void ) { sotDebugTrace::openFile(); }
+  public:stage__INIT( void ) { }// sotDebugTrace::openFile(); }
   };
   stage__INIT sotSOT_initiator;
 };
