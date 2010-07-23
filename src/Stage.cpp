@@ -100,6 +100,8 @@ namespace soth
     /* Compute ML=J(initIr,:)*Y. */
     computeInitalJY(initialIr);
 
+    W_.setIdentity();
+
     /* Set the size of M and L. L is supposed full rank yet. */
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA());  sizeM=previousRank;
@@ -110,6 +112,17 @@ namespace soth
     sotDEBUG(25) << "sizesAML = [" << sizeA() << ", " << sizeM << ", " << sizeL << "]." << std::endl;
 
     /* A=L'; mQR=QR(A); */
+    if (L.cols() == 0)
+    {
+      sotDEBUG(5) << "col size of L is null, skip the end of initialization" << std::endl;
+      L.setRowIndices(VectorXi());
+      sizeL=0;
+      W.setRowRange(0,sizeA()); 
+      W.setColRange(0,sizeA());
+      e.setRowRange(0,sizeA());
+      return previousRank;
+    }
+
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA(), nc-previousRank).transpose();
     Block<MatrixXd> subY = Yinit.getNextHouseholderEssential();
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
@@ -125,7 +138,6 @@ namespace soth
     sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
     W.setColIndices(P);
-    W_.setIdentity();
 
     //TODO: is it necessary? don't think so ...
     //activeSet.permuteRows(P);
@@ -141,8 +153,6 @@ namespace soth
      *     nullifyLineDeficient( i );
      * sizeL = mQR.rank();
      */
-    sotDEBUG(5) << "VAL = " << L(2,2) << std::endl;
-    sotDEBUG(5) << "VAL = " << L.diagonal() << std::endl;
     const Index rank = mQR.rank();
     while( sizeL>rank )
       {
@@ -643,6 +653,11 @@ namespace soth
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::solve( VectorXd& Ytu )
   {
+    if (sizeL==0)
+    {
+      sotDEBUG(10) << "size of L is 0, skipping solve" << std::endl;
+      return;
+    }
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
 
     VectorBlock<VectorXd> Ue = Ytu.segment( sizeM,sizeL );
@@ -738,10 +753,13 @@ namespace soth
     sotDEBUG(25) << "w="<< W.rows()<<"x" << W.cols()
 		<< " -- l=" << L.rows() << "x" << L.cols() << endl;
 
-    sotDEBUG(5) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
+    if (sizeL != 0)
+    {
+      sotDEBUG(5) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
 
 
-    WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
+      WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
+    }
     sotDEBUGIN(5);
     sotDEBUG(5) << "WML = " << (MATLAB)WMLY << std::endl;
 
