@@ -101,7 +101,7 @@ namespace soth
 
     std::cout << " === DOWN ================================ " << std::endl;
     const unsigned int TO_DOWN = 0;
-    const unsigned int ROW_DOWN = 1;
+    const unsigned int ROW_DOWN = 0;
     GivensSequence Ydown;
 
     bool propag=stages[TO_DOWN]->downdate(ROW_DOWN,Ydown);

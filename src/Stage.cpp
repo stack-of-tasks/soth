@@ -293,7 +293,7 @@ namespace soth
 	sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
 
 	regularizeHessenberg(Ydown);
-	L.removeCol(sizeL);
+	L.removeCol(sizeL-1);
 
 	sotDEBUG(5) << "W2 = " << (MATLAB)W << std::endl;
 	sotDEBUG(5) << "M2 = " << (MATLAB)M << std::endl;
@@ -381,18 +381,17 @@ namespace soth
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
-	sotDEBUG(25) << "MLi = " << (MATLAB)rowMrL0(i) << std::endl;
+	sotDEBUG(25) << "MLb = " << (MATLAB)rowMrL0(i) << std::endl;
 	Givens G1;
 	G1.makeGivensAndApply(MLi,sizeM+i,sizeM+i+1);
+	sotDEBUG(25) << "MLa = " << (MATLAB)rowMrL0(i) << std::endl;
 
 	for( unsigned r=i+1;r<sizeL;++r )
 	  {
 	    RowML MLr = rowMrL0(r) ;
 	    G1.applyThisOnTheLeft( MLr );
 	  }
-	// TODO: store in Y.
 	Ydown.push(G1);
-	//Y*=G1;
       }
   }
 
