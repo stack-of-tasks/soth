@@ -112,6 +112,15 @@ namespace soth
   }
 
 
+  //assume the variable 'solution' contains Yu
+  void HCOD::computeLambda()
+  {
+    int previousRank = sizeProblem;
+    //stages.back().
+  }
+
+
+
   void HCOD::
   show( std::ostream& os, bool check )
   {
