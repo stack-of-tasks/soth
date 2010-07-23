@@ -556,7 +556,10 @@ namespace soth
      * return false
      */
 
-    if( sizeM<decreasePreviousRank )
+    bool def=false;
+    if( sizeM>=decreasePreviousRank )
+      {	def=true;}
+    else
       {
 	M.pushColBack( L.popRowFront() );
 	sizeM++;
@@ -564,13 +567,17 @@ namespace soth
 	// sizeL++;
       }
 
-    bool def=false;
+    sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << endl;
+
     for( unsigned int i=0;i<sizeA();++i )
       {
 	RowL MLi = rowML(i);
 	Ydown.applyThisOnTheLeftReduced(MLi);
-	if( sizeM+i==decreasePreviousRank ) def=true;
+	if( (!def)&&(rowSize(i)==decreasePreviousRank) ) def=true;
       }
+    sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << endl;
 
     if( def )
       {
@@ -578,10 +585,12 @@ namespace soth
       }
     else
       {
-	L.pushColFront( sizeM+sizeL-1 );
-	sizeL++;
+	L.pushColBack( sizeM+sizeL );
       }
-  }
+
+    sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << endl;
+ }
 
   void Stage::
   addARow( const Index & wrowup,const Index & wcolup,bool deficient )

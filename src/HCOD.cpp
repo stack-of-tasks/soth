@@ -117,7 +117,8 @@ namespace soth
     // TODO: propagate.
     for( unsigned int i=TO_UP+1;i<stages.size();++i )
       {
-     	//TODO stages[i]->propagateUpdate(Ydown,rankDef);
+     	//TODO
+	stages[i]->propagateUpdate(Ydown,rankDef);
       }
     updateY(Yup);
 
