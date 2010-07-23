@@ -486,8 +486,11 @@ namespace soth
     Index wrowup = activeSet.activeRow( cst.first,cst.second );
     Index wcolup = -1;
     for( unsigned int i=0;i<nr;++i ) if( freeML_[i] ) { freeML_[i]= false; wcolup = i; break; }
-    assert( wcolup >= 0 );
+    assert( (wcolup >= 0)&&(wcolup<nr) );
+    assert( (wrowup >= 0)&&(wrowup<nr) );
+    sotDEBUG(5) << "wr=" << wrowup << " wc=" << wcolup << endl;
 
+    sotDEBUG(5) << "cst=" << cst.first << " bound=" << cst.second << endl;
     e_(wrowup) = bounds[cst.first].getBound(cst.second);
     RowML JupY = ML_.row(wcolup);
     JupY = J.row(cst.first); Y.applyThisOnTheLeft(JupY);
@@ -555,10 +558,8 @@ namespace soth
      * return false
      */
 
-    bool def=false;
-    if( sizeM>=decreasePreviousRank )
-      {	def=true;}
-    else
+    bool increaseL = false;
+    if( sizeM<decreasePreviousRank )
       {
 	M.pushColBack( L.popRowFront() );
 	sizeM++;
@@ -573,18 +574,21 @@ namespace soth
       {
 	RowL MLi = rowML(i);
 	Ydown.applyThisOnTheLeftReduced(MLi);
-	if( (!def)&&(rowSize(i)==decreasePreviousRank) ) def=true;
       }
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
 
-    if( def )
-      {
+    // sizeM already increased, so sM+sL is the last col of the Hessenberg.
+    if( sizeM+sizeL<=decreasePreviousRank )
+      { // L increased a column.
+	L.pushColBack( sizeM+sizeL );
+      }
+    else if( sizeM<=decreasePreviousRank )
+      { // rank decrease ongoing...
 	assert( false && "TODO" );
       }
     else
-      {
-	L.pushColBack( sizeM+sizeL );
+      { // already lost the rank, nothing to do.
       }
 
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
@@ -608,7 +612,6 @@ namespace soth
        }
      else
       {
-	sotDEBUG(5) << "wr=" << wrowup << " wc=" << wcolup << endl;
 	sotDEBUG(5) << "W0 = " << (MATLAB)W << endl;
 	sotDEBUG(5) << "Wi = " << (MATLAB)W.getColIndices() << endl;
 	sotDEBUG(5) << "Li = " << (MATLAB)Irn << endl;

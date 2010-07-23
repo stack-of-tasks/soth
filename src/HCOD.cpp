@@ -180,7 +180,10 @@ namespace soth
     {
       int si = stages[i]->sizeA();
       s -= si;
-      stages[i]->computeLagrangeMultipliers(lambda.segment(s, si), ro.head(r));
+
+      VectorBlock<VectorXd> l=lambda.segment(s, si);
+      VectorBlock<VectorXd> roh = ro.head(r);
+      stages[i]->computeLagrangeMultipliers(l,roh);
       r -= stages[i]->rank();
     }
   }
