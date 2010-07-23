@@ -47,7 +47,7 @@ int main (int argc, char** argv)
       std::cout <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
       /* Compute the initial COD for each stage. */
       stages[i] = stage_ptr_t(new soth::Stage( J[i],b[i],Y ));
-      previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows());
+      previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
       Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
       std::cout << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
     }

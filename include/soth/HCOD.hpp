@@ -23,6 +23,8 @@ namespace soth
     void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
     const VectorXi& getInitialActiveSet( unsigned int i );
 
+    void updateY( const GivensSequence& Yup );
+
     void reset( void );
     void solve( void );
 

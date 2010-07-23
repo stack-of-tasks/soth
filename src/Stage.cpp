@@ -87,9 +87,12 @@ namespace soth
     computeInitalJY( Ir );
   }
 
+  /* TODO: the previous rank is not usefull anymore, since it correspond to the
+   * actual rank of Y. */
   unsigned int Stage::
   computeInitialCOD( const unsigned int previousRank,
-		     const ActiveSet & initialIr )
+		     const ActiveSet & initialIr,
+		     BaseY& Yinit)
   {
     sotDEBUG(5) << "J = " << (MATLAB)J << std::endl;
 
@@ -108,7 +111,7 @@ namespace soth
 
     /* A=L'; mQR=QR(A); */
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA(), nc-previousRank).transpose();
-    Block<MatrixXd> subY = Y.getNextHouseholderEssential();
+    Block<MatrixXd> subY = Yinit.getNextHouseholderEssential();
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
       mQR(subL,subY, EPSILON);
     const MatrixXd & R = mQR.matrixR();
@@ -150,7 +153,7 @@ namespace soth
     /* Y=Y*Yup; */
     //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
     //Y.composeOnTheRight(Yup);
-    Y.increaseRank(sizeL);
+    Yinit.increaseRank(sizeL);
 
     return previousRank+sizeL;
   }
@@ -360,7 +363,7 @@ namespace soth
 	  }
 	// TODO: store in Y.
 	Ydown.push(G1);
-	Y*=G1;
+	//Y*=G1;
       }
   }
 

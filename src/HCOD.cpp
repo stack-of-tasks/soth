@@ -77,7 +77,7 @@ namespace soth
 	assert( stages[i]!=0 );
 
 	sotDEBUG(5) <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
-	previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows());
+	previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
       }
 
     /* Initial solve. */
@@ -105,6 +105,7 @@ namespace soth
       {
      	propag = stages[i]->propagateDowndate(Ydown,propag);
       }
+    updateY(Ydown);
 
     show(std::cout,true);
 
@@ -118,6 +119,12 @@ namespace soth
 
   }
 
+  void HCOD::
+  updateY( const GivensSequence& Yup )
+  {
+    Y *= Yup;
+
+  }
 
   void HCOD::
   show( std::ostream& os, bool check )

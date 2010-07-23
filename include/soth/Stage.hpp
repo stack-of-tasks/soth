@@ -40,7 +40,7 @@ namespace soth
 
     const MatrixXd & J;
     const bound_vector_t & bounds;
-    BaseY & Y;
+    const BaseY & Y;
 
     unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
     ActiveSet activeSet;
@@ -79,9 +79,12 @@ namespace soth
 
     /* --- INIT ------------------------------------------------------------- */
 
-    /* Return the rank of the current COD = previousRank+size(L). */
+    /* Return the rank of the current COD = previousRank+size(L).
+     * Give a non-const ref on Y so that it is possible to modify it.
+     */
     unsigned int computeInitialCOD( const unsigned int previousRank,
-				    const ActiveSet & initialIr );
+				    const ActiveSet & initialIr,
+				    BaseY & Yinit );
     /*
       ML=J(initIr,:)*Y;
       rank=Ir.size();  Ir=1:rank;
