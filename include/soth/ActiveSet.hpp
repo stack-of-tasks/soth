@@ -66,6 +66,15 @@ namespace soth
       nba--;
     }
 
+    void permuteRows( const VectorXi & P )
+    {
+      assert(P.size()==nba);
+      VectorXi Pt(P.size());
+      for( unsigned int i=0;i<nba;++i ) Pt(P(i))=i;
+      for( unsigned int i=0;i<v.size();++i )
+	if( isActive(i) ) v[i].second = Pt(v[i].second);
+    }
+
     /* Give the reference of the constraint (ie line in J) located at row <row> of
      * the working space ML. */
     unsigned int whichConstraint( unsigned int r ) const

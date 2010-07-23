@@ -103,7 +103,6 @@ namespace soth
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA());  sizeM=previousRank;
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA());  sizeL=sizeA();
-    e.setRowRange(0,sizeL);
     sotDEBUG(15) << "MY = " << (MATLAB)M << std::endl;
     sotDEBUG(15) << "LY = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
@@ -121,10 +120,12 @@ namespace soth
     /* L=triu(mQR'); */
     const VectorXi & P = mQR.colsPermutation().indices();
     L.setRowIndices(P);    M.setRowIndices(P);
+    activeSet.permuteRows(P);
+    e.setRowIndices(P);
     sotDEBUG(7) << "L0 = " << (MATLAB)L << std::endl;
     sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
-    W.setRowRange(0,sizeL); W.setColIndices(Ir);
+    W.setRowRange(0,sizeL); W.setColRange(0,sizeL);
     W_.setIdentity();
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
 
@@ -140,9 +141,9 @@ namespace soth
       {
 	/* Nullify the last line of L, which is of size rank. */
 	sotDEBUG(5) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
-    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 	nullifyLineDeficient( sizeL-1,rank );
-     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
      }
     L.setColRange(sizeM,sizeM+sizeL);
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
@@ -230,6 +231,7 @@ namespace soth
   downdate( const unsigned int position,
 	    GivensSequence & Ydown )
   {
+    sotDEBUGPRIOR(+45);
     sotDEBUG(5) << " --- DOWNDATE ---------------------------- " << std::endl;
     removeInW( position );
     e.removeRow( position );
@@ -435,6 +437,7 @@ namespace soth
   unsigned int Stage::
   update( unsigned int cst,GivensSequence & Yup )
   {
+    sotDEBUG(5) << " --- UPDATE ---------------------------- " << std::endl;
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -460,24 +463,30 @@ namespace soth
     Index rowup = activeSet.activeRow( cst,bounds[cst].getType() );
     RowML JupY = ML_.row(rowup);
     JupY = J.row(cst); Y.applyThisOnTheLeft(JupY);
-    double norm2=0; int rankJ=sizeM-1;
+    double norm2=0; int rankJ=sizeM;
     for( Index i=nc-1;i>=sizeM;--i )
       {
 	norm2+=JupY(i)*JupY(i);
 	if( norm2>EPSILON )
-	  { rankJ=i; break; }
+	  { rankJ=i+1; break; }
       }
+    sotDEBUG(5) << "JupY = " << (MATLAB)JupY << endl;
+    sotDEBUG(5) << "rankUp = " << rankJ << endl;
+
+    /* TODO: add a value in e. */
 
     if( rankJ>sizeM+sizeL )
       { // Rank increase
 	/* Remove the tail of JuY. */
-	for( Index i=rankJ;i>sizeM+sizeL;--i )
+	for( Index i=rankJ-1;i>sizeM+sizeL;--i )
 	  {
+	    sotDEBUG(15) << "% Right-resorb " << i << endl;
 	    Givens G1;
 	    G1.makeGivensAndApply(JupY,i-1,i);
 	    Yup.push(G1);
 	  }
 	addARow(rowup);
+	L.pushColBack(sizeL-1);
       }
     else
       {
@@ -491,6 +500,11 @@ namespace soth
 	    addARow(rowup,true);
 	  }
       }
+
+    sotDEBUG(5) << "W = " << (MATLAB)W << endl;
+    sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << endl;
+
     return rankJ;
   }
 
@@ -521,6 +535,9 @@ namespace soth
 	sizeL++;
       }
 
+     sotDEBUG(5) << "W = " << (MATLAB)W << endl;
+     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
   }
 
   /* --- SOLVER ------------------------------------------------------------- */
