@@ -44,7 +44,9 @@ namespace soth
     const BaseY & Y;
 
     unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
+
     ActiveSet activeSet;
+    std::vector<bool> freeML_;
 
     MatrixXd W_;
     MatrixXd ML_;
@@ -161,6 +163,7 @@ namespace soth
   protected:
     void regularizeHessenberg( GivensSequence & Ydown );
     void removeInW( const  unsigned int position );
+    void removeARowFromL( unsigned int row );
     void removeARow( unsigned int row );
 
     /* --- UPD -------------------------------------------------------------- */
@@ -174,7 +177,7 @@ namespace soth
 
     // Return true if the rank re-decrease operated at the current stage.
     /* Return the rank of the line where the rank re-decrease will occurs. */
-    unsigned int update( unsigned int cst, GivensSequence & Yup );
+    unsigned int update( const ConstraintRef & cst, GivensSequence & Yup );
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -214,7 +217,7 @@ namespace soth
       return false;
     */
   protected:
-    void addARow( const Index & row,bool deficient=false );
+    void addARow( const Index & wrowup,const Index & wcolup,bool deficient=false );
 
     /* --- SOLVE ------------------------------------------------------------ */
   public:

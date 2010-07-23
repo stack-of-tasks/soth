@@ -28,10 +28,14 @@ int main (int argc, char** argv)
 
       /* Introduce a deficience of J1 du to J0. */
       if( i==0 ) J[0].row(1) = Eigen::MatrixXd::Random(1,NC);
-      if( i==1 ) J[1].row(2) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
-      if( i==1 ) J[1].row(3) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
+      // if( i==1 ) J[1].row(2) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
+      // if( i==1 ) J[1].row(3) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
 
       std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
+      std::cout << "e"<<i;
+      for( unsigned int j=0;j<NR[i];++j )
+	std::cout << b[i][j].getBound(soth::Bound::BOUND_TWIN) << "   ";
+      std::cout << std::endl;
     }
 
   /* SOTH structure construction. */
