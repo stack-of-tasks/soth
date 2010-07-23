@@ -501,31 +501,43 @@ namespace soth
   }
 
 
+  //lambda_i =  Wr_i*L_i^-T*ro_i
+  //ro_{1,2,..,i-1} += Mr_i^T*L_i^-T*ro_i
+  //all ro_j j in {1,..,i} are stored in lambda_j
+  void Stage::computeLagrangeMultiplicators(VectorXd& lambda, Index previousRank)
+  {
+    VectorBlock<VectorXd> lambda_i = lambda.segment(previousRank, sizeL);
+    solveInPlaceWithUpperTriangular(L, lambda_i);
+    lambda.head(previousRank) = M.bottomRows(sizeL).transpose()*lambda_i;
+    lambda_i *= W_.bottomRightCorner(sizeL, sizeL);
+  }
+
+
 
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */
 
   /* Get line <r> of the matrix [ L 0 .. 0 ]. */
-  Stage::RowL Stage::rowL0( const unsigned int r )
+  Stage::RowL Stage::rowL0( const Index r )
   {
     return ML_.row(Ir(r)).tail(nc-sizeM);
   }
 
 
   /* Get line <r> of the matrix [ Mr L 0 .. 0 ] (- Mr = M(Ir,:) -)*/
-  Stage::RowML Stage::rowMrL0( const unsigned int r )
+  Stage::RowML Stage::rowMrL0( const Index r )
   {
     return ML_.row(Ir(r));
   }
 
   /* Get line <r> of the matrix [ M [0;L] 0 ], headed to the non zero part. */
-  Stage::RowL Stage::rowML( const unsigned int r )
+  Stage::RowL Stage::rowML( const Index r )
   {
     return ML_.row(Ir(r)).head(rowSize(r));
   }
 
-  unsigned int Stage::rowSize( const unsigned int r )
+  unsigned int Stage::rowSize( const Index r )
   { return (r<sizeN)?sizeM:sizeM+r-sizeN; }
 
   /* --- TEST RECOMPOSE ----------------------------------------------------- */

@@ -224,6 +224,8 @@ namespace soth
     void solve( VectorXd& Yu );
     //void solveTranspose( const VectorXd & e, VectorXd res );
 
+    void computeLagrangeMultiplicators(VectorXd& lambda, Index previousRank);
+
     //void damp( const double & damping );
 
 
@@ -243,12 +245,13 @@ namespace soth
     // const_SubMatrixXd L() const ;
     // const_SubMatrixXd Lo() const ;
 
-    RowL rowL0( const unsigned int r );
-    RowML rowMrL0( const unsigned int r );
-    RowL rowML( const unsigned int r );
-    unsigned int rowSize( const unsigned int r );
+    RowL rowL0( const Index r );
+    RowML rowMrL0( const Index r );
+    RowL rowML( const Index r );
+    unsigned int rowSize( const Index r );
 
     int sizeA( void ) const { return activeSet.nbActive(); }
+    Index rank() const {return sizeL;}
 
     // SubRowXd row( const unsigned int r );
     // SubRowXd rown( const unsigned int r ); // row rank def
