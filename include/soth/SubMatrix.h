@@ -192,7 +192,7 @@ inline void setColRange( Index start, Index end )
   switch (size)
   {
     case 0: m_colIndices = VectorXi(); return;
-    case 1: m_colIndices.resize(1); m_colIndices << 1; return;
+    case 1: m_colIndices.resize(1); m_colIndices << 0; return;
     default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
@@ -204,7 +204,7 @@ inline void setRowRange( Index start, Index end )
   switch (size)
   {
     case 0: m_rowIndices = VectorXi(); return;
-    case 1: m_rowIndices.resize(1); m_rowIndices << 1; return;
+    case 1: m_rowIndices.resize(1); m_rowIndices << 0; return;
     default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
@@ -314,7 +314,7 @@ inline void setColRange( Index start, Index end )
   switch (size)
   {
     case 0: m_colIndices = VectorXi(); return;
-    case 1: m_colIndices.resize(1); m_colIndices << 1; return;
+    case 1: m_colIndices.resize(1); m_colIndices << 0; return;
     default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
@@ -425,7 +425,7 @@ inline void setRowRange( Index start, Index end )
   switch (size)
   {
     case 0: m_rowIndices = VectorXi(); return;
-    case 1: m_rowIndices.resize(1); m_rowIndices << 1; return;
+    case 1: m_rowIndices.resize(1); m_rowIndices << 0; return;
     default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
