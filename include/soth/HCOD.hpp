@@ -25,6 +25,10 @@ namespace soth
 
     void updateY( const GivensSequence& Yup );
 
+    //sizes
+    int sizeA() const;
+    int rank() const;
+
     void reset( void );
     void solve( void );
     void computeLambda();
