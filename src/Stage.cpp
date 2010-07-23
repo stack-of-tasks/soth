@@ -198,7 +198,6 @@ namespace soth
 	sotDEBUG(5) << "Widx2 = " << (MATLAB)W.getColIndices() << std::endl;
 	sotDEBUG(5) << Ir(i) << "  " << Ir(row) << std::endl;
 
-
 	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
       }
@@ -558,8 +557,8 @@ namespace soth
      * return false
      */
 
-    bool increaseL = false;
-    if( sizeM<decreasePreviousRank )
+    bool defDone = decreasePreviousRank<=sizeM;
+    if(! defDone )
       {
 	M.pushColBack( L.popRowFront() );
 	sizeM++;
@@ -583,7 +582,7 @@ namespace soth
       { // L increased a column.
 	L.pushColBack( sizeM+sizeL );
       }
-    else if( sizeM<=decreasePreviousRank )
+    else if(! defDone )
       { // rank decrease ongoing...
 	const int rdef = decreasePreviousRank-sizeM;
 	assert( (rdef>0)&&(rdef<sizeL) );
