@@ -537,6 +537,52 @@ namespace soth
     return rankJ;
   }
 
+
+  void Stage::
+  propagateUpdate( GivensSequence & Ydown,
+		   unsigned int decreasePreviousRank )
+  {
+    /*
+     * M=M*Ydown;
+     * if(! decreasePreviousRank ) return true;
+     * L.indices2().push_front( M.indice2().pop_back() );
+     *
+     * foreach i in In
+     *   if( L(i,0) == 0 continue;
+     *   Ir << i; In >> i;
+     *   return true;
+     *
+     * Ydown += regularizeHessenberg
+     * return false
+     */
+
+    if( sizeM<decreasePreviousRank )
+      {
+	M.pushColBack( L.popRowFront() );
+	sizeM++;
+	// L.pushColFront( sizeM+sizeL );
+	// sizeL++;
+      }
+
+    bool def=false;
+    for( unsigned int i=0;i<sizeA();++i )
+      {
+	RowL MLi = rowML(i);
+	Ydown.applyThisOnTheLeftReduced(MLi);
+	if( sizeM+i==decreasePreviousRank ) def=true;
+      }
+
+    if( def )
+      {
+	assert( false && "TODO" );
+      }
+    else
+      {
+	L.pushColFront( sizeM+sizeL-1 );
+	sizeL++;
+      }
+  }
+
   void Stage::
   addARow( const Index & wrowup,const Index & wcolup,bool deficient )
   {

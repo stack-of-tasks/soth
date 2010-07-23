@@ -115,7 +115,10 @@ namespace soth
     unsigned int rankDef
       = stages[TO_UP]->update( std::make_pair(ROW_UP,Bound::BOUND_TWIN),Yup);
     // TODO: propagate.
-
+    for( unsigned int i=TO_UP+1;i<stages.size();++i )
+      {
+     	//TODO stages[i]->propagateUpdate(Ydown,rankDef);
+      }
     updateY(Yup);
 
     show(std::cout,true);
