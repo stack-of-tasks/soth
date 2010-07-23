@@ -119,7 +119,7 @@ namespace soth
     const unsigned int CSTR_UP = 5;
     GivensSequence Yup;
     unsigned int rankDef
-      = stages[TO_UP]->update( std::make_pair(CSTR_UP,Bound::BOUND_TWIN),Yup);
+      = stages[TO_UP]->update( std::make_pair(CSTR_UP,Bound::BOUND_INF),Yup);
     // TODO: propagate.
     for( unsigned int i=TO_UP+1;i<stages.size();++i )
       {
