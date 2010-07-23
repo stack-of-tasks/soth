@@ -67,6 +67,30 @@ namespace soth
     solution.setZero();
     throw "TODO";
   }
+
+  void HCOD::
+  update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
+  {
+    GivensSequence Yup;
+    unsigned int rankDef = stages[stageUp]->update(cst,Yup);
+    for( unsigned int i=stageUp+1;i<stages.size();++i )
+      {
+	stages[i]->propagateUpdate(Yup,rankDef);
+      }
+    updateY(Yup);
+  }
+  void HCOD::
+  downdate( const unsigned int & stageDown, const unsigned int & rowDown )
+  {
+    GivensSequence Ydown;
+    bool propag=stages[stageDown]->downdate(rowDown,Ydown);
+    for( unsigned int i=stageDown+1;i<stages.size();++i )
+      {
+     	propag = stages[i]->propagateDowndate(Ydown,propag);
+      }
+    updateY(Ydown);
+  }
+
   void HCOD::
   solve( void )
   {
@@ -94,49 +118,22 @@ namespace soth
     Y.computeExplicitly();
 
     computeLambda();
-    std::cout << "lambda = " << std::endl << lambda << std::endl;
+    std::cout << "lambda = " << (MATLAB)lambda << std::endl;
     std::cout << "err = " << std::endl;
     for (int i=0; i<stages.size(); ++i)
-      std::cout << stages[i]->computeErr(solution) << std::endl;
+      std::cout << "   " << (MATLAB)stages[i]->computeErr(solution) << std::endl;
 
     std::cout << " === DOWN ================================ " << std::endl;
     const unsigned int TO_DOWN = 0;
     const unsigned int ROW_DOWN = 0;
-    GivensSequence Ydown;
-
-    bool propag=stages[TO_DOWN]->downdate(ROW_DOWN,Ydown);
-
-    for( unsigned int i=TO_DOWN+1;i<stages.size();++i )
-      {
-     	propag = stages[i]->propagateDowndate(Ydown,propag);
-      }
-    updateY(Ydown);
-
+    downdate(TO_DOWN,ROW_DOWN);
     show(std::cout,true);
 
     std::cout << " === UP ================================ " << std::endl;
     const unsigned int TO_UP = 0;
     const unsigned int CSTR_UP = 5;
-    GivensSequence Yup;
-    unsigned int rankDef
-      = stages[TO_UP]->update( std::make_pair(CSTR_UP,Bound::BOUND_INF),Yup);
-    // TODO: propagate.
-    for( unsigned int i=TO_UP+1;i<stages.size();++i )
-      {
-     	//TODO
-	stages[i]->propagateUpdate(Ydown,rankDef);
-      }
-    updateY(Yup);
-
+    update( TO_UP,std::make_pair(CSTR_UP,Bound::BOUND_INF) );
     show(std::cout,true);
-
-    /* --- RECOMPOSE FOR TEST --- */
-    // for( unsigned int i=0;i<stages.size();++i )
-    //   {
-    // 	Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);
-    // 	sotDEBUG(5) << "Jrec" <<i<<" = " << (soth::MATLAB)Jrec << std::endl;
-    //   }
-
 
   }
 
@@ -144,7 +141,7 @@ namespace soth
   updateY( const GivensSequence& Yup )
   {
     Y *= Yup;
-
+    // TODO: update Ytu.
   }
 
   int HCOD::sizeA() const
@@ -202,6 +199,46 @@ namespace soth
     Y.applyThisOnTheLeft(Yex);
     os<<"Y = " << (MATLAB)Yex << std::endl;
   }
+
+
+  template< typename VectorGen >
+  void HCOD::activeSearch( VectorGen & u )
+  {
+    /*
+     * foreach stage: stage.initCOD(Ir_init)
+     * u = 0
+     * u0 = solve
+     * do
+     *   tau,cst_ref = max( violation(stages) )
+     *   u += du*tau
+     *   if( tau<1 )
+     *     update(cst_ref); break;
+     *
+     *   lambda,w = computeLambda
+     *   cst_ref,lmin = min( lambda,w )
+     *   if lmin<0
+     *     downdate( cst_ref )
+     *
+     */
+
+    /* TODO:
+       - computation of the violation per stages
+       - computation of tau
+       - translation of cst_ref in triple<stage_ref,cst_ref,bound_ref>
+       - compute du from Ytdu and Ytu from u.
+       - compute min lambda,w
+       - Make all the necessary functions public, and externalize the algo.
+
+       - Test with empty stages, full stages, rank 0 stages.
+       - Build a test with fixed-values matrices of all ranks.
+
+       - Compact the final active set (init aset is suppose to
+       be row-compact). / Assert this hypothesis.
+    */
+
+  }
+
+
 
 
 

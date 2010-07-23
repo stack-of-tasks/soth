@@ -33,7 +33,14 @@ namespace soth
     void solve( void );
     void computeLambda();
 
+    void update( const unsigned int & stageUp,const Stage::ConstraintRef & cst );
+    void downdate( const unsigned int & stageDown, const unsigned int & row );
+
     void show( std::ostream& os, bool check=false );
+
+  template< typename VectorGen >
+  void activeSearch( VectorGen & u );
+
 
   protected:
     HCOD( void ) : Y(0) {};

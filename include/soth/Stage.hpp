@@ -162,9 +162,9 @@ namespace soth
 
   protected:
     void regularizeHessenberg( GivensSequence & Ydown );
-    void removeInW( const  unsigned int position );
+    unsigned int removeInW( const  unsigned int position );
     void removeARowFromL( unsigned int row );
-    void removeARow( unsigned int row );
+    void removeACrossFromW( const unsigned int & row, const unsigned int & col );
 
     /* --- UPD -------------------------------------------------------------- */
   public:

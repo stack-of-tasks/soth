@@ -38,6 +38,16 @@ namespace soth
       M.applyOnTheRight(i, j, G);
     }
 
+    // M := M*G.
+    template<typename Derived>
+    void applyThisOnTheLeftPartiel(MatrixBase<Derived> & M) const
+    {
+      if( (i<M.cols())&&(j<M.cols()) )
+	M.applyOnTheRight(i, j, G);
+      else if(i<M.cols()) { assert( M.col(i).norm()<1e-6 ); }
+      else if(j<M.cols()) { assert( M.col(j).norm()<1e-6 ); }
+    }
+
     // M := M*G'.
     template<typename Derived>
     void applyTransposeOnTheLeft(MatrixBase<Derived> & M) const
@@ -104,7 +114,8 @@ namespace soth
     void applyThisOnTheLeftReduced(MatrixBase<Derived> & M) const
     {
       for (size_t i=0; i<G.size(); ++i)
-        if( G[i].applicable( M.cols()) ) applyThisOnTheLeft(M);
+	G[i].applyThisOnTheLeftPartiel(M);
+      //if( G[i].applicable( M.cols()) ) G[i].applyThisOnTheLeft(M);
     }
 
     // M := M*G'.

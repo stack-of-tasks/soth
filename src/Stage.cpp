@@ -208,19 +208,19 @@ namespace soth
 
   /* Remove a row, and commit the changes in M and W. */
   void Stage::
-  removeARow( unsigned int position )
+  removeACrossFromW( const unsigned int & row, const unsigned int & col  )
   {
-    unsigned int wrowdown = W.getRowIndices()(position);
-    unsigned int wcoldown = W.getColIndices()(position);
+    unsigned int wrowdown = W.getRowIndices()(row);
+    unsigned int wcoldown = W.getColIndices()(col);
     sotDEBUG(15) << "wrowdown =" << wrowdown << std::endl;
     sotDEBUG(15) << "wcoldown =" << wcoldown << std::endl;
 
-    W.removeRow(position);	W.removeCol(position);
-    e.removeRow( position );
+    W.removeRow(row);	W.removeCol(col);
+    e.removeRow(row);
 
-    M.removeRow(position);
-    if( position>=sizeN() )
-      { L.removeRow(position-sizeN()); sizeL--; }
+    M.removeRow(col);
+    if( col>=sizeN() )
+      { L.removeRow(col-sizeN()); sizeL--; }
 
     activeSet.unactiveRow(wrowdown);
     freeML_[wcoldown]=true;
@@ -270,37 +270,33 @@ namespace soth
   {
     //sotDEBUGPRIOR(+45);
     sotDEBUG(5) << " --- DOWNDATE ---------------------------- " << std::endl;
-    removeInW( position );
-    removeARow(position);
+    unsigned int colToRemove = removeInW( position );
+    bool rankDef = colToRemove >= sizeN();
+    removeACrossFromW(position,colToRemove);
 
-    // b. Three possibles cases: rank-deficient line removed, or full-rank remove
-    //  and rank promotion, or full-rank removed and no promotion.
-    if( position < sizeN() ) // Rank-def line removed.
-      {
-	sotDEBUG(5) << "Nothing to do." << std::endl;
-
-	return true;
-      }
-    else if( (sizeN()>0)&&(std::abs(ML_( Irn(sizeN()-1),sizeM ))>EPSILON) )
-      { // Apparition of a none zero coeff on the first deficient L-row.
-	L.pushRowFront(Irn(sizeN()-1)); sizeL++;
-	return true;
-      }
-    else // Full-rank line removed and no rank promotion: resorbe Hessenberg and propagate.
-      {
+    if( rankDef )
+      { // Full-rank line removed and no rank promotion: resorbe Hessenberg and propagate.
 	sotDEBUG(5) << "Whss = " << (MATLAB)W << std::endl;
 	sotDEBUG(5) << "Mhss = " << (MATLAB)M << std::endl;
 	sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
 
+	// TODO: use the knowledge that the first colToRemove-sizeN()
+	// of L are properly shaped and does not need any Hess.
 	regularizeHessenberg(Ydown);
-	L.removeCol(sizeL-1);
+	L.removeCol(sizeL);
 
 	sotDEBUG(5) << "W2 = " << (MATLAB)W << std::endl;
 	sotDEBUG(5) << "M2 = " << (MATLAB)M << std::endl;
 	sotDEBUG(5) << "L2= " << (MATLAB)L << std::endl;
 
 	return false;
-     }
+      }
+    else
+      {
+	sotDEBUG(5) << "Nothing to do." << std::endl;
+
+	return true;
+      }
   }
 
   // Return true if the rank decrease operated at the current stage.
@@ -398,57 +394,41 @@ namespace soth
 
   /* Rotate W so that W is 1 on position,position and L|position is
    * at worst hessenberg. */
-  void Stage::removeInW( const  unsigned int position )
+  unsigned int Stage::
+  removeInW( const  unsigned int row )
   {
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
 
-    for( unsigned int i=0;i<position;++i )
+    int col = 0;
+    while( std::abs(W(row,col))< EPSILON ) col++;
+
+    for( unsigned int i=col;i<sizeA();++i )
       {
-	if( std::abs(W(position,i))< EPSILON ) continue;
-	sotDEBUG(4) << "i = " << i << " Wpi = " << W(position,i) << endl;
+	if( std::abs(W(row,i)-1)< EPSILON ) break;
 
-	/* Wt(i,position) VS Wt(i+1,position) */
+	/* Wt(row,col) VS Wt(row,i) */
 	Givensd G1;
-	G1.makeGivens(W(position,i+1),W(position,i));
+	G1.makeGivens(W(row,col),W(row,i));
 
-	W_.applyOnTheRight( Irn(i+1),Irn(i),G1 );
+	W_.applyOnTheRight( Irn(col),Irn(col),G1 );
 
-	const int rs = rowSize(i+1);
-	sotDEBUG(15) << "rs = " << rs << endl;
-	if(rs>0) // if not means it is a rank def of the first stage.
+	const int rs = rowSize(i);
+	if( rs>0 )
 	  {
 	    /* Apply on 2 specific lines of ML, so ML_ is OK. */
 	    Block<MatrixXd> ML(ML_,0,0,nr,rs);
-	    ML.applyOnTheLeft( Irn(i+1),Irn(i),G1.transpose());
+	    ML.applyOnTheLeft( Irn(col),Irn(i),G1.transpose());
 	  }
       }
-
-    sotDEBUG(15) << "W = " << (MATLAB)W << std::endl;
-    sotDEBUG(15) << "M = " << (MATLAB)M << std::endl;
-    sotDEBUG(15) << "L = " << (MATLAB)L << std::endl;
-
-    for( unsigned int i=position+1;i<sizeA();++i )
-      {
-	if( std::abs(W(position,i))< EPSILON ) continue;
-
-	/* Wt(i,position) VS Wt(position,position) */
-	Givensd G1;
-	G1.makeGivens(W(position,position),W(position,i));
-
-	W_.applyOnTheRight( Irn(position),Irn(i),G1 );
-
-	const int rs = rowSize(i);
-	assert(rs>0);
-	/* Apply on 2 specific lines of ML, so ML_ is OK. */
-	Block<MatrixXd> ML(ML_,0,0,nr,rs);
-	ML.applyOnTheLeft( Irn(position),Irn(i),G1.transpose());
-     }
 
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "colToRemove = " << col << endl;
+
+    return col;
   }
 
   /* --- UPDATE ------------------------------------------------------------- */
@@ -559,7 +539,7 @@ namespace soth
     bool defDone = decreasePreviousRank<=sizeM;
     if(! defDone )
       {
-	M.pushColBack( L.popRowFront() );
+	M.pushColBack( L.popColFront() );
 	sizeM++;
 	// L.pushColFront( sizeM+sizeL );
 	// sizeL++;
@@ -568,6 +548,8 @@ namespace soth
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
 
+    MatrixXd Yex(nc,nc); Yex.setIdentity(); Ydown.applyThisOnTheLeft(Yex);
+    sotDEBUG(5) << (MATLAB)Yex << endl;
     for( unsigned int i=0;i<sizeA();++i )
       {
 	RowL MLi = rowML(i);
@@ -663,6 +645,9 @@ namespace soth
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     soth::solveInPlaceWithLowerTriangular(L,Ue);
     sotDEBUG(5) << "LiUe = " << (MATLAB)Ue << std::endl;
+
+
+    // TODO: solve =   Ytu + Linv( Ue-MYtu ).
   }
 
 
@@ -765,7 +750,7 @@ namespace soth
 	  {
 	    J_.row(activeSet.where(i)) = J.row(i);
 	    e_(activeSet.where(i)) = bounds[i].getBound(activeSet.whichBound(i));
-	    std::cout << "where(" << i << ") = " << activeSet.where(i) << endl;
+	    sotDEBUG(15) << "where(" << i << ") = " << activeSet.where(i) << endl;
 	  }
       }
 
