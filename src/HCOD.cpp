@@ -86,12 +86,18 @@ namespace soth
       {
 	stages[i]->solve(solution);
       }
-    sotDEBUG(5) << "Yu = " << (MATLAB)solution << std::endl;
+    sotDEBUG(5) << "Ytu = " << (MATLAB)solution << std::endl;
     Y.applyThisOnVector( solution );
     sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
 
     show(std::cout,true);
     Y.computeExplicitly();
+
+    computeLambda();
+    std::cout << "lambda = " << std::endl << lambda << std::endl;
+    std::cout << "err = " << std::endl;
+    for (int i=0; i<stages.size(); ++i)
+      std::cout << stages[i]->computeErr(solution) << std::endl;
 
     std::cout << " === DOWN ================================ " << std::endl;
     const unsigned int TO_DOWN = 0;
@@ -141,11 +147,42 @@ namespace soth
 
   }
 
-  //assume the variable 'solution' contains Yu
+  int HCOD::sizeA() const
+  {
+    int s=0;
+    for (size_t i=0; i<stages.size(); ++i)
+      s+= stages[i]->sizeA();
+    return s;
+  }
+
+  int HCOD::rank() const
+  {
+    int r=0;
+    for (size_t i=0; i<stages.size(); ++i)
+      r+= stages[i]->rank();
+    return r;
+  }
+
+  //assume the variable 'solution' contains Y^T*u
   void HCOD::computeLambda()
   {
-    int previousRank = sizeProblem;
-    //stages.back().
+    int s = sizeA();
+    lambda.resize(s);
+    //last lambda
+    int sn = stages.back()->sizeA();
+    lambda.tail(sn) = stages.back()->computeErr(solution);
+    s -= sn;
+    VectorXd ro = stages.back()->computeRo(solution);
+    assert(ro.size() == rank() - stages.back()->rank());
+    int r = ro.size();
+
+    for (int i=stages.size()-2; i>=0; --i)
+    {
+      int si = stages[i]->sizeA();
+      s -= si;
+      stages[i]->computeLagrangeMultipliers(lambda.segment(s, si), ro.head(r));
+      r -= stages[i]->rank();
+    }
   }
 
 
