@@ -300,8 +300,9 @@ namespace soth
 
     VectorBlock<Derived2> ro_i = ro_under_i.tail(sizeL);
     solveInPlaceWithUpperTriangular(L.transpose(), ro_i);
-    ro_under_i.head(sizeM).noalias() += M.bottomRows(sizeL).transpose()*ro_i;
-    lambda_i.noalias() = W_.rightCols(sizeL) * ro_i;
+//    if (sizeM>0) //we are not at stage 0
+      ro_under_i.head(sizeM).noalias() += M.bottomRows(sizeL).transpose()*ro_i;
+    lambda_i.noalias() = W.rightCols(sizeL) * ro_i;
   }
 
 }; // namespace soth
