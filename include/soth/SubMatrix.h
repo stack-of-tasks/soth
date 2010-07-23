@@ -186,19 +186,27 @@ inline void pushColFront( Index iadd )
 
 inline void setColRange( Index start, Index end )
 {
-  assert( start<=end ); assert( start>=0 );
+  assert( start<=end ); assert( start>=0 ); assert( end<=m_matrix.cols() );
 
   const Index size = end-start;
-  m_colIndices.resize(size);
-  m_colIndices = VectorXi::LinSpaced(start,end-1,size);
+  switch (size)
+  {
+    case 0: m_colIndices = VectorXi(); return;
+    case 1: m_colIndices.resize(1); m_colIndices << 1; return;
+    default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
+  }
 }
 inline void setRowRange( Index start, Index end )
 {
-  assert( start<=end ); assert( start>=0 );
+  assert( start<=end ); assert( start>=0 ); assert( end<=m_matrix.rows() );
 
   const Index size = end-start;
-  m_rowIndices.resize(size);
-  m_rowIndices = VectorXi::LinSpaced(start,end-1,size);
+  switch (size)
+  {
+    case 0: m_rowIndices = VectorXi(); return;
+    case 1: m_rowIndices.resize(1); m_rowIndices << 1; return;
+    default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
+  }
 }
 
 protected:
@@ -300,11 +308,15 @@ inline void pushColFront( Index iadd )
 }
 inline void setColRange( Index start, Index end )
 {
-  assert( start<=end ); assert( start>=0 );
+  assert( start<=end ); assert( start>=0 ); assert( end<=m_matrix.cols() );
 
   const Index size = end-start;
-  m_colIndices.resize(size);
-  m_colIndices = VectorXi::LinSpaced(start,end-1,size);
+  switch (size)
+  {
+    case 0: m_colIndices = VectorXi(); return;
+    case 1: m_colIndices.resize(1); m_colIndices << 1; return;
+    default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
+  }
 }
 
 protected:
@@ -407,11 +419,15 @@ inline void pushRowFront( Index iadd )
 }
 inline void setRowRange( Index start, Index end )
 {
-  assert( start<=end ); assert( start>=0 );
+  assert( start<=end ); assert( start>=0 ); assert( end<=m_matrix.rows() );
 
   const Index size = end-start;
-  m_rowIndices.resize(size);
-  m_rowIndices = VectorXi::LinSpaced(start,end-1,size);
+  switch (size)
+  {
+    case 0: m_rowIndices = VectorXi(); return;
+    case 1: m_rowIndices.resize(1); m_rowIndices << 1; return;
+    default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
+  }
 }
 protected:
   const MatrixType& m_matrix;
