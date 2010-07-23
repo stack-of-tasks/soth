@@ -585,7 +585,9 @@ namespace soth
       }
     else if( sizeM<=decreasePreviousRank )
       { // rank decrease ongoing...
-	assert( false && "TODO" );
+	const int rdef = decreasePreviousRank-sizeM;
+	assert( (rdef>0)&&(rdef<sizeL) );
+	nullifyLineDeficient( rdef,rdef-1 );
       }
     else
       { // already lost the rank, nothing to do.
