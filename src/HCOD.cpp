@@ -204,6 +204,10 @@ namespace soth
   template< typename VectorGen >
   void HCOD::activeSearch( VectorGen & u )
   {
+    assert(VectorXi::LinSpaced(0,2,3)[0] == 0 
+            && VectorXi::LinSpaced(0,2,3)[1] == 1 
+            && VectorXi::LinSpace(0,2,3)[2] == 2 
+            && "new version of Eigen might have change the order of arguments in LinSpaced, please correct");
     /*
      * foreach stage: stage.initCOD(Ir_init)
      * u = 0
