@@ -15,6 +15,7 @@ namespace soth
     //forward substitution, colum version
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<Derived2>)
     assert(lhs.rows() == lhs.cols());
+    assert(lhs.rows() > 0);
     assert(rhs.size() == lhs.rows());
     const int n = lhs.rows();
     for (int i=0; i<n-1; ++i)
@@ -36,6 +37,7 @@ namespace soth
     //backward substitution, colum version
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<Derived2>)
     assert(lhs.rows() == lhs.cols());
+    assert(lhs.rows() > 0);
     assert(rhs.size() == lhs.rows());
     const int n = lhs.rows();
     for (int i=n-1; i>0; --i)

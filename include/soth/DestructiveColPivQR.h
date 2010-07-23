@@ -277,6 +277,9 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   Index cols = m_r.cols();
   Index size = m_r.diagonalSize();
 
+  assert(m_r.diagonalSize() > 0);
+  //TODO : handle this case ?
+
   //m_hCoeffs.resize(size);
 
   m_temp.resize(cols);
