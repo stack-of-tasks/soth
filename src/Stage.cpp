@@ -54,7 +54,7 @@ namespace soth
     if( initialIr.nbActive()==0 )
       {
 	sotERROR << "TODO: initial IR empty." << std::endl;
-	/*TODO*/throw "TODO";
+	/*TODO*/assert( false&&"TODO" );
       }
 
     activeSet=initialIr;
@@ -191,11 +191,18 @@ namespace soth
 	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
       }
 
+    removeARow( row );
+  }
+
+  /* Remove a row of L, and commit the changes in M and W. */
+  void Stage::
+  removeARow( unsigned int row )
+  {
     L.removeRow(row);
     M.pushRowFront(M.removeRow(row+sizeN()));
     W.pushColFront(W.removeCol(row+sizeN()));
     sizeL--;
-	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
   }
 
   /* --- DOWNDATE ----------------------------------------------------------- */
@@ -349,6 +356,12 @@ namespace soth
 
   void Stage::regularizeHessenberg( GivensSequence & Ydown )
   {
+    /*
+     * for i=i0:rank-1
+     *   gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
+     *   L = L*GR;
+     *   Ydown.push_back( gr );
+     */
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
@@ -368,13 +381,8 @@ namespace soth
   }
 
 
-  /*
-   * for i=i0:rank-1
-   *   gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
-   *   L = L*GR;
-   *   Ydown.push_back( gr );
-   */
-  /* Rotate W so that W is 1 on position,position and L|position is at worst hessenberg. */
+  /* Rotate W so that W is 1 on position,position and L|position is
+   * at worst hessenberg. */
   void Stage::removeInW( const  unsigned int position )
   {
     // sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
@@ -424,8 +432,8 @@ namespace soth
   /* --- UPDATE ------------------------------------------------------------- */
   /* --- UPDATE ------------------------------------------------------------- */
 
-  bool Stage::update( unsigned int cst,
-		      GivensSequence & Yup )
+  unsigned int Stage::
+  update( unsigned int cst,GivensSequence & Yup )
   {
     /*
      * Inew = Unused.pop();
@@ -468,22 +476,39 @@ namespace soth
 	    Givens G1;
 	    G1.makeGivensAndApply(JupY,i-1,i);
 	    Yup.push(G1);
-
+	  }
+	addARow(rowup);
+      }
+    else
+      {
+	if( rankJ>sizeM )
+	  {
+	    addARow(rowup);
+	    nullifyLineDeficient(sizeL-1,rankJ-sizeM);
+	  }
+	else
+	  {
+	    addARow(rowup,true);
 	  }
       }
-
-
-    return false;
+    return rankJ;
   }
 
   void Stage::
   addARow( const Index & rowup,bool deficient )
   {
-    if(deficient)
-      {
-	assert( false && "TODO" );
-      }
-    else
+    // TODO: clean this mess.
+     if(deficient)
+       {
+     	M.pushRowFront( rowup );
+     	W.pushColFront( rowup );
+     	W.pushRowBack( rowup );
+     	// clean W.
+     	W_.row( rowup ) .setZero();
+     	W_.col( rowup ) .setZero();
+     	W_(rowup,rowup ) = 1.0;
+       }
+     else
       {
 	L.pushRowBack( rowup );
 	M.pushRowBack( rowup );
@@ -493,6 +518,7 @@ namespace soth
 	W_.row( rowup ) .setZero();
 	W_.col( rowup ) .setZero();
 	W_(rowup,rowup ) = 1.0;
+	sizeL++;
       }
 
   }

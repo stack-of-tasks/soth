@@ -157,15 +157,10 @@ namespace soth
      * return false
      */
 
-    void regularizeHessenberg( GivensSequence & Ydown );
-    /*
-      for i=i0:rank-1
-      gr = GR( L(Ir(i),i),L(Ir(i),i+1),i,i+1 );
-      L = L*GR;
-      Ydown.push_back( gr );
-    */
   protected:
+    void regularizeHessenberg( GivensSequence & Ydown );
     void removeInW( const  unsigned int position );
+    void removeARow( unsigned int row );
 
     /* --- UPD -------------------------------------------------------------- */
   public:
@@ -177,8 +172,8 @@ namespace soth
     */
 
     // Return true if the rank re-decrease operated at the current stage.
-    bool update( unsigned int cst,
-		 GivensSequence & Yup );
+    /* Return the rank of the line where the rank re-decrease will occurs. */
+    unsigned int update( unsigned int cst, GivensSequence & Yup );
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -218,7 +213,7 @@ namespace soth
       return false;
     */
   protected:
-    void addARow( const Index & row,bool deficient );
+    void addARow( const Index & row,bool deficient=false );
 
     /* --- SOLVE ------------------------------------------------------------ */
   public:
