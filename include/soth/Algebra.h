@@ -89,7 +89,7 @@ namespace soth
       for(int i=0;i<m1.size();++i )
 	{
 	  if( m1[i]<0 ) ostmp << "-"; else ostmp << " ";
-	  if(MATLAB::fullPrec||fabs(m1[i])>1e-6) ostmp <<  fabs(m1[i]);
+	  if(MATLAB::fullPrec||std::abs(m1[i])>1e-6) ostmp <<  std::abs(m1[i]);
 	  else { ostmp << "0"; }
 	  if( m1.size()!=i+1 )
 	    {
@@ -122,7 +122,7 @@ namespace soth
 	  for(int j=0;j<m1.cols();++j )
 	    {
 	      if( m1(i,j)<0 ) ostmp << "-"; else ostmp << " ";
-	      if(MATLAB::fullPrec||fabs(m1(i,j))>1e-6) ostmp <<  fabs(m1(i,j));
+	      if(MATLAB::fullPrec||std::abs(m1(i,j))>1e-6) ostmp <<  std::abs(m1(i,j));
 	      else { ostmp << "0"; }
 	      if( m1.cols()!=j+1 )
 		{

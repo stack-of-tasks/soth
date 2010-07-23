@@ -27,6 +27,7 @@ namespace soth
 
     void reset( void );
     void solve( void );
+    void computeLambda();
 
     void show( std::ostream& os, bool check=false );
 
@@ -44,6 +45,7 @@ namespace soth
     stage_sequence_t stages;
     activeset_sequence_t initialActiveSets;
     VectorXd solution;
+    VectorXd lambda; //lagrange multiplier
 
   };
 
