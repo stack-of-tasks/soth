@@ -217,10 +217,11 @@ namespace soth
       return true;
       return false;
     */
-
+  protected:
+    void addARow( const Index & row,bool deficient );
 
     /* --- SOLVE ------------------------------------------------------------ */
-
+  public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
     void solve( VectorXd& Yu );
     //void solveTranspose( const VectorXd & e, VectorXd res );

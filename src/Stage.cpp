@@ -467,22 +467,34 @@ namespace soth
 	  {
 	    Givens G1;
 	    G1.makeGivensAndApply(JupY,i-1,i);
-	    // TODO: store in Y.
 	    Yup.push(G1);
 
-	    L.pushRowBack( rowup );
-	    M.pushRowBack( rowup );
-	    W.pushColBack( rowup );
-	    W.pushRowBack( rowup );
-	    // TODO: clean W.
-	    W_.row( rowup ) .setZero();
-	    W_.col( rowup ) .setZero();
-	    W_(rowup,rowup ) = 1.0;
 	  }
       }
 
 
     return false;
+  }
+
+  void Stage::
+  addARow( const Index & rowup,bool deficient )
+  {
+    if(deficient)
+      {
+	assert( false && "TODO" );
+      }
+    else
+      {
+	L.pushRowBack( rowup );
+	M.pushRowBack( rowup );
+	W.pushColBack( rowup );
+	W.pushRowBack( rowup );
+	// clean W.
+	W_.row( rowup ) .setZero();
+	W_.col( rowup ) .setZero();
+	W_(rowup,rowup ) = 1.0;
+      }
+
   }
 
   /* --- SOLVER ------------------------------------------------------------- */
