@@ -91,7 +91,6 @@ namespace soth
     sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
 
     show(std::cout,true);
-    return; // DEBUG
     Y.computeExplicitly();
 
     std::cout << " === DOWN ================================ " << std::endl;
@@ -111,9 +110,10 @@ namespace soth
 
     std::cout << " === UP ================================ " << std::endl;
     const unsigned int TO_UP = 0;
-    const unsigned int ROW_UP = 1;
+    const unsigned int ROW_UP = 0;
     GivensSequence Yup;
-    unsigned int rankDef = stages[TO_UP]->update(ROW_UP,Yup);
+    unsigned int rankDef
+      = stages[TO_UP]->update( std::make_pair(ROW_UP,Bound::BOUND_TWIN),Yup);
     // TODO: propagate.
 
     updateY(Yup);

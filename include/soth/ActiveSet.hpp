@@ -38,6 +38,7 @@ namespace soth
     int activeRow( unsigned int ref, Bound::bound_t type )
     {
       int row = -1;
+      /* TODO: it is possible to store the first freeline. */
       for( unsigned int i=0;i<freerow.size();++i )
 	{
 	  if( freerow[i] )
@@ -111,6 +112,19 @@ namespace soth
       // for( unsigned int i=0;i<v.size();++i )
       // 	if( isActive(i) ) res( where(i) ) = i;
       return res;
+    }
+
+    void disp( std::ostream& os )
+    {
+      for( unsigned int i=0;i<v.size();++ i )
+	{
+	  os << i << ": ";
+	  if(isActive(i)) os<< v[i].second; else os <<"Unactive";
+	  os << std::endl;
+	}
+      for( unsigned int i=0;i<freerow.size();++ i )
+	{ os << (freerow[i])?"0":"1"; }
+      os<<std::endl;
     }
 
   protected:
