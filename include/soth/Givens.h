@@ -59,6 +59,14 @@ namespace soth
       M.applyOnTheLeft(i, j, G.adjoint());
     }
 
+    bool applicable( unsigned int size ) const
+    {
+      bool ci = (i<size);
+      bool cj = (j<size);
+      assert( (ci&&cj)||((!ci)&&(!cj)) );
+      return ci&&cj;
+    }
+
   private:
     NestedType G;
     int i;
@@ -89,6 +97,14 @@ namespace soth
     {
       for (size_t i=0; i<G.size(); ++i)
         G[i].applyThisOnTheLeft(M);
+    }
+
+    // M := M*G.
+    template<typename Derived>
+    void applyThisOnTheLeftReduced(MatrixBase<Derived> & M) const
+    {
+      for (size_t i=0; i<G.size(); ++i)
+        if( G[i].applicable( M.cols()) ) applyThisOnTheLeft(M);
     }
 
     // M := M*G'.

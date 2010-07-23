@@ -202,8 +202,8 @@ namespace soth
      */
 
     // Return true if the rank decrease operated at the current stage.
-    //bool propagateUpdate( RotationGiven_list_t & Yup,
-    //bool decreasePreviousRank );
+    void propagateUpdate( GivensSequence & Ydown,
+			  unsigned int decreasePreviousRank );
     /*
       ML=ML*Yup;
       increaseSizeM();
