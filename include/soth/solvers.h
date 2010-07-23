@@ -42,7 +42,6 @@ namespace soth
     {
       rhs[i] /= lhs(i,i);
       rhs.head(i) -= rhs[i]* lhs.col(i).head(i);
-      std::cout << rhs.transpose() << std::endl;
     }
     rhs[0] /= lhs(0,0);
   }
