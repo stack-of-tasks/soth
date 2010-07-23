@@ -414,7 +414,7 @@ namespace soth
     int col = 0;
     while( std::abs(W(row,col))< EPSILON ) col++;
 
-    for( unsigned int i=col;i<sizeA();++i )
+    for( unsigned int i=col+1;i<sizeA();++i )
       {
 	if( std::abs(W(row,i)-1)< EPSILON ) break;
 
@@ -422,7 +422,7 @@ namespace soth
 	Givensd G1;
 	G1.makeGivens(W(row,col),W(row,i));
 
-	W_.applyOnTheRight( Irn(col),Irn(col),G1 );
+	W_.applyOnTheRight( Irn(col),Irn(i),G1 );
 
 	const int rs = rowSize(i);
 	if( rs>0 )
@@ -431,7 +431,7 @@ namespace soth
 	    Block<MatrixXd> ML(ML_,0,0,nr,rs);
 	    ML.applyOnTheLeft( Irn(col),Irn(i),G1.transpose());
 	  }
-      }
+  }
 
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
