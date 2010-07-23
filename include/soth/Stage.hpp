@@ -7,6 +7,7 @@ namespace Eigen
 {
   #include "soth/SubMatrix.h"
 }
+#include "soth/solvers.h"
 #include "soth/Algebra.h"
 #include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
@@ -218,10 +219,14 @@ namespace soth
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void solve( VectorXd& Yu );
+    void solve( VectorXd& Ytu );
     //void solveTranspose( const VectorXd & e, VectorXd res );
 
-    void computeLagrangeMultiplicators(VectorXd& lambda, Index previousRank);
+    VectorXd computeErr(const VectorXd& Ytu);
+    VectorXd computeRo(const VectorXd& Ytu);
+
+  template <typename Derived1, typename Derived2>
+  void computeLagrangeMultipliers(MatrixBase<Derived1>& lambda_i, MatrixBase<Derived2>& ro_under_i);
 
     //void damp( const double & damping );
 
@@ -269,6 +274,32 @@ namespace soth
     bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }
 
   };
+
+
+
+
+
+
+  /** input: ro_under_i = {ro_1, ..., ro_i}
+    * on return:
+    * lambda_i =  Wr_i*L_i^-T*ro_i
+    * ro_under_{i-1} = ro_under_{i-1} Mr_i^T*L_i^-T*ro_i
+    * ro_i = L_i^-T*ro_i (should not be useful)
+    */
+  template <typename Derived1, typename Derived2>
+  void Stage::computeLagrangeMultipliers(MatrixBase<Derived1>& lambda_i, MatrixBase<Derived2>& ro_under_i)
+  {
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived1)
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived2)
+
+    assert(lambda_i.rows() == W.rows());
+    assert(ro_under_i.rows() == sizeM+sizeL);
+
+    VectorBlock<Derived2> ro_i = ro_under_i.tail(sizeL);
+    solveInPlaceWithUpperTriangular(L.transpose(), ro_i);
+    ro_under_i.head(sizeM).noalias() += M.bottomRows(sizeL).transpose()*ro_i;
+    lambda_i.noalias() = W_.rightCols(sizeL) * ro_i;
+  }
 
 }; // namespace soth
 

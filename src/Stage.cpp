@@ -13,7 +13,6 @@ namespace soth
 
 
 #include "soth/Stage.hpp"
-#include "soth/solvers.h"
 #include <Eigen/QR>
 namespace Eigen
 {
@@ -528,11 +527,11 @@ namespace soth
   /* --- SOLVER ------------------------------------------------------------- */
 
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
-  void Stage::solve( VectorXd& Yu )
+  void Stage::solve( VectorXd& Ytu )
   {
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
 
-    VectorBlock<VectorXd> Ue = Yu.segment( sizeM,sizeL );
+    VectorBlock<VectorXd> Ue = Ytu.segment( sizeM,sizeL );
     // if( isWIdenty )
     //   {	Ue = e; }//  Ue = Transpositions<-1,-1>(W.getColIndices()).transpose()*(e);      }
     // else
@@ -545,7 +544,7 @@ namespace soth
 
     sotDEBUG(5) << "Ue = " << (MATLAB)Ue << std::endl;
     SubMatrixXd Mr( ML_,Ir,M.getColIndices() );
-    Ue -= Mr*Yu.head(sizeM);
+    Ue -= Mr*Ytu.head(sizeM);
 
     sotDEBUG(5) << "Uem = " << (MATLAB)Ue << std::endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
@@ -554,15 +553,23 @@ namespace soth
   }
 
 
-  //lambda_i =  Wr_i*L_i^-T*ro_i
-  //ro_{1,2,..,i-1} += Mr_i^T*L_i^-T*ro_i
-  //all ro_j j in {1,..,i} are stored in lambda_j
-  void Stage::computeLagrangeMultiplicators(VectorXd& lambda, Index previousRank)
+  //err = Ju-e = W [M L 0] Y^u - e
+  VectorXd Stage::computeErr(const VectorXd& Ytu)
   {
-    VectorBlock<VectorXd> lambda_i = lambda.segment(previousRank, sizeL);
-    solveInPlaceWithUpperTriangular(L, lambda_i);
-    lambda.head(previousRank) = M.bottomRows(sizeL).transpose()*lambda_i;
-    lambda_i *= W_.bottomRightCorner(sizeL, sizeL);
+    //TODO : manage temporary memory ?
+    VectorXd tmp = M*Ytu.head(sizeM);
+    tmp.tail(sizeL) += L.triangularView<Lower>()*Ytu.segment(sizeM, sizeL);
+    return W*tmp - e;
+  }
+
+
+  VectorXd Stage::computeRo(const VectorXd& Ytu)
+  {
+    //TODO : manage temporary memory ?
+    assert(Ytu.size() == nc);
+    VectorXd tmp = W.transpose()*e - M*Ytu.head(sizeM);
+    tmp.tail(sizeL) += L.triangularView<Lower>()*Ytu.segment(sizeM, sizeL);
+    return M.transpose()*tmp;
   }
 
 
