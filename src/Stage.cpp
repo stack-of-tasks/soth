@@ -555,10 +555,8 @@ namespace soth
      * return false
      */
 
-    bool def=false;
-    if( sizeM>=decreasePreviousRank )
-      {	def=true;}
-    else
+    bool increaseL = false;
+    if( sizeM<decreasePreviousRank )
       {
 	M.pushColBack( L.popRowFront() );
 	sizeM++;
@@ -573,18 +571,21 @@ namespace soth
       {
 	RowL MLi = rowML(i);
 	Ydown.applyThisOnTheLeftReduced(MLi);
-	if( (!def)&&(rowSize(i)==decreasePreviousRank) ) def=true;
       }
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
 
-    if( def )
-      {
+    // sizeM already increased, so sM+sL is the last col of the Hessenberg.
+    if( sizeM+sizeL<=decreasePreviousRank )
+      { // L increased a column.
+	L.pushColBack( sizeM+sizeL );
+      }
+    else if( sizeM<=decreasePreviousRank )
+      { // rank decrease ongoing...
 	assert( false && "TODO" );
       }
     else
-      {
-	L.pushColBack( sizeM+sizeL );
+      { // already lost the rank, nothing to do.
       }
 
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
