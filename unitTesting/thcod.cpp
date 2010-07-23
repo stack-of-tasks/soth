@@ -11,7 +11,7 @@ int main (int argc, char** argv)
   sotDebugTrace::openFile(); 
   const int NB_STAGE = 3;
   const int RANK[] = { 3, 4, 3, 5, 3 };
-  const int NR[] = { 5, 4, 5, 5, 8 };
+  const int NR[] = { 6, 4, 5, 5, 8 };
   const int NC = 12;
 
   /* Initialize J and b. */
@@ -37,6 +37,7 @@ int main (int argc, char** argv)
 	std::cout << b[i][j].getBound(soth::Bound::BOUND_TWIN) << "   ";
       std::cout << std::endl;
     }
+  b[0][NR[0]-1] = soth::Bound(-0.5, soth::Bound::BOUND_INF);
 
   /* SOTH structure construction. */
   soth::HCOD hcod(NC,NB_STAGE);
