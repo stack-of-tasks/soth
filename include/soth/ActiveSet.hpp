@@ -105,6 +105,9 @@ namespace soth
     /* Return a compact of the active line, ordered by row values. */
     operator VectorXi (void) const
     {
+      if (nba==0)
+        return VectorXi();
+
       VectorXi res(nba);
       int row = 0;
       for( unsigned int i=0;i<v.size();++i )

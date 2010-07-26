@@ -10,8 +10,8 @@ int main (int argc, char** argv)
 {
   sotDebugTrace::openFile();
   const int NB_STAGE = 3;
-  const int RANK[] = { 3, 4, 3, 5, 3 };
-  const int NR[] = { 6, 4, 5, 5, 8 };
+  const int RANK[] = { 1, 4, 3, 5, 3 };
+  const int NR[] = { 1, 4, 5, 5, 8 };
   const int NC = 12;
 
   /* Initialize J and b. */
@@ -38,14 +38,18 @@ int main (int argc, char** argv)
 	std::cout << b[i][j].getBound(soth::Bound::BOUND_TWIN) << "   ";
       std::cout << std::endl;
     }
-  b[0][NR[0]-1] = soth::Bound(-0.5, soth::Bound::BOUND_INF);
+  //b[0][NR[0]-1] = soth::Bound(-0.5, soth::Bound::BOUND_INF);
 
   /* SOTH structure construction. */
   soth::HCOD hcod(NC,NB_STAGE);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       hcod.pushBackStage( J[i],b[i] );
-      hcod.setInitialActiveSet( Eigen::VectorXi::LinSpaced(0, NR[i]-1, NR[i]),i);
+      assert(NR[i]>0);
+      if (NR[i]>1)
+        hcod.setInitialActiveSet( Eigen::VectorXi::LinSpaced(0, NR[i]-1, NR[i]),i);
+      else
+        hcod.setInitialActiveSet( Eigen::VectorXi::Zero(1), i);
     }
 
   hcod.solve();
