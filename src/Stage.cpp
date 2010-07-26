@@ -59,9 +59,13 @@ namespace soth
 
     activeSet=initialIr;
     sotDEBUG(5) << "initIr = " << (MATLAB)(VectorXi)activeSet << std::endl;
+
+    ML_.setZero();
     SubMatrix<MatrixXd,RowPermutation> Jact( J,activeSet );
     Block<MatrixXd> ML = ML_.topRows(activeSet.nbActive()); //(ML_,0,0,activeSet.nbActive(),nc );
+    sotDEBUG(15) << "Ja = " << (MATLAB)Jact << std::endl;
     ML = Jact;
+    sotDEBUG(15) << "Ja = " << (MATLAB)ML_ << std::endl;
     Y.applyThisOnTheLeft( ML );
 
     for( unsigned int i=0;i<activeSet.nbActive();++i )
@@ -117,7 +121,7 @@ namespace soth
       sotDEBUG(5) << "col size of L is null, skip the end of initialization" << std::endl;
       L.setRowIndices(VectorXi());
       sizeL=0;
-      W.setRowRange(0,sizeA()); 
+      W.setRowRange(0,sizeA());
       W.setColRange(0,sizeA());
       e.setRowRange(0,sizeA());
       return previousRank;
@@ -130,6 +134,8 @@ namespace soth
     const MatrixXd & R = mQR.matrixR();
     sotDEBUG(25) << "mR = " << (MATLAB)R << std::endl;
     sotDEBUG(25) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
+    sotDEBUG(7) << "ML_ = " << (MATLAB)ML_ << std::endl;
+    //    for( Index i=0;i<L.rows();++i ) rowL0(i).tail(nc-sizeM-i-1).setZero();
 
     /* L=triu(mQR'); */
     const VectorXi & P = mQR.colsPermutation().indices();
@@ -480,6 +486,7 @@ namespace soth
 
     sotDEBUG(5) << "cst=" << cst.first << " bound=" << cst.second << endl;
     e_(wrowup) = bounds[cst.first].getBound(cst.second);
+    sotDEBUG(5) << "bound="<<bounds[cst.first].getBound(cst.second) <<  endl;
     RowML JupY = ML_.row(wcolup);
     JupY = J.row(cst.first); Y.applyThisOnTheLeft(JupY);
     double norm2=0; int rankJ=sizeM;
@@ -499,13 +506,13 @@ namespace soth
 	/* Remove the tail of JuY. */
 	for( Index i=rankJ-1;i>sizeM+sizeL;--i )
 	  {
-	    sotDEBUG(15) << "% Right-resorb " << i << endl;
+	    sotDEBUG(45) << "% Right-resorb " << i << endl;
 	    Givens G1;
 	    G1.makeGivensAndApply(JupY,i-1,i);
 	    Yup.push(G1);
 	  }
 	addARow(wrowup,wcolup);
-	L.pushColBack(sizeL-1);
+	L.pushColBack(sizeM+sizeL-1);
       }
     else
       { // No rank increase: regularize.
@@ -605,19 +612,16 @@ namespace soth
      else
       {
 	sotDEBUG(5) << "W0 = " << (MATLAB)W << endl;
-	sotDEBUG(5) << "Wi = " << (MATLAB)W.getColIndices() << endl;
-	sotDEBUG(5) << "Li = " << (MATLAB)Irn << endl;
+	sotDEBUG(45) << "Widx = " << (MATLAB)W.getColIndices() << endl;
+	sotDEBUG(45) << "Lidx = " << (MATLAB)Irn << endl;
 	L.pushRowBack( wcolup );
 	M.pushRowBack( wcolup );
 	W.pushColBack( wcolup );
 	W.pushRowBack( wrowup );
 	e.pushRowBack( wrowup );
 	// clean W.
-	sotDEBUG(5) << "W = " << (MATLAB)W << endl;
 	W_.row( wrowup ) .setZero();//setConstant(3.33); //setZero();
-	sotDEBUG(5) << "W = " << (MATLAB)W << endl;
 	W_.col( wcolup ) .setZero();//setConstant(3.33); //setZero();
-	sotDEBUG(5) << "W = " << (MATLAB)W << endl;
 	W_(wrowup,wcolup ) = 1.0;
 	sizeL++;
       }
@@ -722,10 +726,14 @@ namespace soth
   recompose( MatrixXd& WMLY ) const
   {
     sotDEBUGIN(5);
+    if( sizeA()==0 )
+      {
+	assert( (sizeL==0)&&(M.rows()==0)&&(L.rows()==0)&&(L.cols()==0)&&(W.rows()==0)&&(W.rows()==0) );
+	WMLY.resize(0,nc);
+	return;
+      }
     WMLY.resize(sizeA(),nc); WMLY.setZero();
-    sotDEBUGIN(5);
     WMLY.block(0,0,sizeA(),sizeM) = W*M;
-    sotDEBUGIN(5);
 
     sotDEBUG(5) << "UL = " << (MATLAB)WMLY.block(0,sizeM,sizeA(),sizeL) << std::endl;
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
@@ -758,11 +766,16 @@ namespace soth
     MatrixXd Ja_;   SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(Ja_);
     sotDEBUG(15) << "Jrec="<<(MATLAB)Jrec << endl;
     sotDEBUG(15) << "Ja="<<(MATLAB)Ja << endl;
-    bool res = ((Jrec-Ja).norm()<=EPSILON);
+    bool res;
+    if( sizeA() ) res = ((Jrec-Ja).norm()<=EPSILON);
+    else res = ( (Jrec.cols()==Ja.cols())&&(Jrec.rows()==Jrec.rows()) );
     sotDEBUG(5) <<"% J: Recomposition  " << ((res)?"OK.":"wrong.") << std::endl;
 
     VectorXd ea_;
-    bool vres = (e-eactive(ea_)).norm()<=EPSILON;
+    bool vres;
+    if( sizeA() ) vres = (e-eactive(ea_)).norm()<=EPSILON;
+    else vres = (e.size()==eactive(ea_).size() );
+
     sotDEBUG(15) << "e="<<(MATLAB)e << endl;
     sotDEBUG(15) << "ea="<<(MATLAB)eactive(ea_) << endl;
     sotDEBUG(5) <<"% e: Recomposition  " << ((vres)?"OK.":"wrong.") << std::endl;
@@ -835,6 +848,7 @@ namespace soth
     sotDEBUG(25) << "Il"<<stageRef<<" = " << (MATLAB)L.getRowIndices() << std::endl;
     sotDEBUG(25) << "J"<<stageRef<<"_ = " << (MATLAB)J_ << std::endl;
     sotDEBUG(5) << "e"<<stageRef<<" = " << (MATLAB)ea << std::endl;
+    sotDEBUG(25) << "ML"<<stageRef<<"_ = " << (MATLAB)ML_ << std::endl;
 
     os << "a"<<stageRef<<" = " << (MATLAB)(Indirect)activeSet << std::endl;
     os << "J"<<stageRef<<" = " << (MATLAB)Ja << std::endl;

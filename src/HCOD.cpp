@@ -34,6 +34,16 @@ namespace soth
     pushBackStage(J,bounds);
     setInitialActiveSet(Ir0,stages.size()-1);
   }
+  void HCOD::
+  pushBackStages( const std::vector<MatrixXd> & J,
+		  const std::vector<bound_vector_t> & bounds )
+  {
+    assert( J.size() == bounds.size() );
+    for( unsigned int i=0;i<J.size();++i )
+      {
+	pushBackStage( J[i],bounds[i] );
+      }
+  }
 
   Stage& HCOD::
   stage( unsigned int i )
@@ -81,6 +91,7 @@ namespace soth
 	previousRank
 	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
       }
+    Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
   }
   void HCOD::
   update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )

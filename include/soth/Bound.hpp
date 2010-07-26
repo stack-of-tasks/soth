@@ -37,6 +37,7 @@ namespace soth
 
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);
+    Bound& operator= ( const std::pair<double,double> & val);
 
   }; // Class Bound
 

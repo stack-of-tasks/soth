@@ -16,9 +16,13 @@ namespace soth
 
     void pushBackStage( const MatrixXd & J, const bound_vector_t & bounds );
     void pushBackStage( const MatrixXd & J, const bound_vector_t & bounds,const VectorXi& Ir0 );
+    void pushBackStages( const std::vector<MatrixXd> & J,
+			 const std::vector<bound_vector_t> & bounds );
 
     Stage& stage( unsigned int i );
     const Stage& stage( unsigned int i ) const;
+    Stage& operator[] ( unsigned int i ) { return stage(i); }
+    const Stage& operator[] ( unsigned int i ) const { return stage(i); }
 
     void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
     const VectorXi& getInitialActiveSet( unsigned int i );
@@ -28,6 +32,7 @@ namespace soth
     //sizes
     int sizeA() const;
     int rank() const;
+    int nbStages() const { return stages.size(); }
 
     void reset( void );
     void solve( void );

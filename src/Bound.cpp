@@ -85,6 +85,13 @@ namespace soth
     return *this;
   }
 
+  Bound& Bound::operator= ( const std::pair<double,double> & val)
+  {
+    valInf = val.first; valSup = val.second;
+    type= BOUND_DOUBLE;
+    return *this;
+  }
+
 
 
 
