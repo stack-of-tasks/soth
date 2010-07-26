@@ -26,9 +26,12 @@ namespace soth
   {
   public:
     typedef MatrixXd::Index Index;
+    typedef SubMatrix<MatrixXd>::RowIndices Indirect;
+
     typedef SubMatrix<MatrixXd> SubMatrixXd;
     typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
-    typedef SubMatrixXd::RowIndices Indirect;
+    typedef SubMatrixXd const_SubMatrixXd;
+    typedef SubVectorXd const_SubVectorXd;
 
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
     typedef MatrixXd::RowXpr RowML;
@@ -249,18 +252,19 @@ namespace soth
 
     /* Return true iff Jactive=recompose and eactive=e. */
     bool testRecomposition( void ) const;
-
+    /* For debug purpose, give the line of an active constraint (assert the activity). */
+    Index where( unsigned int cst ) const;
 
   public:
     /* --- ACCESSORS --- */
 
-    // SubMatrixXd M();
-    // SubMatrixXd L();
+    SubMatrixXd getM() { return M; }
+    const_SubMatrixXd getM() const { return M; }
+    SubMatrixXd getL() { return L; }
+    const_SubMatrixXd getL() const { return L; }
+    SubVectorXd gete() { return e; }
+    const_SubVectorXd gete() const { return e; }
     // SubMatrixXd Lo();
-
-    // const_SubMatrixXd M() const ;
-    // const_SubMatrixXd L() const ;
-    // const_SubMatrixXd Lo() const ;
 
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );

@@ -587,8 +587,8 @@ namespace soth
     else if(! defDone )
       { // rank decrease ongoing...
 	const int rdef = decreasePreviousRank-sizeM;
-	assert( (rdef>0)&&(rdef<sizeL) );
-	nullifyLineDeficient( rdef,rdef );
+	assert( rdef<sizeL );
+	  nullifyLineDeficient( rdef,rdef );
       }
     else
       { // already lost the rank, nothing to do.
@@ -752,8 +752,6 @@ namespace soth
     if (sizeL != 0)
     {
       sotDEBUG(5) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
-
-
       WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
     }
     sotDEBUGIN(5);
@@ -785,6 +783,15 @@ namespace soth
     sotDEBUG(5) <<"% e: Recomposition  " << ((vres)?"OK.":"wrong.") << std::endl;
 
     return res&&vres;
+  }
+
+  Stage::Index Stage::
+  where( unsigned int cst ) const
+  {
+    Index ref = activeSet.where(cst);
+    const Indirect & Idx = W.getRowIndices();
+    for( Index i=0;i<nr;++i )
+      { if( Idx(i)==ref )  return i; }
   }
 
    /* Return a sub matrix containing the active rows of J, in the
