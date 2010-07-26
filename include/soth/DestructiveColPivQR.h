@@ -363,6 +363,10 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     // update our table of squared norms of the columns
     for (Index l = k+1; l<cols; ++l)
       m_colSqNorms[l] -= m_r(k,m_colsIntTranspositions[l])*m_r(k,m_colsIntTranspositions[l]);
+
+    // Nullify the lower-diag part of the column
+    //colk.tail(rows-k-1).setZero();
+
     //m_colSqNorms.tail(cols-k-1) -= m_r.row(k).tail(cols-k-1).cwiseAbs2();
     //std::cout << "R=" << std::endl << m_r << std::endl;
     //std::cout << "norms=" << std::endl << m_colSqNorms << std::endl;

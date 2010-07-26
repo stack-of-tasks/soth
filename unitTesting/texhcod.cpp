@@ -96,12 +96,13 @@ int main (int argc, char** argv)
 {
   sotDebugTrace::openFile();
   bool exitOk=true;
+  const int executeAll = 0;
 
   Eigen::MatrixXd Massert(5,9);
   soth::MatrixRnd::randomize( Massert );
   assert( std::abs(Massert(1,2)-0.985007)<1e-5 );
 
-  {
+  if(executeAll){
     /* All matrices full rank and independant, but the last one due to
      * lack of DOF.
      */
@@ -122,7 +123,7 @@ int main (int argc, char** argv)
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   }
 
-  {
+  if(executeAll){
     /* All matrices full rank, updating rows until the last rank saturates
      * du to the matrix size. Then remove all the lines from the first.
      */
@@ -150,6 +151,193 @@ int main (int argc, char** argv)
     exitOk &= clearIteralively(hcod);
   }
 
+  /* --- UPDATE TESTS --- */
+  if(executeAll){
+    /* Insertion of a full rank line, increasing the total rank, on stages first, middle, last.
+     */
+    const int NB_STAGE = 3;
+    const int RANK[] = { 3,3,3 };
+    const int NR[] = { 3,3,3 };
+    const int NC = 10;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
+    for( int s=0;s<NB_STAGE;++s ) b[s][2] = std::make_pair(-2,2);
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    int rank=hcod.rank();
+    for( int i=0;i<NB_STAGE;++i )
+      {
+	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	exitOk&=hcod.testRecomposition(&std::cout);
+	assert( hcod.rank()==++rank );
+     }
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  if(executeAll){
+    /* Insertion of a full rank line, increasing stage rank but not the total rank,
+     * on stages first, and middle (not last, this case is not possible).
+     */
+    const int NB_STAGE = 3;
+    const int RANK[] = { 3,3,3 };
+    const int NR[] = { 3,3,3 };
+    const int NC = 10;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
+    for( int s=0;s<NB_STAGE-1;++s )
+      {
+	const int LAST = NR[s]-1;
+	b[s][LAST] = std::make_pair(-LAST,LAST);
+      }
+    { // Link last line of 0 to first 2 lines of 1.
+      const int s=0,LAST = NR[s]-1;
+      Eigen::MatrixXd Xhi(1,NR[s+1]-1); soth::MatrixRnd::randomize(Xhi);
+      J[s].row(LAST) = Xhi*J[s+1].topRows(NR[s+1]-1);
+    }
+    { // Link last line of 1 to 2.
+      const int s=1,LAST = NR[s]-1;
+      Eigen::MatrixXd Xhi(1,NR[s+1]); soth::MatrixRnd::randomize(Xhi);
+      J[s].row(LAST) = Xhi*J[s+1];
+    }
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    int rank=hcod.rank();
+    for( int i=0;i<NB_STAGE-1;++i )
+      {
+	const int rankStage = hcod[i].rank();
+	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	exitOk&=hcod.testRecomposition(&std::cout);
+	assert( hcod.rank()==rank );
+	assert( rankStage+1 == hcod[i].rank() );
+     }
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  if(executeAll){
+    /* Insertion of a rank-def line, preserving the total rank, on stages first, middle, last.
+     */
+    const int NB_STAGE = 3;
+    const int RANK[] = { 2,2,2 };
+    const int NR[] = { 3,3,3 };
+    const int NC = 10;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
+    for( int s=0;s<NB_STAGE;++s ) b[s][2] = std::make_pair(-2,2);
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    int rank=hcod.rank();
+    for( int i=0;i<NB_STAGE;++i )
+      {
+	const int rankStage = hcod[i].rank();
+	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	exitOk&=hcod.testRecomposition(&std::cout);
+	assert( hcod.rank()==rank );
+  	assert( rankStage == hcod[i].rank() );
+    }
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  if(executeAll);{
+    /* Insertion at the last stage when rank==nc (overshoot possible).
+     */
+    const int NB_STAGE = 5;
+    const int RANK[] = { 3,3,3,3,5 };
+    const int NR[] = { 4,4,4,4,5 };
+    const int NC = 15;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
+
+    const int LS = NB_STAGE-1, LR=NR[LS]-1;
+    b[LS][LR] = std::make_pair(-2,2);
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    const int rank=hcod.rank();
+    const int rankStage = hcod[LS].rank();
+    assert(rank==NC);
+    hcod.update( LS,std::make_pair(LR,soth::Bound::BOUND_INF) );
+    exitOk&=hcod.testRecomposition(&std::cout);
+    assert( hcod.rank()==rank );
+    assert( rankStage == hcod[LS].rank() );
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  if(executeAll);{
+    /* Insertion at the last stage when rank==nc (overshoot possible).
+     */
+    const int NB_STAGE = 5;
+    const int RANK[] = { 3,3,3,3,5 };
+    const int NR[] = { 4,4,4,4,5 };
+    const int NC = 15;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
+
+    const int LS = NB_STAGE-3, LR=NR[LS]-1;
+    b[LS][LR] = std::make_pair(-2,2);
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    const int rank=hcod.rank();
+    const int rankStage = hcod[LS].rank();
+    assert(rank==NC);
+    hcod.update( LS,std::make_pair(LR,soth::Bound::BOUND_INF) );
+    exitOk&=hcod.testRecomposition(&std::cout);
+    assert( hcod.rank()==rank );
+    assert( rankStage == hcod[LS].rank() );
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  exit(0);
+  /* --- RANK DEFICIENCY --- */
+
   {
     /* All matrices rank def due to previous stages and by themselves.
      */
@@ -163,6 +351,33 @@ int main (int argc, char** argv)
     std::vector<soth::bound_vector_t> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
     //    for( unsigned int i=2;i<NR[2];++i ) b[2][i] = std::make_pair(-i,i);
+
+    soth::HCOD hcod(NC,NB_STAGE);
+    hcod.pushBackStages( J,b );
+
+    hcod.initialize();
+
+    exitOk&=hcod.testRecomposition(&std::cout);
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+
+    exitOk &= clearIteralively(hcod);
+  }
+
+  {
+    /* Same as before, but iterative construction ---> TODO
+     */
+    const int NB_STAGE = 3;
+    const int RANKFREE[] = { 2,2,3 };
+    const int RANKLINKED[] = { 0,2,2 };
+    const int NR[] = { 4,5,6 };
+    const int NC = 12;
+
+    std::vector<Eigen::MatrixXd> J(NB_STAGE);
+    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
+    for( unsigned int s=0;s<NB_STAGE;++s )
+      for( unsigned int i=2;i<NR[s];++i )
+	b[s][i] = std::make_pair(-i,i);
 
     soth::HCOD hcod(NC,NB_STAGE);
     hcod.pushBackStages( J,b );

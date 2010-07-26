@@ -558,19 +558,23 @@ namespace soth
       {
 	M.pushColBack( L.popColFront() );
 	sizeM++;
-	// L.pushColFront( sizeM+sizeL );
-	// sizeL++;
       }
 
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
 
-    MatrixXd Yex(nc,nc); Yex.setIdentity(); Ydown.applyThisOnTheLeft(Yex);
-    sotDEBUG(5) << (MATLAB)Yex << endl;
+#ifdef SOTH_DEBUG
+    {
+      MatrixXd Yex(nc,nc); Yex.setIdentity(); Ydown.applyThisOnTheLeft(Yex);
+      sotDEBUG(5) << (MATLAB)Yex << endl;
+    }
+#endif
     for( unsigned int i=0;i<sizeA();++i )
       {
 	RowL MLi = rowML(i);
+	sotDEBUG(5) << "MLib = " << (MATLAB)MLi << endl;
 	Ydown.applyThisOnTheLeftReduced(MLi);
+	sotDEBUG(5) << "MLia = " << (MATLAB)MLi << endl;
       }
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
@@ -578,13 +582,13 @@ namespace soth
     // sizeM already increased, so sM+sL is the last col of the Hessenberg.
     if( sizeM+sizeL<=decreasePreviousRank )
       { // L increased a column.
-	L.pushColBack( sizeM+sizeL );
+	L.pushColBack( sizeM+sizeL-1 );
       }
     else if(! defDone )
       { // rank decrease ongoing...
 	const int rdef = decreasePreviousRank-sizeM;
 	assert( (rdef>0)&&(rdef<sizeL) );
-	nullifyLineDeficient( rdef,rdef-1 );
+	nullifyLineDeficient( rdef,rdef );
       }
     else
       { // already lost the rank, nothing to do.
