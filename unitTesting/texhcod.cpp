@@ -11,58 +11,6 @@
 #include <iomanip>
 
 
-
-
-void printRand( int r,int c)
-{
-
-  std::cout << "<< ";
-  for( int i=0;i<r;++i )
-    {
-      for( int j=0;j<c;++j )
-	{
-	  std::cout << std::setprecision(3) << ((rand()+0.0)/RAND_MAX*2)-1.;
-	  if( j==c-1 )
-	    { if( i==r-1 ) std::cout << " ;"; else std::cout << " ,"; }
-	  else std::cout << " ,  ";
-	}
-      if( i==r-1 ) std::cout << std::endl << std::endl;
-      else std::cout << std::endl << "         ";
-    }
-}
-
-#define PRINT_RAND( A ) std::cout << "      " << #A ; printRand(A.rows(),A.cols());
-
-void printStage( int s,int i,int r, int j )
-{
-  Eigen::MatrixXd Xhi( i,r );
-  Eigen::MatrixXd Jfr( r,j );
-
-  std::cout << "    {\n"
-    "      s = "<<s<<"; // Stage s -- size "<<i<<","<<j<<" -- rank "<<r<<"\n"
-    "      Eigen::MatrixXd Xhi( NR[ s],RANK[ s] );\n"
-    "      Eigen::MatrixXd Jfr( RANK[ s],NC );\n"
-    "      b[ s].resize(NR[ s]);\n" << std::endl;
-  PRINT_RAND(Xhi); PRINT_RAND(Jfr);
-  std::cout <<"      J[s] = Xhi*Jfr;\n"
-    "      for( unsigned int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);\n"
-    "    }"<<std::endl;
-}
-
-    // /* Automatic code generation.*/
-    // if(0)
-    //   {
-    // 	for( int s=0;s<NB_STAGE;++s )
-    // 	  printStage(s,NR[s],RANK[s],NC );
-    // 	exit(0);
-    //   }
-
-
-
-
-
-
-
 void generateDataSet( std::vector<Eigen::MatrixXd> &J,
 		      std::vector<soth::bound_vector_t> &b,
 		      soth::HCOD& hcod,
