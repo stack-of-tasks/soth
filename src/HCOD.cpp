@@ -69,6 +69,20 @@ namespace soth
   }
 
   void HCOD::
+  initialize( void )
+  {
+    /* Compute the initial COD for each stage. */
+    unsigned int previousRank = 0;
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	assert( stages[i]!=0 );
+	sotDEBUG(5) <<" --- STAGE " <<i
+		    << " --------------------------------- " << std::endl;
+	previousRank
+	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
+      }
+  }
+  void HCOD::
   update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
   {
     GivensSequence Yup;
@@ -186,6 +200,18 @@ namespace soth
   }
 
 
+  bool HCOD::
+  testRecomposition( std::ostream* os )
+  {
+    bool res = true;
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	bool sres=stages[i]->testRecomposition();
+	if( os&&(!sres) ) *os << "Stage " <<i<<" is not properly recomposed."<<std::endl;
+	res&=sres;
+      }
+    return res;
+  }
 
   void HCOD::
   show( std::ostream& os, bool check )
@@ -204,9 +230,9 @@ namespace soth
   template< typename VectorGen >
   void HCOD::activeSearch( VectorGen & u )
   {
-    assert(VectorXi::LinSpaced(0,2,3)[0] == 0 
-            && VectorXi::LinSpaced(0,2,3)[1] == 1 
-            && VectorXi::LinSpace(0,2,3)[2] == 2 
+    assert(VectorXi::LinSpaced(0,2,3)[0] == 0
+            && VectorXi::LinSpaced(0,2,3)[1] == 1
+            && VectorXi::LinSpaced(0,2,3)[2] == 2
             && "new version of Eigen might have change the order of arguments in LinSpaced, please correct");
     /*
      * foreach stage: stage.initCOD(Ir_init)

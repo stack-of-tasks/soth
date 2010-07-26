@@ -719,7 +719,7 @@ namespace soth
 
   /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
   void Stage::
-  recompose( MatrixXd& WMLY )
+  recompose( MatrixXd& WMLY ) const
   {
     sotDEBUGIN(5);
     WMLY.resize(sizeA(),nc); WMLY.setZero();
@@ -751,9 +751,63 @@ namespace soth
     sotDEBUG(5) << "WMLY = " << (MATLAB)WMLY << std::endl;
   }
 
+  bool Stage::
+  testRecomposition( void ) const
+  {
+    MatrixXd Jrec; recompose(Jrec);
+    MatrixXd Ja_;   SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(Ja_);
+    sotDEBUG(15) << "Jrec="<<(MATLAB)Jrec << endl;
+    sotDEBUG(15) << "Ja="<<(MATLAB)Ja << endl;
+    bool res = ((Jrec-Ja).norm()<=EPSILON);
+    sotDEBUG(5) <<"% J: Recomposition  " << ((res)?"OK.":"wrong.") << std::endl;
+
+    VectorXd ea_;
+    bool vres = (e-eactive(ea_)).norm()<=EPSILON;
+    sotDEBUG(15) << "e="<<(MATLAB)e << endl;
+    sotDEBUG(15) << "ea="<<(MATLAB)eactive(ea_) << endl;
+    sotDEBUG(5) <<"% e: Recomposition  " << ((vres)?"OK.":"wrong.") << std::endl;
+
+    return res&&vres;
+  }
+
+   /* Return a sub matrix containing the active rows of J, in the
+   * same order as given by W. J_ is a matrix where th full
+   * J is stored (workspace). */
+  SubMatrix<MatrixXd,RowPermutation> Stage::
+  Jactive( MatrixXd& J_ ) const
+  {
+    J_.resize(nr,nc); J_.setConstant(-1.11111);
+    for( unsigned int i=0;i<nr;++i )
+      {
+	if( activeSet.isActive(i) )
+	  {
+	    J_.row(activeSet.where(i)) = J.row(i);
+	    sotDEBUG(15) << "where(" << i << ") = " << activeSet.where(i) << endl;
+	  }
+      }
+
+    return SubMatrix<MatrixXd,RowPermutation> (J_,W.getRowIndices());
+  }
+
+  /* Return a sub vector containing the active rows of e, in the
+   * same order as given by W. */
+  SubMatrix<VectorXd,RowPermutation> Stage::
+  eactive( VectorXd& e_ ) const
+  {
+    e_.resize(nr); e_.setConstant(-1.11111);
+    for( unsigned int i=0;i<nr;++i )
+      {
+	if( activeSet.isActive(i) )
+	  {
+	    e_(activeSet.where(i)) = bounds[i].getBound(activeSet.whichBound(i));
+	  }
+      }
+
+    return  SubVectorXd(e_,W.getRowIndices());
+  }
 
   void Stage::
-  show( std::ostream& os, unsigned int stageRef, bool check )
+  show( std::ostream& os, unsigned int stageRef, bool check ) const
   {
     sotDEBUGIN(5);
 

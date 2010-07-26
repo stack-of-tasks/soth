@@ -236,8 +236,20 @@ namespace soth
 
     /* --- CHECK ------------------------------------------------------------ */
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
-    void recompose( MatrixXd& WMLY );
-    void show( std::ostream& os, unsigned int stageRef, bool check=false );
+    void recompose( MatrixXd& WMLY ) const;
+    void show( std::ostream& os, unsigned int stageRef, bool check=false ) const;
+
+    /* Return a sub matrix containing the active rows of J, in the
+     * same order as given by W. J_ is a matrix where th full
+     * J is stored (workspace). */
+    SubMatrix<MatrixXd,RowPermutation>   Jactive( MatrixXd& J_ ) const ;
+    /* Return a sub vector containing the active rows of e, in the
+     * same order as given by W. */
+    SubMatrix<VectorXd,RowPermutation>  eactive( VectorXd& e_ ) const;
+
+    /* Return true iff Jactive=recompose and eactive=e. */
+    bool testRecomposition( void ) const;
+
 
   public:
     /* --- ACCESSORS --- */

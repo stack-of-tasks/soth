@@ -82,12 +82,12 @@ typedef Matrix<typename Base::Index, MatrixType::ColsAtCompileTime,1> ColIndices
     m_colIndices = colIndices;
   }
 
-  inline const RowIndices& getRowIndices()
+  inline const RowIndices& getRowIndices() const
   {
     return m_rowIndices;
   }
 
-  inline const ColIndices& getColIndices()
+  inline const ColIndices& getColIndices() const
   {
     return m_colIndices;
   }
@@ -257,7 +257,7 @@ public:
     m_colIndices = colIndices;
   }
 
-  inline const ColIndices& getColIndices()
+  inline const ColIndices& getColIndices() const
   {
     return m_colIndices;
   }
@@ -367,7 +367,7 @@ public:
     m_rowIndices = rowIndices;
   }
 
-  inline const RowIndices& getRowIndices()
+  inline const RowIndices& getRowIndices() const
   {
     return m_rowIndices;
   }

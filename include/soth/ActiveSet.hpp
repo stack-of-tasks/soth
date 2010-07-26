@@ -114,7 +114,7 @@ namespace soth
       return res;
     }
 
-    void disp( std::ostream& os )
+    void disp( std::ostream& os ) const
     {
       for( unsigned int i=0;i<v.size();++ i )
 	{
