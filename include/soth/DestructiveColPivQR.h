@@ -297,7 +297,11 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   for(Index k = 0; k < cols; ++k)
     m_colSqNorms.coeffRef(k) = m_r.col(k).squaredNorm();
 
-  RealScalar threshold_helper = m_colSqNorms.maxCoeff() * ei_abs2(epsilon()) /rows;
+  //RealScalar threshold_helper = m_colSqNorms.maxCoeff() * ei_abs2(epsilon()) /rows;
+  // The threshold should be decided wrt. to the norm of ML, while this class only consider
+  // the norm of L -> TODO: add an initialization of threshold by EPS*norm(L) ... is it really
+  // necessary, 'cos it is time consuming.
+  RealScalar threshold_helper = ei_abs2(epsilon());
 
   m_nonzero_pivots = size; // the generic case is that in which all pivots are nonzero (invertible case)
   m_maxpivot = RealScalar(0);

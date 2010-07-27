@@ -53,8 +53,8 @@ namespace soth
     if( isAllRow(initialIr) ) { computeInitalJY_allRows(); return; }
     if( initialIr.nbActive()==0 )
       {
-	sotERROR << "TODO: initial IR empty." << std::endl;
-	/*TODO*/assert( false&&"TODO" );
+	sotDEBUG(5) << "Initial IR empty." << std::endl;
+	ML_.setZero(); return;
       }
 
     activeSet=initialIr;
@@ -110,16 +110,18 @@ namespace soth
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
     M.setColRange(0,previousRank);    M.setRowRange(0,sizeA());  sizeM=previousRank;
     L.setColRange(previousRank,nc);   L.setRowRange(0,sizeA());  sizeL=sizeA();
+
     sotDEBUG(15) << "MY = " << (MATLAB)M << std::endl;
     sotDEBUG(15) << "LY = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
     sotDEBUG(25) << "sizesAML = [" << sizeA() << ", " << sizeM << ", " << sizeL << "]." << std::endl;
 
     /* A=L'; mQR=QR(A); */
-    if (L.cols() == 0)
+    if( (L.cols() == 0)||(L.rows()==0) )
     {
       sotDEBUG(5) << "col size of L is null, skip the end of initialization" << std::endl;
       L.setRowIndices(VectorXi());
+      L.setColIndices(VectorXi());
       sizeL=0;
       W.setRowRange(0,sizeA());
       W.setColRange(0,sizeA());
@@ -493,7 +495,7 @@ namespace soth
     for( Index i=nc-1;i>=sizeM;--i )
       {
 	norm2+=JupY(i)*JupY(i);
-	if( norm2>EPSILON )
+	if( norm2>EPSILON*EPSILON )
 	  { rankJ=i+1; break; }
       }
     sotDEBUG(5) << "JupY = " << (MATLAB)JupY << endl;
@@ -556,7 +558,8 @@ namespace soth
     bool defDone = decreasePreviousRank<=sizeM;
     if(! defDone )
       {
-	M.pushColBack( L.popColFront() );
+	if( sizeL>0 ) M.pushColBack( L.popColFront() );
+	else M.pushColBack(sizeM);
 	sizeM++;
       }
 
@@ -582,13 +585,13 @@ namespace soth
     // sizeM already increased, so sM+sL is the last col of the Hessenberg.
     if( sizeM+sizeL<=decreasePreviousRank )
       { // L increased a column.
-	L.pushColBack( sizeM+sizeL-1 );
+	if( sizeL>0 )L.pushColBack( sizeM+sizeL-1 );
       }
     else if(! defDone )
       { // rank decrease ongoing...
 	const int rdef = decreasePreviousRank-sizeM;
 	assert( rdef<sizeL );
-	  nullifyLineDeficient( rdef,rdef );
+	nullifyLineDeficient( rdef,rdef );
       }
     else
       { // already lost the rank, nothing to do.
@@ -719,7 +722,11 @@ namespace soth
   }
 
   unsigned int Stage::rowSize( const Index r )
-  { return (r<sizeN())?sizeM:sizeM+r-sizeN()+1; }
+  {
+    if( r<sizeN() ) return sizeM;
+    else return std::min( sizeM+r-sizeN()+1,nc );
+    //return (r<sizeN())?sizeM:sizeM+r-sizeN()+1;
+ }
 
   /* --- TEST RECOMPOSE ----------------------------------------------------- */
   /* --- TEST RECOMPOSE ----------------------------------------------------- */
