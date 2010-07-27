@@ -8,6 +8,7 @@
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
 #include "MatrixRnd.h"
+#include <sys/time.h>
 #include <iomanip>
 
 
@@ -91,26 +92,39 @@ clearIteralively( soth::HCOD& hcod )
 	{
 	  hcod.downdate(s,0);
 	  exitOk&=hcod.testRecomposition(&std::cout);
+	  assert( exitOk );
 	}
     }
   return exitOk;
 }
 
+
+
 int main (int argc, char** argv)
 {
   bool exitOk=true;
   const int executeAll = 1;
-  sotDebugTrace::openFile();
+  //sotDebugTrace::openFile();
 
   Eigen::MatrixXd Massert(5,9);
   soth::MatrixRnd::randomize( Massert );
   assert( std::abs(Massert(1,2)-0.985007)<1e-5 );
+
+
+  {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    int seed = tv.tv_usec % 7919;
+    std::cout << "seed = " << seed << std::endl;
+    soth::Random::setSeed(seed);
+  }
 
   /* --- INITIALIZATION TESTS ----------------------------------------------- */
   /* --- INITIALIZATION TESTS ----------------------------------------------- */
   /* --- INITIALIZATION TESTS ----------------------------------------------- */
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* All matrices full rank and independant, but the last one due to
      * lack of DOF.
      */
@@ -133,6 +147,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* All matrices full rank, updating rows until the last rank saturates
      * du to the matrix size. Then remove all the lines from the first.
      */
@@ -162,6 +177,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Stage 1 has 1 rows, Stage 2 is rank 1, Stage 3 projected as rank 1,
      * Stage 4 has 0 rows, Stage 5 projected is rank 0.
      */
@@ -196,8 +212,36 @@ int main (int argc, char** argv)
   /* --- UPDATE TESTS ------------------------------------------------------- */
   /* --- UPDATE TESTS ------------------------------------------------------- */
 
+  /* :CHECK LIST:
+   *  ==========
+   * UPDATE:
+   *  1. PRE on current stage:
+   *   1a. Stage is empty.
+   *   1b. Stage is not empty.
+   *    1ba. Stage is rank-null.
+   *    1bb. Stage is not rank-null.
+   *     1bba. Stage is full rank.
+   *      1bbaa. Stage is overshoot (ie sizeM+sizeL==nc)
+   *      1bbab. Stage is not overshoot (ie sizeM+sizeL<nc)
+   *     1bbb. Stage is rank deficient.
+   *      1bbba. Stage is overshoot (ie sizeM+sizeL==nc)
+   *      1bbbb. Stage is not overshoot (ie sizeM+sizeL<nc)
+   *
+   *  2. POST on current stage:
+   *   2a. Rank didn't increase.
+   *   2b. Rank increase.
+   *    2ba. Total rank increase.
+   *    2bb. Total rank did not increase.
+   *     2bba. Rank increase caused an overshoot (ie, at last non-void stage, sM+sL==nc).
+   *     2bbb. No overshoot.
+   *      2bbba. Rank increase caused a rank closure (ie rank==0 on a upper stage).
+   *      2bbbb. No rank closure.
+   */
+
   if(executeAll){
-    /* Insertion of a full rank line, increasing the total rank, on stages first, middle, last.
+    //sotDebugTrace::openFile();
+    /* Insertion of a full rank line, increasing the total rank, on stages first,
+     * middle, last.
      */
     const int NB_STAGE = 3;
     const int RANK[] = { 3,3,3 };
@@ -230,6 +274,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion of a rank-def line, preserving the total rank, on stages first, middle, last.
      */
     const int NB_STAGE = 3;
@@ -265,6 +310,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion of a full rank line, increasing stage rank but not the total rank,
      * on stages first, and middle (not last, this case is not possible).
      */
@@ -316,6 +362,7 @@ int main (int argc, char** argv)
 
   /* --- Overshoot --- */
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion at the last stage when rank==nc (direct overshoot possible).
      */
     const int NB_STAGE = 5;
@@ -351,6 +398,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion at the last stage when rank==nc (indirect overshoot possible).
      */
     const int NB_STAGE = 5;
@@ -387,6 +435,7 @@ int main (int argc, char** argv)
 
   /* --- Closure --- */
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion of a full rank line that causes the closure of a stage above.
      *  1.   Rank distribution is 2-2-2, with the 2 last stages being link to the
      *       4 first inactive constraints of stage 0.
@@ -454,6 +503,7 @@ int main (int argc, char** argv)
 
   /* --- Ouverture --- */
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion in a stage with 0 rank, then removal (back to 0, closure),
      * then reintro (opening).
      */
@@ -493,7 +543,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
-    /* Opening the first stage. */
+    /* Opening the first stage and next closing the last one. */
     const int NB_STAGE = 3;
     const int RANKFREE[] = { 5,5,5 };
     const int RANKLINKED[] = { 0,0,0 };
@@ -516,8 +566,9 @@ int main (int argc, char** argv)
 	assert(hcod.rank()==10);          assert( hcod[0].rank()==i );
 	assert( hcod[1].rank()==5 );    assert( hcod[2].rank()==5-i );
 	hcod.update( 0,std::make_pair(i,soth::Bound::BOUND_INF) );
+	exitOk&=hcod.testRecomposition(&std::cout);
+	assert(exitOk);
       }
-    if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
     assert(hcod.rank()==10);          assert( hcod[0].rank()==5 );
     assert( hcod[1].rank()==5 );    assert( hcod[2].rank()==0 );
 
@@ -529,6 +580,7 @@ int main (int argc, char** argv)
   /* --- DOWNDATE TESTS ----------------------------------------------------- */
   /* --- DOWNDATE TESTS ----------------------------------------------------- */
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a full rank line, with decrease of the total rank.
      */
     const int NB_STAGE = 3;
@@ -563,6 +615,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a rank def line, with no decrease of neither the stage
      * nor the total rank.
      */
@@ -598,6 +651,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Insertion of a full rank line, decreasing stage rank but not the total rank,
      * on stages first, and middle (not last, this case is not possible).
      */
@@ -624,23 +678,25 @@ int main (int argc, char** argv)
     hcod.pushBackStages( J,b );
 
     hcod.initialize();
+    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
     exitOk&=hcod.testRecomposition(&std::cout);
-    //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-    assert( hcod[0].rank()==3 );
-    assert( hcod[1].rank()==2 );
-    assert( hcod[2].rank()==2 );
+    assert( hcod.rank()==7 );       assert( hcod[0].rank()==3 );
+    assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==2 );
     assert( hcod[0].gete()(hcod[0].where(2),0) == 3 );
+    assert( exitOk );
 
-    int rank=hcod.rank();
-    for( int i=0;i<NB_STAGE-1;++i )
-      {
-	const int rankStage = hcod[i].rank();
-	hcod.downdate( i,hcod[i].where(NR[i]-1) );
-	exitOk&=hcod.testRecomposition(&std::cout);
-	assert( hcod.rank()==rank );
-	assert( rankStage-1 == hcod[i].rank() );
-      }
+    hcod.downdate( 0,hcod[0].where(NR[0]-1) );
+    exitOk&=hcod.testRecomposition(&std::cout);
+    assert( hcod.rank()==7 );       assert( hcod[0].rank()==2 );
+    assert( hcod[1].rank()==3 );    assert( hcod[2].rank()==2 );
+    assert( exitOk );
+
+    hcod.downdate( 1,hcod[1].where(NR[1]-1) );
+    exitOk&=hcod.testRecomposition(&std::cout);
+    assert( hcod.rank()==7 );       assert( hcod[0].rank()==2 );
+    assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==3 );
+    assert( exitOk );
 
     exitOk &= clearIteralively(hcod);
     assert(exitOk);
@@ -648,6 +704,7 @@ int main (int argc, char** argv)
 
   // Opening at rank liberation
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a row linked to an upper 0-rank stage, causing rank opening.
      */
     const int NB_STAGE = 3;
@@ -673,7 +730,6 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     assert(hcod.rank()==3);          assert( hcod[0].rank()==2 );
     assert( hcod[1].rank()==1 );    assert( hcod[2].rank()==0 );
-    if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
     hcod.downdate( 0,0 );
     exitOk&=hcod.testRecomposition(&std::cout);
@@ -686,6 +742,7 @@ int main (int argc, char** argv)
 
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a full-rank row, causing rank-0 at the stage. Second, the
      * same, but causing sizeA==0 at the stage.
      */
@@ -730,6 +787,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a full-rank row, causing rank-0 at the stage. Second, the
      * same, but causing sizeA==0 at the stage.
      */
@@ -771,6 +829,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a line in the deficient-overshoot last stage, causing
      * a direct overshoot removal.
      */
@@ -805,6 +864,7 @@ int main (int argc, char** argv)
 
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Removal of a line above the deficient-overshoot last stage, causing
      * an indirect overshoot removal.
      */
@@ -838,6 +898,7 @@ int main (int argc, char** argv)
   }
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Closing the first stage. */
     const int NB_STAGE = 3;
     const int RANKFREE[] = { 5,5,5 };
@@ -875,6 +936,7 @@ int main (int argc, char** argv)
   /* --- RANK DEFICIENCY ---------------------------------------------------- */
 
   if(executeAll){
+    //sotDebugTrace::openFile();
     /* Iterative construction from scrach.
      */
     const int NB_STAGE = 3;

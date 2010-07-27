@@ -206,7 +206,7 @@ namespace soth
     const Index r = (in_r<0)?row-1:in_r;
     for( Index i=r-1;i>=0;--i )
       {
-	if( std::abs(L(row,i))<EPSILON ) continue;
+	//if( std::abs(L(row,i))<EPSILON ) continue; //{ ML_(Irn(row),L.getColIndices()(i)) = 0; continue; } // PSEUDOZEROS
 	Givensd G1;
 	G1.makeGivens(L(i,i),L(row,i));
 	Block<MatrixXd> ML(ML_,0,0,nr,sizeM+r);
@@ -348,7 +348,8 @@ namespace soth
     L.pushColFront( M.popColBack() );
     sizeM--;
 
-    /* Check is one of the M's grown. */
+    /* Check if one of the M's grown. */
+    //TODO: search from the end: for( Index i=sizeN()-1;i>=0;--i )
     for( Index i=0;i<sizeN();++i )
       {
 	if( std::abs(ML_(Irn(i),sizeM)) > EPSILON )
@@ -358,11 +359,13 @@ namespace soth
 	    Block<MatrixXd> ML(ML_,0,0,nr,sizeM+1);
 	    for( Index j=i+1;j<sizeN();++j )
 	      {
-		if( std::abs(ML_(Irn(j),sizeM))<=EPSILON ) continue;
+		// if( std::abs(ML_(Irn(j),sizeM))<=EPSILON )
+		//   { sotDEBUG(5) << "continue..." << endl; continue; }  // PSEUDOZERO
 		Givensd G1;
 		G1.makeGivens(ML_(Irn(i),sizeM),ML_(Irn(j),sizeM));
 		ML.applyOnTheLeft( Irn(i),Irn(j),G1.transpose());
 		W_.applyOnTheRight( Irn(i),Irn(j),G1);
+		assert( std::abs(ML_(Irn(j),sizeM))<EPSILON*EPSILON ); ML_(Irn(j),sizeM)=0; // PSEUDOZERO
 	      }
 	    /* Commute the lines in L. */
 	    M.permuteRow(i,sizeN()-1);
@@ -381,6 +384,7 @@ namespace soth
     regularizeHessenberg(Ydown);
     L.popColBack();
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    for( int i=0;i<sizeN();++i ) { ML_(Irn(i),sizeM)=0.; } // PSEUDOZEROS
     return false;
   }
 
@@ -424,7 +428,8 @@ namespace soth
 
     for( unsigned int i=col+1;i<sizeA();++i )
       {
-	if( std::abs(W(row,i)-1)< EPSILON ) break;
+	/* Compare ||rest||^2 = 1-(1-x)^2 ~ 2x, with x=Wrc. */
+	if( std::abs(W(row,col)-1)< EPSILON*EPSILON/2 ) break;
 
 	/* Wt(row,col) VS Wt(row,i) */
 	Givensd G1;

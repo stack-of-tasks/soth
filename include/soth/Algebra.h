@@ -89,7 +89,7 @@ namespace soth
       for(int i=0;i<m1.size();++i )
 	{
 	  if( m1[i]<0 ) ostmp << "-"; else ostmp << " ";
-	  if(MATLAB::fullPrec||std::abs(m1[i])>1e-6) ostmp <<  std::abs(m1[i]);
+	  if(MATLAB::fullPrec||(std::abs(m1[i])>1e-6)) ostmp <<  std::abs(m1[i]);
 	  else { ostmp << "0"; }
 	  if( m1.size()!=i+1 )
 	    {
@@ -115,14 +115,16 @@ namespace soth
   template< typename Derived >
     void MATLAB::initMatrix( const MatrixBase<Derived> & m1 )
     {
-      std::ostringstream os; os << "...\n[ ";
+      std::ostringstream os;
+      if( fullPrec ) { os << "[...\n" << m1 << "];"; str=os.str(); return; }
+      os << "...\n[ ";
       std::ostringstream ostmp;
       for(int i=0;i<m1.rows();++i )
 	{
 	  for(int j=0;j<m1.cols();++j )
 	    {
-	      if( m1(i,j)<0 ) ostmp << "-"; else ostmp << " ";
-	      if(MATLAB::fullPrec||std::abs(m1(i,j))>1e-6) ostmp <<  std::abs(m1(i,j));
+	      if( m1(i,j)<0 ) ostmp <<"-"; else ostmp << " ";
+	      if(MATLAB::fullPrec||(std::abs(m1(i,j))>1e-6)) ostmp <<  std::abs(m1(i,j));
 	      else { ostmp << "0"; }
 	      if( m1.cols()!=j+1 )
 		{
