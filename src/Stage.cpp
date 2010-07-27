@@ -869,14 +869,23 @@ namespace soth
     os << "L"<<stageRef<<" = " << (MATLAB)L << std::endl;
 
     if( check )
+    {
+      MatrixXd Jrec; recompose(Jrec);
+      if (Jrec.rows()>0)
       {
-	MatrixXd Jrec; recompose(Jrec);
-	sotDEBUG(5) << "Jrec="<<(MATLAB)Jrec << endl;
-	if((Jrec-Ja).norm()>1e-6) os << "Jrec"<<stageRef<<" = " << (MATLAB)Jrec << std::endl;
-	else os <<"% Recomposition OK. " << std::endl;
-	if((e-ea).norm()<=1e-6) sotDEBUG(5) <<"% Recomposition e OK. " << std::endl;
-	else os << "% Recomposition e not OK. " << std::endl;
+        sotDEBUG(5) << "Jrec="<<(MATLAB)Jrec << endl;
+        if((Jrec-Ja).norm()>1e-6) os << "Jrec"<<stageRef<<" = " << (MATLAB)Jrec << std::endl;
+        else os <<"% Recomposition OK. " << std::endl;
+        if((e-ea).norm()<=1e-6) sotDEBUG(5) <<"% Recomposition e OK. " << std::endl;
+        else os << "% Recomposition e not OK. " << std::endl;
       }
+      else
+      {
+        sotDEBUG(5) << "Jrec="<<(MATLAB)Jrec << endl;
+        os <<"% Recomposition OK. " << std::endl;
+        sotDEBUG(5) <<"% Recomposition e OK. " << std::endl;
+      }
+    }
   }
 
   ActiveSet Stage::_allRows(0);
