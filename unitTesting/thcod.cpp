@@ -52,6 +52,6 @@ int main (int argc, char** argv)
         hcod.setInitialActiveSet( Eigen::VectorXi::Zero(1), i);
     }
 
-  hcod.solve();
-  //hcod.show(std::cout,true);
+  hcod.initialize();
+  hcod.show(std::cout,true);
 }

@@ -24,7 +24,7 @@ namespace soth
     void active( unsigned int ref, Bound::bound_t type, unsigned int row )
     {
       assert( ref<v.size() );
-      assert( v[ref].first == Bound::BOUND_NONE );
+      assert( (v[ref].first == Bound::BOUND_NONE)&&"Constraint has not been properly unactivated." );
       assert( row<v.size() );
       assert( freerow[row] );
       assert( type!=Bound::BOUND_NONE );
