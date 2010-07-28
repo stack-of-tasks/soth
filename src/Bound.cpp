@@ -93,6 +93,39 @@ namespace soth
   }
 
 
+  std::ostream& operator<< (std::ostream& os, const Bound&b )
+  {
+    switch( b.type )
+      {
+      case Bound::BOUND_INF:
+	os << "[ " << b.valInf << ", +inf ]";
+	break;
+      case Bound::BOUND_SUP:
+	os << "[ -inf ," << b.valSup << " ]";
+	break;
+      case Bound::BOUND_TWIN:
+	os << "[ " << b.valTwin <<", " << b.valTwin << " ]";
+	break;
+      case Bound::BOUND_DOUBLE:
+	os << "[ " << b.valInf <<", " << b.valSup << " ]";
+	break;
+      case Bound::BOUND_NONE:
+	os << "[ -inf, +inf ]";
+      }
+    return os;
+  }
+  std::ostream& operator<< (std::ostream& os, const bound_vector_t& t)
+  {
+    os << "[ ";
+    for( bound_vector_t::const_iterator iter=t.begin();
+	 iter!=t.end();++iter )
+      {
+	os << *iter;
+	if( iter+1 != t.end() ) os <<"; "; else os<<" ]";
+      }
+    return os;
+  }
+
 
 
 }; // namespace soth

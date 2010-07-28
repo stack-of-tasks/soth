@@ -13,10 +13,16 @@ namespace soth
     ,Y(sizeProblem)
     ,stages(0),initialActiveSets(0)
     ,solution(sizeProblem)
+    ,du(sizeProblem),Ytu(sizeProblem),Ytdu(sizeProblem),rho(sizeProblem)
+    ,isReset(false),isInit(false),isSolutionCpt(false)
   {
     stages.reserve(nbStage);
     initialActiveSets.reserve(nbStage);
   }
+
+  /* --- SETTERS/GETTERS ---------------------------------------------------- */
+  /* --- SETTERS/GETTERS ---------------------------------------------------- */
+  /* --- SETTERS/GETTERS ---------------------------------------------------- */
 
   void HCOD::
   pushBackStage( const MatrixXd & J, const bound_vector_t & bounds )
@@ -27,6 +33,7 @@ namespace soth
 
     initialActiveSets.resize( s+1 );
     initialActiveSets[s].resize(0);
+    isInit=false;
   }
   void HCOD::
   pushBackStage( const MatrixXd & J, const bound_vector_t & bounds,const VectorXi& Ir0 )
@@ -71,104 +78,6 @@ namespace soth
     return initialActiveSets[i];
   }
 
-  void HCOD::
-  reset( void )
-  {
-    solution.setZero();
-    throw "TODO";
-  }
-
-  void HCOD::
-  initialize( void )
-  {
-    /* Compute the initial COD for each stage. */
-    unsigned int previousRank = 0;
-    for( unsigned int i=0;i<stages.size();++i )
-      {
-	assert( stages[i]!=0 );
-	sotDEBUG(5) <<" --- STAGE " <<i
-		    << " --------------------------------- " << std::endl;
-	previousRank
-	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
-      }
-    Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
-  }
-  void HCOD::
-  update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
-  {
-    GivensSequence Yup;
-    unsigned int rankDef = stages[stageUp]->update(cst,Yup);
-    for( unsigned int i=stageUp+1;i<stages.size();++i )
-      {
-	stages[i]->propagateUpdate(Yup,rankDef);
-      }
-    updateY(Yup);
-  }
-  void HCOD::
-  downdate( const unsigned int & stageDown, const unsigned int & rowDown )
-  {
-    GivensSequence Ydown;
-    bool propag=stages[stageDown]->downdate(rowDown,Ydown);
-    for( unsigned int i=stageDown+1;i<stages.size();++i )
-      {
-     	propag = stages[i]->propagateDowndate(Ydown,propag);
-      }
-    updateY(Ydown);
-  }
-
-  void HCOD::
-  solve( void )
-  {
-    /* Compute the initial COD for each stage. */
-    unsigned int previousRank = 0;
-    for( unsigned int i=0;i<stages.size();++i )
-      {
-	assert( stages[i]!=0 );
-
-	sotDEBUG(5) <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
-	previousRank = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
-      }
-
-    /* Initial solve. */
-    solution.setZero();
-    for( unsigned int i=0;i<stages.size();++i )
-      {
-	stages[i]->solve(solution);
-      }
-    sotDEBUG(5) << "Ytu = " << (MATLAB)solution << std::endl;
-    Y.applyThisOnVector( solution );
-    sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
-
-    show(std::cout,true);
-    Y.computeExplicitly();
-
-    computeLambda();
-    std::cout << "lambda = " << (MATLAB)lambda << std::endl;
-    std::cout << "err = " << std::endl;
-    for (int i=0; i<stages.size(); ++i)
-      std::cout << "   " << (MATLAB)stages[i]->computeErr(solution) << std::endl;
-
-    std::cout << " === DOWN ================================ " << std::endl;
-    const unsigned int TO_DOWN = 0;
-    const unsigned int ROW_DOWN = 0;
-    downdate(TO_DOWN,ROW_DOWN);
-    show(std::cout,true);
-
-    std::cout << " === UP ================================ " << std::endl;
-    const unsigned int TO_UP = 0;
-    const unsigned int CSTR_UP = 5;
-    update( TO_UP,std::make_pair(CSTR_UP,Bound::BOUND_INF) );
-    show(std::cout,true);
-
-  }
-
-  void HCOD::
-  updateY( const GivensSequence& Yup )
-  {
-    Y *= Yup;
-    // TODO: update Ytu.
-  }
-
   int HCOD::sizeA() const
   {
     int s=0;
@@ -185,32 +94,132 @@ namespace soth
     return r;
   }
 
-  //assume the variable 'solution' contains Y^T*u
-  void HCOD::computeLambda()
+  /* --- DECOMPOSITION ------------------------------------------------------- */
+  /* --- DECOMPOSITION ------------------------------------------------------- */
+  /* --- DECOMPOSITION ------------------------------------------------------- */
+
+  void HCOD::
+  reset( void )
   {
-    int s = sizeA();
-    lambda.resize(s);
-    //last lambda
-    int sn = stages.back()->sizeA();
-    lambda.tail(sn) = stages.back()->computeErr(solution);
-    s -= sn;
-    VectorXd ro = stages.back()->computeRo(solution);
-    assert(ro.size() == rank() - stages.back()->rank());
-    int r = ro.size();
+    isReset=true;
+    isInit=false;
+    isSolutionCpt=false;
 
-    for (int i=stages.size()-2; i>=0; --i)
-    {
-      int si = stages[i]->sizeA();
-      s -= si;
+    solution.setZero(); Ytu.setZero();
+    for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
+      {   (*iter)->reset();   }
+  }
 
-      VectorBlock<VectorXd> l=lambda.segment(s, si);
-      VectorBlock<VectorXd> roh = ro.head(r);
-      stages[i]->computeLagrangeMultipliers(l,roh);
-      r -= stages[i]->rank();
-    }
+  void HCOD::
+  initialize( void )
+  {
+    if(! isReset) reset(); // TODO: should it be automatically reset?
+    assert( isReset&&(!isInit) ); isInit=true;
+
+    /* Compute the initial COD for each stage. */
+    unsigned int previousRank = 0;
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	assert( stages[i]!=0 );
+	sotDEBUG(5) <<" --- STAGE " <<i
+		    << " --------------------------------- " << std::endl;
+	previousRank
+	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
+      }
+    Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+  }
+  void HCOD::
+  update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
+  {
+    assert(isInit);
+    GivensSequence Yup;
+    unsigned int rankDef = stages[stageUp]->update(cst,Yup);
+    for( unsigned int i=stageUp+1;i<stages.size();++i )
+      {
+	stages[i]->propagateUpdate(Yup,rankDef);
+      }
+    updateY(Yup);
+  }
+  void HCOD::
+  downdate( const unsigned int & stageDown, const unsigned int & rowDown )
+  {
+    assert(isInit);
+    GivensSequence Ydown;
+    bool propag=stages[stageDown]->downdate(rowDown,Ydown);
+    for( unsigned int i=stageDown+1;i<stages.size();++i )
+      {
+     	propag = stages[i]->propagateDowndate(Ydown,propag);
+      }
+    updateY(Ydown);
   }
 
 
+
+  void HCOD::
+  updateY( const GivensSequence& Yup )
+  {
+    Y *= Yup;
+    // TODO: update Ytu.
+  }
+
+
+  /* --- COMPUTE ------------------------------------------------------------ */
+  /* --- COMPUTE ------------------------------------------------------------ */
+  /* --- COMPUTE ------------------------------------------------------------ */
+
+  /* Assume the variable 'Ytu' contains Y^T*u.
+   * The result is stored in the stages (getLagrangeMultipliers()).
+   */
+  void HCOD::
+  computeLagrangeMultipliers()
+  {
+    assert( isSolutionCpt );
+    stages.back()->computeRho(Ytu,rho,true);
+    sotDEBUG(5) << "rho = " << (MATLAB)rho << std::endl;
+    for( stage_riter_t iter=stages.rbegin()+1;iter!=stages.rend();++iter )
+      {
+	(*iter)->computeLagrangeMultipliers(rho);
+      }
+  }
+
+  void HCOD::
+  computeSolution(  bool compute_u )
+  {
+    assert(isInit);
+
+    /* Initial solve. */
+    Ytdu.setZero(); /* Ytdu.head(nullspace) only could be set to 0.
+		     *  Does it make any diff? */
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	stages[i]->computeSolution(Ytu,Ytdu,!isSolutionCpt);
+      }
+    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytdu << std::endl;
+    if( compute_u )
+      {
+	Y.multiply(Ytdu,du);
+	sotDEBUG(5) << "u = " << (MATLAB)du << std::endl;
+      }
+
+    isSolutionCpt=true;
+  }
+
+  void HCOD::
+  makeStep( double tau, bool compute_u )
+  {
+    Ytu += tau*Ytdu;
+    if( compute_u ) { solution += tau*du; }
+  }
+  void HCOD::
+  makeStep( bool compute_u )
+  {
+    Ytu += Ytdu;
+    if( compute_u ) { solution += du; }
+  }
+
+  /* --- TESTS -------------------------------------------------------------- */
+  /* --- TESTS -------------------------------------------------------------- */
+  /* --- TESTS -------------------------------------------------------------- */
   bool HCOD::
   testRecomposition( std::ostream* os )
   {
@@ -224,17 +233,36 @@ namespace soth
     return res;
   }
 
+  bool HCOD::
+  testLagrangeMultipliers( std::ostream* os ) const
+  {
+    VectorXd verifL(sizeProblem); verifL.setZero();
+    for( int i=0;i<stages.size();++i )
+      {
+	const Stage s = *stages[i];
+	MatrixXd J_(s.nbConstraints(),sizeProblem);
+	verifL += s.Jactive(J_).transpose()*s.getLagrangeMultipliers();
+      }
+    sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+
+    const double n = verifL.norm();
+    const bool res = n<1e-6;
+    if(os&&(!res)) (*os) << "TestLagrangian failed: norm is " << n << "."<<std::endl;
+    return res;
+  }
+
   void HCOD::
   show( std::ostream& os, bool check )
   {
     for( unsigned int i=0;i<stages.size();++i )
       {
-	stages[i]->show(os,i,check);
+	stages[i]->show(os,i+1,check);
       }
 
     MatrixXd Yex(sizeProblem,sizeProblem); Yex.setIdentity();
     Y.applyThisOnTheLeft(Yex);
     os<<"Y = " << (MATLAB)Yex << std::endl;
+    if( isSolutionCpt ) { os << "u = " << (MATLAB)solution << std::endl; }
   }
 
 

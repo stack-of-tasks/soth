@@ -4,41 +4,70 @@
 
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
+#include "MatrixRnd.h"
 
+void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
+			       std::vector<soth::bound_vector_t> &b,
+			       const int NB_STAGE,
+			       const int RANKFREE[],
+			       const int RANKLINKED[],
+			       const int NR[],
+			       const int NC )
+{
+  /* Initialize J and b. */
+  J.resize(NB_STAGE);
+  b.resize(NB_STAGE);
+
+  unsigned int s = 0;
+  for( int s=0;s<NB_STAGE;++s )
+    {
+      b[ s].resize(NR[ s]);
+
+      assert( (RANKFREE[s]>0)||(RANKLINKED[s]>0) );
+
+      J[s].resize( NR[s],NC ); J[s].setZero();
+      if( RANKFREE[s]>0 )
+	{
+	  Eigen::MatrixXd Xhifree( NR[s],RANKFREE[s] );
+	  Eigen::MatrixXd Jfr( RANKFREE[s],NC );
+	  soth::MatrixRnd::randomize( Xhifree );
+	  soth::MatrixRnd::randomize( Jfr );
+	  if( Xhifree.cols()>0 ) J[s] += Xhifree*Jfr;
+	}
+      if( RANKLINKED[s]>0 )
+	{
+	  Eigen::MatrixXd Xhilinked( NR[s],RANKLINKED[s] );
+	  soth::MatrixRnd::randomize( Xhilinked );
+	  for( int sb=0;sb<s;++sb )
+	  {
+	    Eigen::MatrixXd Alinked( RANKLINKED[s],NR[sb] );
+	    soth::MatrixRnd::randomize( Alinked );
+	    J[s] += Xhilinked*Alinked*J[sb];
+	  }
+	}
+
+      for( unsigned int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
+    }
+}
 
 int main (int argc, char** argv)
 {
   sotDebugTrace::openFile();
   const int NB_STAGE = 3;
-  const int RANK[] = { 1, 4, 3, 5, 3 };
-  const int NR[] = { 1, 4, 5, 5, 8 };
+  const int RANKFREE[]   = { 3, 4, 3,     5, 3 };
+  const int RANKLINKED[] = { 2, 2, 1,     5, 3 };
+  const int NR[]         = { 5, 4, 5,     5, 8 };
   const int NC = 12;
 
   /* Initialize J and b. */
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
   std::vector<soth::bound_vector_t> b(NB_STAGE);
+  generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
-      Eigen::MatrixXd Xhi,Jfr;
-      soth::randMatrix(Xhi,NR[i],RANK[i]);
-      soth::randMatrix(Jfr,RANK[i],NC);
-      J[i]=Xhi*Jfr;
-      b[i].resize(NR[i]);
-      for( unsigned int j=0;j<NR[i];++j ) b[i][j] = j*(i+1)*0.5;
-
-      /* Introduce a deficience of J1 du to J0. */
-      //if( i==0 ) J[0].row(1) = Eigen::MatrixXd::Random(1,NC);
-      if( i==0 ) J[0].row(NR[0]-1) = Eigen::MatrixXd::Random(1,NC);
-      if( i==1 ) J[1].row(2) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
-      if( i==1 ) J[1].row(3) = Eigen::MatrixXd::Random(1,NR[0])*J[0];
-
       std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
-      std::cout << "e"<<i;
-      for( unsigned int j=0;j<NR[i];++j )
-	std::cout << b[i][j].getBound(soth::Bound::BOUND_TWIN) << "   ";
-      std::cout << std::endl;
+      std::cout << "e"<<i<< " = " << b[i] << ";"<<std::endl;
     }
-  //b[0][NR[0]-1] = soth::Bound(-0.5, soth::Bound::BOUND_INF);
 
   /* SOTH structure construction. */
   soth::HCOD hcod(NC,NB_STAGE);
@@ -53,5 +82,12 @@ int main (int argc, char** argv)
     }
 
   hcod.initialize();
+  hcod.computeSolution(true);
+  hcod.makeStep();
+  hcod.computeLagrangeMultipliers();
+
+  bool testL = hcod.testLagrangeMultipliers(std::cout);
+  sotDEBUG(5) << "Test multipliers: " << ((testL)?"Passed!":"Failed...") << std::endl;
+
   hcod.show(std::cout,true);
 }

@@ -49,7 +49,7 @@ namespace soth
   {
     friend std::ostream & operator << (std::ostream & os, const MATLAB & m );
 
-
+    MATLAB( const double& x );
     template< typename Derived >
     MATLAB( const MatrixBase<Derived> & m1 )
     {

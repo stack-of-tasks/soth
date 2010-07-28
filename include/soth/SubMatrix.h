@@ -208,6 +208,7 @@ inline void setRowRange( Index start, Index end )
     default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
+inline const MatrixType& internal() { return m_matrix; }
 
 protected:
   const MatrixType& m_matrix;
@@ -318,6 +319,7 @@ inline void setColRange( Index start, Index end )
     default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
+inline const MatrixType& internal() { return m_matrix; }
 
 protected:
   const MatrixType& m_matrix;
@@ -429,6 +431,8 @@ inline void setRowRange( Index start, Index end )
     default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
   }
 }
+inline const MatrixType& internal() { return m_matrix; }
+
 protected:
   const MatrixType& m_matrix;
   RowIndices m_rowIndices;

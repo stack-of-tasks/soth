@@ -75,6 +75,19 @@ namespace soth
     BaseY& operator*= (const Givens& g);
     BaseY& operator*= (const GivensSequence& G);
 
+    template< typename DerivedI, typename DerivedO >
+    void multiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res )
+    {
+      if( isExplicit ) res = matrixExplicit*m;
+      else { res=m; applyThisOnTheRight(res); }
+    }
+    template< typename DerivedI, typename DerivedO >
+    void transposeMultiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res )
+    {
+      if( isExplicit ) res = matrixExplicit.transpose()*m;
+      else { res=m; applyTransposeOnTheRight(res); }
+    }
+
 
     // Y *= Yup. Carefull: there is some recopy here.
 //    void composeOnTheRight( const BaseY& Yp );

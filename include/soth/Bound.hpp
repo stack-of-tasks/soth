@@ -2,6 +2,7 @@
 #define __SOTH_BOUND__
 
 #include <vector>
+#include <iostream>
 
 namespace soth
 {
@@ -38,11 +39,13 @@ namespace soth
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);
     Bound& operator= ( const std::pair<double,double> & val);
+    friend std::ostream& operator<< (std::ostream& os, const Bound& );
 
   }; // Class Bound
 
 
   typedef std::vector< Bound > bound_vector_t;
+  std::ostream& operator<< (std::ostream& os, const bound_vector_t& );
 
 }; // namespace soth
 

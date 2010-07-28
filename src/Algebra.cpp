@@ -64,6 +64,12 @@ namespace soth
 {
   bool MATLAB::fullPrec=false;
 
+  MATLAB::MATLAB( const double & x )
+    {
+      std::ostringstream os; os << x << " ; ";
+      str = os.str();
+    }
+
   std::ostream & operator << (std::ostream & os, const MATLAB & m )
   {return os << m.str; }
 }

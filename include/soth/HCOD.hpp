@@ -27,26 +27,37 @@ namespace soth
     void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
     const VectorXi& getInitialActiveSet( unsigned int i );
 
-    void updateY( const GivensSequence& Yup );
-
     //sizes
     int sizeA() const;
     int rank() const;
     int nbStages() const { return stages.size(); }
 
+    /* --- Decomposition --- */
+  public:
     void reset( void );
-    void solve( void );
-    void computeLambda();
-
     void initialize( void );
     void update( const unsigned int & stageUp,const Stage::ConstraintRef & cst );
     void downdate( const unsigned int & stageDown, const unsigned int & row );
+  protected:
+    void updateY( const GivensSequence& Yup );
 
+    /* --- Computations --- */
+  public:
+    void computeSolution( bool compute_u = true );
+    void computeLagrangeMultipliers( void );
+    void makeStep( double tau, bool compute_u = true );
+    void makeStep( bool compute_u = true );
+
+    /* --- Tests --- */
+  public:
     void show( std::ostream& os, bool check=false );
     bool testRecomposition( std::ostream* os );
+    bool testLagrangeMultipliers( std::ostream* os ) const;
+    bool testLagrangeMultipliers( std::ostream& os ) const
+    { testLagrangeMultipliers(&os); }
 
-  template< typename VectorGen >
-  void activeSearch( VectorGen & u );
+    template< typename VectorGen >
+    void activeSearch( VectorGen & u );
 
 
   protected:
@@ -55,6 +66,8 @@ namespace soth
   protected:
     typedef boost::shared_ptr<soth::Stage> stage_ptr_t;
     typedef std::vector<stage_ptr_t> stage_sequence_t;
+    typedef stage_sequence_t::iterator stage_iter_t;
+    typedef stage_sequence_t::reverse_iterator stage_riter_t;
     typedef std::vector<VectorXi> activeset_sequence_t;
 
   protected:
@@ -63,8 +76,9 @@ namespace soth
     stage_sequence_t stages;
     activeset_sequence_t initialActiveSets;
     VectorXd solution;
-    VectorXd lambda; //lagrange multiplier
 
+    VectorXd du,Ytu,Ytdu,rho;
+    bool isReset,isInit,isSolutionCpt;
   };
 
 

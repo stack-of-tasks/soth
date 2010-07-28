@@ -30,9 +30,10 @@ namespace soth
 
     typedef SubMatrix<MatrixXd> SubMatrixXd;
     typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
+    typedef TriangularView<SubMatrixXd,Lower> TriSubMatrixXd;
     typedef SubMatrixXd const_SubMatrixXd;
     typedef SubVectorXd const_SubVectorXd;
-
+    typedef TriangularView<const_SubMatrixXd,Lower> const_TriSubMatrixXd;
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
     typedef MatrixXd::RowXpr RowML;
 
@@ -54,22 +55,23 @@ namespace soth
     MatrixXd W_;
     MatrixXd ML_;
     VectorXd e_;
+    VectorXd lambda_;
 
     SubMatrixXd M,L;
-    SubVectorXd e;
+    SubVectorXd e,lambda;
 
     bool isWIdenty;
     SubMatrixXd W;
 
     //SubMatrixXd L0sq;
     //TriSubMatrixXd L0; // L0 = tri(L0sq)
-
     //TriMatrixXd Ldamp;
 
-    // fullRankRows = Ir. defRankRows = In.
-    const Indirect& Ir, &Irn; // Ir = L0sq.indirect1() -- Irn = M.indirect1()
-
-    unsigned int sizeM,sizeL; // sizeL = card(Ir).
+    /* fullRankRows = Ir. defRankRows = In.
+     * Ir = L.indirect1() -- Irn = M.indirect1(). */
+    const Indirect& Ir, &Irn;
+    /* sizeL = card(Ir). sizeM = previousRank. */
+    unsigned int sizeM,sizeL;
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -79,89 +81,38 @@ namespace soth
      * W_*ML_ = W*[M [ zeros(In.size(),rank); L ] ]
      */
 
+    /* Check is the stage has been reset, initialized, if the optimum
+     * has been computed, and if the lagrange multipliers have been
+     * computed. */
+    bool isReset,isInit,isOptimumCpt,isLagrangeCpt;
+
   public:
 
     Stage( const MatrixXd & J, const bound_vector_t & bounds, BaseY& Y  );
 
     /* --- INIT ------------------------------------------------------------- */
 
+    void reset();
     /* Return the rank of the current COD = previousRank+size(L).
      * Give a non-const ref on Y so that it is possible to modify it.
      */
     unsigned int computeInitialCOD( const unsigned int previousRank,
 				    const ActiveSet & initialIr,
 				    BaseY & Yinit );
-    /*
-      ML=J(initIr,:)*Y;
-      rank=Ir.size();  Ir=1:rank;
-      M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end);
-
-      A=columnMajor(L)  // A==L'
-      qr(A);
-      RotationHouseHolder_list_t Yup( A );
-      Y=Y*Yup;
-
-      for i=rank:-1:1
-      if( L(i,i)!= 0 ) break;
-      nullifyLineDeficient( i );
-
-    */
 
   protected:
     void nullifyLineDeficient( const Index row, const Index in_r );
-    /*
-      Jd = L.row(r);
-      foreach i in rank:-1:1
-      if( Jd(i)==0 ) continue;
-      gr= GR(L(Ir(i),i),Jd(i),i,r );
-      L=gr*L;
-      W=W*gr';
-      Ir >> r;
-      In << r;
-    */
-
-    void computeInitalJY( const ActiveSet & initialIr );
-    void computeInitalJY_allRows(void);
+    void computeInitialJY( const ActiveSet & initialIr );
+    void computeInitialJY_allRows(void);
 
     /* --- DOWN ------------------------------------------------------------- */
   public:
-    // Return true if the rank re-increase operated at the current stage.
+    /* Return true if the rank re-increase operated at the current stage. */
     bool downdate( const unsigned int position,
 		   GivensSequence & Ydown );
-    /*
-      gr = Neutralize row <position> in W <position>
-      L=gr'*L
-      bool res;
-      if( L(In.last(),0) == 0
-      // Rank deficience: regularize Hessenberg
-      Ydown = regularizeHessenberg
-      res=false;
-      else
-      // No rank dec: quit
-      Ir << In.pop();
-      res=true;
-      Ir >> r; In >> r;
-      Unused << r;
-      return res;
-    */
-
-
-    // Return true if the rank decrease operated at the current stage.
+    /* Return true if the rank decrease operated at the current stage. */
     bool propagateDowndate( GivensSequence & Ydown,
 			    bool decreasePreviousRank );
-    /*
-     * M=M*Ydown;
-     * if(! decreasePreviousRank ) return true;
-     * L.indices2().push_front( M.indice2().pop_back() );
-     *
-     * foreach i in In
-     *   if( L(i,0) == 0 continue;
-     *   Ir << i; In >> i;
-     *   return true;
-     *
-     * Ydown += regularizeHessenberg
-     * return false
-     */
 
   protected:
     void regularizeHessenberg( GivensSequence & Ydown );
@@ -171,73 +122,38 @@ namespace soth
 
     /* --- UPD -------------------------------------------------------------- */
   public:
-    /* TODO
-       if stage(sup).update( Jup,Yup )
-       while stage(sup++).propagateUpdate( Yup,false
-       else ..
-
-    */
-
-    // Return true if the rank re-decrease operated at the current stage.
     /* Return the rank of the line where the rank re-decrease will occurs. */
     unsigned int update( const ConstraintRef & cst, GivensSequence & Yup );
-    /*
-     * Inew = Unused.pop();
-     * Row JupY = row(Inew);
-     * JupU = Jup*Y;
-     * double norm2=0; double rankJ=0;
-     * for i=n:-1:1
-     *   norm2+=JupY(i)^2;
-     *   if norm2!=0 rankJ=i; break;
-     *
-     * Ir << Inew
-     * W(Inew,Inew)=1;
-     * if rankJ>sizeM+rank
-     *   // Rank increase
-     *   for i=rankJ:-1:sizeM+rank+1
-     *     Gr gr; gr.init( JupY,i,i-1,0 ); prod(JupY,gr);
-     *     Yup.push_back( gr );
-     *     return false;
-     * else
-     *   // No rank increase;
-     *   nullifyLineDeficient(Inew);
-     *   return true;
-     */
-
-    // Return true if the rank decrease operated at the current stage.
     void propagateUpdate( GivensSequence & Ydown,
 			  unsigned int decreasePreviousRank );
-    /*
-      ML=ML*Yup;
-      increaseSizeM();
-      if( decreasePreviousRank ) return true
-      for i=1:rank
-      if L(i,i) == 0
-      // Rank re-decrease
-      nullifyLineDeficient( i );
-      regularizeHessenberg( Yup,i+1 );
-      return true;
-      return false;
-    */
   protected:
     void addARow( const Index & wrowup,const Index & wcolup,bool deficient=false );
 
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void solve( VectorXd& Ytu );
-    //void solveTranspose( const VectorXd & e, VectorXd res );
+    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init );
 
-    VectorXd computeErr(const VectorXd& Ytu);
-    VectorXd computeRo(const VectorXd& Ytu);
-
-  template <typename Derived1, typename Derived2>
-  void computeLagrangeMultipliers(MatrixBase<Derived1>& lambda_i, MatrixBase<Derived2>& ro_under_i);
+    /* The const functions simultaneously set up the lambda member. */
+    /* computeRho(.,.,false) is const. What trick can we use to explicit that? TODO. */
+    void computeError(const VectorXd& Ytu, VectorXd& err ) const;
+    void computeError(const VectorXd& Ytu );
+    void computeRho(const VectorXd& Ytu, VectorXd& Ytrho, bool inLambda = false );
+    void computeLagrangeMultipliers( VectorXd& rho, VectorXd& l ) const;
+    void computeLagrangeMultipliers( VectorXd& rho );
 
     //void damp( const double & damping );
 
+  protected:
+    void computeErrorFromJu(const VectorXd& MLYtu);
+    void computeErrorFromJu(const VectorXd& Ytu, VectorXd& err) const;
+    void computeMLYtu( const VectorXd& Ytu,VectorXd& MLYtu ) const;
+    void transfertInSubVector( const VectorXd& tmp, VectorXd& rec_, const Indirect & idx );
+#define TRANSFERT_IN_SUBVECTOR( tmp,rec ) transfertInSubVector( tmp,rec##_,rec.getRowIndices() );
+
 
     /* --- CHECK ------------------------------------------------------------ */
+  public:
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
     void recompose( MatrixXd& WMLY ) const;
     void show( std::ostream& os, unsigned int stageRef, bool check=false ) const;
@@ -262,28 +178,24 @@ namespace soth
     const_SubMatrixXd getM() const { return M; }
     SubMatrixXd getL() { return L; }
     const_SubMatrixXd getL() const { return L; }
+    TriSubMatrixXd getLtri() { return L.triangularView<Lower>(); }
+    const_TriSubMatrixXd getLtri() const { return L.triangularView<Lower>(); }
     SubVectorXd gete() { return e; }
     const_SubVectorXd gete() const { return e; }
-    // SubMatrixXd Lo();
+    SubVectorXd getLagrangeMultipliers() { return lambda; }
+    const_SubVectorXd getLagrangeMultipliers() const { return lambda; }
 
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );
     RowL rowML( const Index r );
     unsigned int rowSize( const Index r );
 
+    int nbConstraints( void ) const { return nr; }
     int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
     int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
 
     Index rank() const {return sizeL;}
-
-    // SubRowXd row( const unsigned int r );
-    // SubRowXd rown( const unsigned int r ); // row rank def
-    // SubRowXd rowf( const unsigned int r ); // row rank full
-
-    /* --- MODIFIORS --- */
-    // void increaseSizeM();
-    // void decreaseSizeM();
 
   public:
     static ActiveSet& allRows() { return _allRows; }
@@ -299,27 +211,6 @@ namespace soth
 
 
 
-  /** input: ro_under_i = {ro_1, ..., ro_i}
-    * on return:
-    * lambda_i =  Wr_i*L_i^-T*ro_i
-    * ro_under_{i-1} = ro_under_{i-1} Mr_i^T*L_i^-T*ro_i
-    * ro_i = L_i^-T*ro_i (should not be useful)
-    */
-  template <typename Derived1, typename Derived2>
-  void Stage::computeLagrangeMultipliers(MatrixBase<Derived1>& lambda_i, MatrixBase<Derived2>& ro_under_i)
-  {
-    EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived1)
-    EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived2)
-
-    assert(lambda_i.rows() == W.rows());
-    assert(ro_under_i.rows() == sizeM+sizeL);
-
-    VectorBlock<Derived2> ro_i = ro_under_i.tail(sizeL);
-    solveInPlaceWithUpperTriangular(L.transpose(), ro_i);
-//    if (sizeM>0) //we are not at stage 0
-      ro_under_i.head(sizeM).noalias() += M.bottomRows(sizeL).transpose()*ro_i;
-    lambda_i.noalias() = W.rightCols(sizeL) * ro_i;
-  }
 
 }; // namespace soth
 
