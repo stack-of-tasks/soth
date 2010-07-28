@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 #include <list>
+#include <string>
 namespace Eigen
 {
   #include "soth/SubMatrix.h"
@@ -85,7 +86,6 @@ namespace soth
      * has been computed, and if the lagrange multipliers have been
      * computed. */
     bool isReset,isInit,isOptimumCpt,isLagrangeCpt;
-
   public:
 
     Stage( const MatrixXd & J, const bound_vector_t & bounds, BaseY& Y  );
@@ -142,6 +142,16 @@ namespace soth
     void computeLagrangeMultipliers( VectorXd& rho, VectorXd& l ) const;
     void computeLagrangeMultipliers( VectorXd& rho );
 
+    /* Return true if all bounds are checked with the specified tau.  If tau is
+     * specified, the step is computed btw (with tau_out <= tau_in) and the
+     * constraint to update is returned.
+     */
+    bool checkBound( const VectorXd& u,const VectorXd& du,
+		     ConstraintRef*, double* tau );
+    bool checkBound( const VectorXd& u,const VectorXd& du,
+		     ConstraintRef& cstmax, double& taumax );
+
+    bool maxLambda( double & lmax, unsigned int & row ) const;
     //void damp( const double & damping );
 
   protected:
@@ -203,6 +213,8 @@ namespace soth
   protected:
     static ActiveSet _allRows;
     bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }
+  public: /* For debug purpose, could be remove on RELEASE. */
+    std::string name;
 
   };
 

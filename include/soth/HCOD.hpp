@@ -11,6 +11,13 @@ namespace soth
 
   class HCOD
   {
+  protected:
+    typedef boost::shared_ptr<soth::Stage> stage_ptr_t;
+    typedef std::vector<stage_ptr_t> stage_sequence_t;
+    typedef stage_sequence_t::iterator stage_iter_t;
+    typedef stage_sequence_t::reverse_iterator stage_riter_t;
+    typedef std::vector<VectorXi> activeset_sequence_t;
+
   public:
     HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
 
@@ -37,7 +44,9 @@ namespace soth
     void reset( void );
     void initialize( void );
     void update( const unsigned int & stageUp,const Stage::ConstraintRef & cst );
+    void update( stage_iter_t stageIter,const Stage::ConstraintRef & cst );
     void downdate( const unsigned int & stageDown, const unsigned int & row );
+    void downdate( stage_iter_t stageIter,const unsigned int & row );
   protected:
     void updateY( const GivensSequence& Yup );
 
@@ -45,8 +54,17 @@ namespace soth
   public:
     void computeSolution( bool compute_u = true );
     void computeLagrangeMultipliers( void );
+    double computeStepAndUpdate( void );
+    bool searchAndDowndate( void );
+
     void makeStep( double tau, bool compute_u = true );
     void makeStep( bool compute_u = true );
+
+
+    /* --- The big one --- */
+  public:
+    //template< typename VectorGen >
+    void activeSearch( VectorXd & u );
 
     /* --- Tests --- */
   public:
@@ -56,19 +74,10 @@ namespace soth
     bool testLagrangeMultipliers( std::ostream& os ) const
     { testLagrangeMultipliers(&os); }
 
-    template< typename VectorGen >
-    void activeSearch( VectorGen & u );
-
+    void setNameByOrder( const std::string root = ""  );
 
   protected:
     HCOD( void ) : Y(0) {};
-
-  protected:
-    typedef boost::shared_ptr<soth::Stage> stage_ptr_t;
-    typedef std::vector<stage_ptr_t> stage_sequence_t;
-    typedef stage_sequence_t::iterator stage_iter_t;
-    typedef stage_sequence_t::reverse_iterator stage_riter_t;
-    typedef std::vector<VectorXi> activeset_sequence_t;
 
   protected:
     unsigned int sizeProblem;

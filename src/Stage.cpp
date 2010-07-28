@@ -681,6 +681,7 @@ namespace soth
   /* --- SOLVER ------------------------------------------------------------- */
   /* --- SOLVER ------------------------------------------------------------- */
 
+  /* --- DIRECT ------------------------------------------------------------- */
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::computeSolution( const VectorXd& Ytu, VectorXd& Ytdu, bool init )
   {
@@ -723,6 +724,7 @@ namespace soth
     sotDEBUG(45) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
   }
 
+  /* --- INDIRECT ----------------------------------------------------------- */
 
   /* err = Ju-e = W [M L 0] Y^u - e
    * where MLYtu has already been computed.
@@ -866,6 +868,73 @@ namespace soth
   }
 
 
+  /* --- BOUND -------------------------------------------------------------- */
+
+  /* Return true if the previous tau is correct (ie maxlocal(tau)>taumax */
+  bool Stage::checkBound( const VectorXd& u,const VectorXd& du,
+			  ConstraintRef& cstmax, double& taumax )
+  {
+    bool res = true;
+    for( unsigned int i=0;i<nr;++i )
+      {
+	if( activeSet.isActive(i) ) continue;
+	assert( activeSet.whichConstraint(i)!=Bound::BOUND_TWIN );
+
+	/* This has already been computed and could be avoided... TODO. */
+	double val = J.row(i)*u;
+	double dval = J.row(i)*du;
+	const Bound & b = bounds[i];
+	Bound::bound_t btype = b.check(val+dval);
+	if( btype != Bound::BOUND_NONE )
+	  {
+	    assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
+	    sotDEBUG(5) << "Violation at "
+			<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+	    const double & bval = b.getBound(btype);
+	    double btau = (bval-val)/dval;
+	    assert(btau>=0); assert(btau<1);
+	    if( btau<taumax )
+	      {
+		sotDEBUG(1) << "Max violation (tau="<<btau<<") at "
+			    << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+		res=false;
+		taumax=btau; cstmax = std::make_pair(i,btype);
+	      }
+	  }
+      }
+    return res;
+  }
+
+  bool Stage::checkBound( const VectorXd& u,const VectorXd& du,
+			  ConstraintRef* cstptr, double* tauptr )
+  {
+    if( (tauptr==NULL)&&(cstptr==NULL) )
+      { double tau=1; ConstraintRef cst; return checkBound(u,du,cst,tau); }
+    else if( (tauptr!=NULL)&&(cstptr==NULL) )
+      { ConstraintRef cst; return checkBound(u,du,cst,*tauptr); }
+    else if( (tauptr==NULL)&&(cstptr!=NULL) )
+      { double tau=1; return checkBound(u,du,*cstptr,tau); }
+    else if( (tauptr!=NULL)&&(cstptr!=NULL) )
+      { return checkBound(u,du,*cstptr,*tauptr); }
+
+
+  }
+
+  bool Stage::
+  maxLambda( double & lmax,unsigned int& row ) const
+  {
+    bool res=false;
+    EI_FOREACH( i,lambda )
+      {
+	if( lambda(i,1)>lmax )
+	  {
+	    res=true;
+	    lmax=lambda(i,1);
+	    row=i;
+	  }
+      }
+    return res;
+  }
 
   /* --- ACCESSORS ---------------------------------------------------------- */
   /* --- ACCESSORS ---------------------------------------------------------- */

@@ -63,6 +63,7 @@ int main (int argc, char** argv)
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
   std::vector<soth::bound_vector_t> b(NB_STAGE);
   generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+  b[0][1] = std::make_pair(-0.1,0.2);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
@@ -80,14 +81,17 @@ int main (int argc, char** argv)
       else
         hcod.setInitialActiveSet( Eigen::VectorXi::Zero(1), i);
     }
+  hcod.setNameByOrder("stage_");
 
   hcod.initialize();
   hcod.computeSolution(true);
-  hcod.makeStep();
+
+  hcod.show(std::cout,true);
+  double tau = hcod.computeStepAndUpdate();
+  hcod.makeStep(tau);
   hcod.computeLagrangeMultipliers();
 
   bool testL = hcod.testLagrangeMultipliers(std::cout);
   sotDEBUG(5) << "Test multipliers: " << ((testL)?"Passed!":"Failed...") << std::endl;
 
-  hcod.show(std::cout,true);
 }

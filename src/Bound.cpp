@@ -50,7 +50,7 @@ namespace soth
   /* Return the bound that is violated, NONE if bound are OK.
    * In case of twin-bounds, no check is performed, NONE is always returned. */
   Bound::bound_t Bound::
-  check( const double & val )
+  check( const double & val ) const
   {
     assert( type!=BOUND_NONE );
     switch( type )

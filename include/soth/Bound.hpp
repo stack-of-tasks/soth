@@ -34,7 +34,7 @@ namespace soth
     const double& getBound( bound_t type ) const;
     /* Return the bound that is violated, NONE if bound are OK.
      * In case of twin-bounds, no check is performed, NONE is always returned. */
-    bound_t check( const double & val );
+    bound_t check( const double & val ) const;
 
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);

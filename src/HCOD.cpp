@@ -94,6 +94,15 @@ namespace soth
     return r;
   }
 
+  void HCOD::setNameByOrder( const std::string root )
+  {
+    for (size_t i=0; i<stages.size(); ++i)
+      {
+	std::ostringstream os; os<<root<<i;
+	stages[i]->name = os.str();
+      }
+  }
+
   /* --- DECOMPOSITION ------------------------------------------------------- */
   /* --- DECOMPOSITION ------------------------------------------------------- */
   /* --- DECOMPOSITION ------------------------------------------------------- */
@@ -141,6 +150,19 @@ namespace soth
     updateY(Yup);
   }
   void HCOD::
+  update( stage_iter_t stageIter,const Stage::ConstraintRef & cst )
+  {
+    assert(isInit);
+    sotDEBUG(5) << "Update " << (*stageIter)->name << std::endl;
+    GivensSequence Yup;
+    unsigned int rankDef = (*stageIter)->update(cst,Yup);
+    for( ;stageIter!=stages.end();++stageIter )
+      {
+	(*stageIter)->propagateUpdate(Yup,rankDef);
+      }
+    updateY(Yup);
+  }
+  void HCOD::
   downdate( const unsigned int & stageDown, const unsigned int & rowDown )
   {
     assert(isInit);
@@ -149,6 +171,19 @@ namespace soth
     for( unsigned int i=stageDown+1;i<stages.size();++i )
       {
      	propag = stages[i]->propagateDowndate(Ydown,propag);
+      }
+    updateY(Ydown);
+  }
+  void HCOD::
+  downdate( stage_iter_t stageIter,const unsigned int & rowDown )
+  {
+    assert(isInit);
+    sotDEBUG(5) << "Downdate " << (*stageIter)->name << std::endl;
+    GivensSequence Ydown;
+    bool propag=(*stageIter)->downdate(rowDown,Ydown);
+    for( ;stageIter!=stages.end();++stageIter )
+      {
+     	propag = (*stageIter)->propagateDowndate(Ydown,propag);
       }
     updateY(Ydown);
   }
@@ -204,6 +239,26 @@ namespace soth
     isSolutionCpt=true;
   }
 
+  double HCOD::
+  computeStepAndUpdate( void )
+  {
+    assert(isSolutionCpt);
+
+    double tau = 1.0; Stage::ConstraintRef cst;
+    stage_iter_t stageUp;
+    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+      {
+	sotDEBUG(5) << "Check stage " << (*iter)->name << "." << std::endl;
+	if(! (*iter)->checkBound( solution,du,cst,tau ) )
+	  stageUp=iter;
+      }
+    if( tau<1 )
+      {
+	update(stageUp,cst);
+     }
+    return tau;
+  }
+
   void HCOD::
   makeStep( double tau, bool compute_u )
   {
@@ -216,6 +271,105 @@ namespace soth
     Ytu += Ytdu;
     if( compute_u ) { solution += du; }
   }
+
+  bool HCOD::
+  searchAndDowndate( void )
+  {
+    double lambdamax = 0; unsigned int row;
+    stage_iter_t stageDown;
+    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+      {
+	if( (*iter)->maxLambda( lambdamax,row ) )
+	  stageDown=iter;
+      }
+    if( lambdamax!=0 )
+      {
+	downdate(stageDown,row);
+      }
+
+  }
+
+
+  /* --- ACTIVE SEARCH ------------------------------------------------------ */
+  /* --- ACTIVE SEARCH ------------------------------------------------------ */
+  /* --- ACTIVE SEARCH ------------------------------------------------------ */
+
+
+    /* TODO:
+       - Finish updateY
+
+       - compute du from Ytdu and Ytu from u.  **TODO**
+       - Compact the final active set (init aset is suppose to **TODO**
+       be row-compact). / Assert this hypothesis.
+       - Make all the necessary functions public, and externalize the algo. **TODO**
+
+       - computation of the violation per stages **DONE**
+       - computation of tau **DONE**
+       - translation of cst_ref in triple<stage_ref,cst_ref,bound_ref> **NOT NECESSARY**
+       - compute min lambda,w **DONE**
+
+       - Test with empty stages, full stages, rank 0 stages. **DONE**
+       - Build a test with fixed-values matrices of all ranks. **DONE**
+
+    */
+
+  void HCOD::activeSearch( VectorXd & u )
+  {
+    /*
+     * foreach stage: stage.initCOD(Ir_init)
+     * u = 0
+     * u0 = solve
+     * do
+     *   tau,cst_ref = max( violation(stages) )
+     *   u += du*tau
+     *   if( tau<1 )
+     *     update(cst_ref); break;
+     *
+     *   lambda,w = computeLambda
+     *   cst_ref,lmin = min( lambda,w )
+     *   if lmin<0
+     *     downdate( cst_ref )
+     *
+     */
+
+    assert(VectorXi::LinSpaced(0,2,3)[0] == 0
+            && VectorXi::LinSpaced(0,2,3)[1] == 1
+            && VectorXi::LinSpaced(0,2,3)[2] == 2
+            && "new version of Eigen might have change the "
+	   "order of arguments in LinSpaced, please correct");
+
+    initialize();
+    bool endCondition = true;
+    do
+      {
+	computeSolution();
+	double tau = computeStepAndUpdate();
+	if( tau<1 )
+	  {
+	    sotDEBUG(5) << "Update done, make step <1." << std::endl;
+	    makeStep(tau);
+	  }
+	else
+	  {
+	    makeStep();
+	    sotDEBUG(5) << "No update, make step <1." << std::endl;
+	    computeLagrangeMultipliers();
+	    if( searchAndDowndate() )
+	      {
+		sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
+	      }
+	    else
+	      {
+		sotDEBUG(5) << "Lagrange>=0, no downdate." << std::endl;
+		endCondition = false;
+	      }
+	  }
+      } while(endCondition);
+
+    u=solution;
+  }
+
+
 
   /* --- TESTS -------------------------------------------------------------- */
   /* --- TESTS -------------------------------------------------------------- */
@@ -262,50 +416,13 @@ namespace soth
     MatrixXd Yex(sizeProblem,sizeProblem); Yex.setIdentity();
     Y.applyThisOnTheLeft(Yex);
     os<<"Y = " << (MATLAB)Yex << std::endl;
-    if( isSolutionCpt ) { os << "u = " << (MATLAB)solution << std::endl; }
+    if( isSolutionCpt )
+      {
+	os << "u = " << (MATLAB)solution << std::endl;
+	os << "du = " << (MATLAB)du << std::endl;
+      }
   }
 
-
-  template< typename VectorGen >
-  void HCOD::activeSearch( VectorGen & u )
-  {
-    assert(VectorXi::LinSpaced(0,2,3)[0] == 0
-            && VectorXi::LinSpaced(0,2,3)[1] == 1
-            && VectorXi::LinSpaced(0,2,3)[2] == 2
-            && "new version of Eigen might have change the order of arguments in LinSpaced, please correct");
-    /*
-     * foreach stage: stage.initCOD(Ir_init)
-     * u = 0
-     * u0 = solve
-     * do
-     *   tau,cst_ref = max( violation(stages) )
-     *   u += du*tau
-     *   if( tau<1 )
-     *     update(cst_ref); break;
-     *
-     *   lambda,w = computeLambda
-     *   cst_ref,lmin = min( lambda,w )
-     *   if lmin<0
-     *     downdate( cst_ref )
-     *
-     */
-
-    /* TODO:
-       - computation of the violation per stages
-       - computation of tau
-       - translation of cst_ref in triple<stage_ref,cst_ref,bound_ref>
-       - compute du from Ytdu and Ytu from u.
-       - compute min lambda,w
-       - Make all the necessary functions public, and externalize the algo.
-
-       - Test with empty stages, full stages, rank 0 stages.
-       - Build a test with fixed-values matrices of all ranks.
-
-       - Compact the final active set (init aset is suppose to
-       be row-compact). / Assert this hypothesis.
-    */
-
-  }
 
 
 
