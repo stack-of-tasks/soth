@@ -153,10 +153,11 @@ namespace soth
   update( stage_iter_t stageIter,const Stage::ConstraintRef & cst )
   {
     assert(isInit);
-    sotDEBUG(5) << "Update " << (*stageIter)->name << std::endl;
+    sotDEBUG(5) << "Update " << (*stageIter)->name <<", "
+		<< cst << std::endl;
     GivensSequence Yup;
     unsigned int rankDef = (*stageIter)->update(cst,Yup);
-    for( ;stageIter!=stages.end();++stageIter )
+    for( ++stageIter;stageIter!=stages.end();++stageIter )
       {
 	(*stageIter)->propagateUpdate(Yup,rankDef);
       }
@@ -178,10 +179,11 @@ namespace soth
   downdate( stage_iter_t stageIter,const unsigned int & rowDown )
   {
     assert(isInit);
-    sotDEBUG(5) << "Downdate " << (*stageIter)->name << std::endl;
+    sotDEBUG(5) << "Downdate " << (*stageIter)->name<<", row "<<rowDown
+		<<" (cst="<<(*stageIter)->which(rowDown)<<")."<< std::endl;
     GivensSequence Ydown;
     bool propag=(*stageIter)->downdate(rowDown,Ydown);
-    for( ;stageIter!=stages.end();++stageIter )
+    for( ++stageIter;stageIter!=stages.end();++stageIter )
       {
      	propag = (*stageIter)->propagateDowndate(Ydown,propag);
       }
@@ -274,21 +276,24 @@ namespace soth
     if( compute_u ) { solution += du; }
   }
 
+  /* Return true iff the search is positive, ie if downdate was
+   * needed and performed. */
   bool HCOD::
   searchAndDowndate( void )
   {
-    double lambdamax = 0; unsigned int row;
-    stage_iter_t stageDown;
+    double lambdamax = Stage::EPSILON; unsigned int row;
+    stage_iter_t stageDown = stages.end();
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
 	if( (*iter)->maxLambda( lambdamax,row ) )
 	  stageDown=iter;
       }
-    if( lambdamax!=0 )
+    if( stages.end()!=stageDown )
       {
 	downdate(stageDown,row);
+	return true;
       }
-
+    return false;
   }
 
 
@@ -344,6 +349,8 @@ namespace soth
     bool endCondition = true;
     do
       {
+	if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+
 	computeSolution();
 	double tau = computeStepAndUpdate();
 	if( tau<1 )
@@ -354,7 +361,7 @@ namespace soth
 	else
 	  {
 	    makeStep();
-	    sotDEBUG(5) << "No update, make step <1." << std::endl;
+	    sotDEBUG(5) << "No update, make step ==1." << std::endl;
 	    computeLagrangeMultipliers();
 	    if( searchAndDowndate() )
 	      {

@@ -180,6 +180,7 @@ namespace soth
     bool testRecomposition( void ) const;
     /* For debug purpose, give the line of an active constraint (assert the activity). */
     Index where( unsigned int cst ) const;
+    ConstraintRef which( unsigned int row ) const;
 
   public:
     /* --- ACCESSORS --- */
@@ -219,7 +220,7 @@ namespace soth
   };
 
 
-
+  std::ostream& operator<<( std::ostream&os,const Stage::ConstraintRef& cst );
 
 
 

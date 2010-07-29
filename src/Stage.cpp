@@ -74,15 +74,16 @@ namespace soth
 
     ML_.setZero();
     SubMatrix<MatrixXd,RowPermutation> Jact( J,activeSet );
-    Block<MatrixXd> ML = ML_.topRows(activeSet.nbActive()); //(ML_,0,0,activeSet.nbActive(),nc );
+    Block<MatrixXd> ML = ML_.topRows(activeSet.nbActive());
     sotDEBUG(15) << "Ja = " << (MATLAB)Jact << std::endl;
     ML = Jact;
     sotDEBUG(15) << "Ja = " << (MATLAB)ML_ << std::endl;
     Y.applyThisOnTheLeft( ML );
 
     for( unsigned int i=0;i<activeSet.nbActive();++i )
+      {	freeML_[i]=false; }
+    for( unsigned int i=0;i<nr;++i )
       {
-	freeML_[i]=false;
 	if( activeSet.isActive(i) )
 	  e_( activeSet.where(i) ) = bounds[i].getBound( activeSet.whichBound(i) );
       }
@@ -204,11 +205,7 @@ namespace soth
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 
-    //sotDEBUG(5) << "check" << std::endl << W* << std::endl;
-
     /* Y=Y*Yup; */
-    //HouseholderSequence Yup( subY,mQR.hCoeffs(),rank );
-    //Y.composeOnTheRight(Yup);
     Yinit.increaseRank(sizeL);
 
     return previousRank+sizeL;
@@ -836,6 +833,7 @@ namespace soth
 
     VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
+
     solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
     sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
 
@@ -878,12 +876,17 @@ namespace soth
     for( unsigned int i=0;i<nr;++i )
       {
 	if( activeSet.isActive(i) ) continue;
-	assert( activeSet.whichConstraint(i)!=Bound::BOUND_TWIN );
+	assert( bounds[i].getType()!=Bound::BOUND_TWIN );
 
 	/* This has already been computed and could be avoided... TODO. */
 	double val = J.row(i)*u;
 	double dval = J.row(i)*du;
 	const Bound & b = bounds[i];
+	sotDEBUG(5) << "bound = " << b << endl;
+	sotDEBUG(5) << "Ju = " << val << "  --  Jdu = " << dval
+		    << " -- Jupdu = " << val+dval << endl;
+	assert( (b.check(val+10*EPSILON)==Bound::BOUND_NONE)
+		||(b.check(val-10*EPSILON)==Bound::BOUND_NONE) );
 	Bound::bound_t btype = b.check(val+dval);
 	if( btype != Bound::BOUND_NONE )
 	  {
@@ -923,14 +926,34 @@ namespace soth
   bool Stage::
   maxLambda( double & lmax,unsigned int& row ) const
   {
+    /* TODO: unactive the search for TWINS. */
+
     bool res=false;
     EI_FOREACH( i,lambda )
       {
-	if( lambda(i,1)>lmax )
+	const unsigned int cstref = activeSet.whichConstraint(i);
+	Bound::bound_t btype = activeSet.whichBound(cstref);
+	assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
+	switch( btype )
 	  {
-	    res=true;
-	    lmax=lambda(i,1);
-	    row=i;
+	  case Bound::BOUND_TWIN:
+	    break; // Nothing to do.
+	  case Bound::BOUND_SUP:
+	    if( lambda(i,0)>lmax )
+	      {
+		res=true;
+		lmax=lambda(i,0);
+		row=i;
+	      }
+	    break;
+	  case Bound::BOUND_INF:
+	    if( lambda(i,0)>lmax ) // TODO: Why???
+	      {
+		res=true;
+		lmax=lambda(i,0);
+		row=i;
+	      }
+	    break;
 	  }
       }
     return res;
@@ -1038,6 +1061,15 @@ namespace soth
     for( Index i=0;i<nr;++i )
       { if( Idx(i)==ref )  return i; }
   }
+  Stage::ConstraintRef Stage::
+  which( unsigned int row ) const
+  {
+    assert( row<sizeA() );
+    ConstraintRef res;
+    res.first = activeSet.whichConstraint( W.getRowIndices()(row) );
+    res.second = activeSet.whichBound( res.first );
+    return res;
+  }
 
    /* Return a sub matrix containing the active rows of J, in the
    * same order as given by W. J_ is a matrix where th full
@@ -1138,6 +1170,19 @@ namespace soth
       {
 	os << "l{"<<stageRef<<"} = " << (MATLAB)lambda << std::endl;
       }
+  }
+
+  std::ostream& operator<<( std::ostream&os,const Stage::ConstraintRef& cst )
+  {
+    switch( cst.second )
+      {
+      case Bound::BOUND_INF: os << "-"; break;
+      case Bound::BOUND_SUP: os << "+"; break;
+      case Bound::BOUND_DOUBLE: os << "+/-"; break;
+      case Bound::BOUND_TWIN: os << "="; break;
+      case Bound::BOUND_NONE: os << "(o)"; break;
+      }
+    return os << cst.first;
   }
 
   ActiveSet Stage::_allRows(0);

@@ -66,8 +66,8 @@ int main (int argc, char** argv)
   b[0][1] = std::make_pair(-0.1,1.63);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
-      std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
-      std::cout << "e"<<i<< " = " << b[i] << ";"<<std::endl;
+      sotDEBUG(0) << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
+      sotDEBUG(0) << "e"<<i+1<< " = " << b[i] << ";"<<std::endl;
     }
   assert( std::abs(J[0](0,0)-(-1.1149))<1e-5 );
 
@@ -86,12 +86,16 @@ int main (int argc, char** argv)
 
   hcod.initialize();
   hcod.computeSolution(true);
+  assert(  (hcod.rank()==10)   && (hcod[0].rank()==3)
+	 &&(hcod[1].rank()==4) && (hcod[2].rank()==3)  );
 
-  hcod.show(std::cout,true);
+  if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   double tau = hcod.computeStepAndUpdate();
   hcod.makeStep(tau);
-  hcod.computeLagrangeMultipliers();
+  assert((tau==1.)&&"Check bound test failed.");
 
+  hcod.computeLagrangeMultipliers();
   bool testL = hcod.testLagrangeMultipliers(std::cout);
   sotDEBUG(5) << "Test multipliers: " << ((testL)?"Passed!":"Failed...") << std::endl;
+  assert(testL&&"Lagrange Multipliers test failed.");
 }

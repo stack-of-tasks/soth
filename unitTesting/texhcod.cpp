@@ -104,7 +104,7 @@ int main (int argc, char** argv)
 {
   bool exitOk=true;
   const int executeAll = 1;
-  //sotDebugTrace::openFile();
+  sotDebugTrace::openFile();
 
   Eigen::MatrixXd Massert(5,9);
   soth::MatrixRnd::randomize( Massert );
