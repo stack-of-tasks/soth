@@ -63,12 +63,13 @@ int main (int argc, char** argv)
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
   std::vector<soth::bound_vector_t> b(NB_STAGE);
   generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
-  b[0][1] = std::make_pair(-0.1,0.2);
+  b[0][1] = std::make_pair(-0.1,1.63);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       std::cout << "J"<<i<<" = " << (soth::MATLAB)J[i] << std::endl;
       std::cout << "e"<<i<< " = " << b[i] << ";"<<std::endl;
     }
+  assert( std::abs(J[0](0,0)-(-1.1149))<1e-5 );
 
   /* SOTH structure construction. */
   soth::HCOD hcod(NC,NB_STAGE);
@@ -93,5 +94,4 @@ int main (int argc, char** argv)
 
   bool testL = hcod.testLagrangeMultipliers(std::cout);
   sotDEBUG(5) << "Test multipliers: " << ((testL)?"Passed!":"Failed...") << std::endl;
-
 }

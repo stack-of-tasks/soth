@@ -194,7 +194,9 @@ namespace soth
   updateY( const GivensSequence& Yup )
   {
     Y *= Yup;
-    // TODO: update Ytu.
+    Yup.applyTransposeOnTheRight(Ytu);
+    Yup.applyTransposeOnTheRight(Ytdu); /* TODO: this second multiplication could
+					 * be avoided. */
   }
 
 
@@ -298,7 +300,6 @@ namespace soth
     /* TODO:
        - Finish updateY
 
-       - compute du from Ytdu and Ytu from u.  **TODO**
        - Compact the final active set (init aset is suppose to **TODO**
        be row-compact). / Assert this hypothesis.
        - Make all the necessary functions public, and externalize the algo. **TODO**
@@ -307,6 +308,7 @@ namespace soth
        - computation of tau **DONE**
        - translation of cst_ref in triple<stage_ref,cst_ref,bound_ref> **NOT NECESSARY**
        - compute min lambda,w **DONE**
+       - compute du from Ytdu and Ytu from u.  **STUPID**
 
        - Test with empty stages, full stages, rank 0 stages. **DONE**
        - Build a test with fixed-values matrices of all ranks. **DONE**
