@@ -50,8 +50,8 @@ typedef Matrix<typename Base::Index, MatrixType::ColsAtCompileTime,1> ColIndices
 
   inline SubMatrix(const MatrixType& matrix, bool permuted=true)
     : m_matrix(matrix)
-    , m_rowIndices(permuted ? RowIndices::LinSpaced(0, matrix.rows()-1, matrix.rows()) : RowIndices())
-    , m_colIndices(permuted ? ColIndices::LinSpaced(0, matrix.cols()-1, matrix.cols()) : ColIndices())
+    , m_rowIndices(permuted ? RowIndices::LinSpaced(matrix.rows(),0, matrix.rows()-1) : RowIndices())
+    , m_colIndices(permuted ? ColIndices::LinSpaced(matrix.cols(), 0, matrix.cols()-1) : ColIndices())
   {
   }
 
@@ -193,7 +193,7 @@ inline void setColRange( Index start, Index end )
   {
     case 0: m_colIndices = VectorXi(); return;
     case 1: m_colIndices.resize(1); m_colIndices << start; return;
-    default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
+    default: m_colIndices = VectorXi::LinSpaced(size,start,end-1); return;
   }
 }
 inline void setRowRange( Index start, Index end )
@@ -205,7 +205,7 @@ inline void setRowRange( Index start, Index end )
   {
     case 0: m_rowIndices = VectorXi(); return;
     case 1: m_rowIndices.resize(1); m_rowIndices << start; return;
-    default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
+    default: m_rowIndices = VectorXi::LinSpaced(size,start,end-1); return;
   }
 }
 inline const MatrixType& internal() { return m_matrix; }
@@ -233,7 +233,7 @@ public:
 
   inline SubMatrix(const MatrixType& matrix, bool permuted=true)
     : m_matrix(matrix)
-    , m_colIndices(permuted ? ColIndices::LinSpaced(0, matrix.cols()-1, matrix.cols()) : ColIndices())
+    , m_colIndices(permuted ? ColIndices::LinSpaced(matrix.cols(),0, matrix.cols()-1) : ColIndices())
   {
   }
 
@@ -316,7 +316,7 @@ inline void setColRange( Index start, Index end )
   {
     case 0: m_colIndices = VectorXi(); return;
     case 1: m_colIndices.resize(1); m_colIndices << start; return;
-    default: m_colIndices = VectorXi::LinSpaced(start,end-1,size); return;
+    default: m_colIndices = VectorXi::LinSpaced(size,start,end-1); return;
   }
 }
 inline const MatrixType& internal() { return m_matrix; }
@@ -344,7 +344,7 @@ public:
 
   inline SubMatrix(const MatrixType& matrix, bool permuted=true)
     : m_matrix(matrix)
-    , m_rowIndices(permuted ? RowIndices::LinSpaced(0, matrix.rows()-1, matrix.rows()) : RowIndices())
+    , m_rowIndices(permuted ? RowIndices::LinSpaced(matrix.rows(), 0, matrix.rows()-1) : RowIndices())
   {
   }
 
@@ -428,7 +428,7 @@ inline void setRowRange( Index start, Index end )
   {
     case 0: m_rowIndices = VectorXi(); return;
     case 1: m_rowIndices.resize(1); m_rowIndices << start; return;
-    default: m_rowIndices = VectorXi::LinSpaced(start,end-1,size); return;
+    default: m_rowIndices = VectorXi::LinSpaced(size,start,end-1); return;
   }
 }
 inline const MatrixType& internal() { return m_matrix; }

@@ -339,10 +339,10 @@ namespace soth
      *
      */
 
-    assert(VectorXi::LinSpaced(0,2,3)[0] == 0
-            && VectorXi::LinSpaced(0,2,3)[1] == 1
-            && VectorXi::LinSpaced(0,2,3)[2] == 2
-            && "new version of Eigen might have change the "
+    assert(VectorXi::LinSpaced(3,0,2)[0] == 0
+	   && VectorXi::LinSpaced(3,0,2)[1] == 1
+	   && VectorXi::LinSpaced(3,0,2)[2] == 2
+	   && "new version of Eigen might have change the "
 	   "order of arguments in LinSpaced, please correct");
 
     initialize();

@@ -63,7 +63,7 @@ int main (int argc, char** argv)
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
   std::vector<soth::bound_vector_t> b(NB_STAGE);
   generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
-  b[0][1] = std::make_pair(-0.1,1.63);
+  b[0][1] = std::make_pair(-0.1,2.37);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       sotDEBUG(0) << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
@@ -78,7 +78,7 @@ int main (int argc, char** argv)
       hcod.pushBackStage( J[i],b[i] );
       assert(NR[i]>0);
       if (NR[i]>1)
-        hcod.setInitialActiveSet( Eigen::VectorXi::LinSpaced(0, NR[i]-1, NR[i]),i);
+        hcod.setInitialActiveSet( Eigen::VectorXi::LinSpaced(NR[i],0, NR[i]-1),i);
       else
         hcod.setInitialActiveSet( Eigen::VectorXi::Zero(1), i);
     }
@@ -92,7 +92,7 @@ int main (int argc, char** argv)
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   double tau = hcod.computeStepAndUpdate();
   hcod.makeStep(tau);
-  assert((tau==1.)&&"Check bound test failed.");
+  assert((std::abs(tau-1.)<=10*soth::Stage::EPSILON)&&"Check bound test failed.");
 
   hcod.computeLagrangeMultipliers();
   bool testL = hcod.testLagrangeMultipliers(std::cout);

@@ -287,7 +287,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   m_colsTranspositions.resize(cols);
   m_colsIntTranspositions.resize(cols);
   if (cols>1)
-    m_colsIntTranspositions =  IntRowVectorType::LinSpaced(0, cols-1, cols);
+    m_colsIntTranspositions =  IntRowVectorType::LinSpaced(cols,0, cols-1);
   else
     m_colsIntTranspositions =  IntRowVectorType::Zero(1); //TODO: treat this special case here. It just requires to check every output data is correctly initilized
 
