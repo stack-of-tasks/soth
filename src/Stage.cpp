@@ -831,6 +831,8 @@ namespace soth
     assert( isInit );
     assert( rho.rows() == nc );
 
+    if( sizeL==0 )
+      {	l.resize(sizeA()); l.setZero(); return; }
     VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
 

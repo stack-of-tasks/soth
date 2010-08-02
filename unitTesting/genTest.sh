@@ -1,10 +1,12 @@
+exec=texhcod
+exec=trandom
 
 ref=0
 
 nbTest=1e3
 for i in `seq 1 $nbTest`
 do
-    ./unitTesting/texhcod &> tmp.txt
+    ./unitTesting/$exec &> tmp.txt
     res=$?;
     seed=`cat tmp.txt | grep seed`
     if [ $res != "0" ]

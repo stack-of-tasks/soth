@@ -114,6 +114,7 @@ namespace soth
     isInit=false;
     isSolutionCpt=false;
 
+    Y.reset();
     solution.setZero(); Ytu.setZero();
     for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
       {   (*iter)->reset();   }

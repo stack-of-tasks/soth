@@ -82,7 +82,7 @@ void generateRandomProfile(int & nbStage,
 			   std::vector<int>& nr,
 			   int & nc )
 {
-  nc = Random::rand<int>() % 50 + 5;
+  nc = Random::rand<int>() % 50 + 6;
   nbStage = randu(1,nc/3);
 
   //nc=30; nbStage=5;
@@ -93,7 +93,7 @@ void generateRandomProfile(int & nbStage,
 
   const int NR = std::max(2,(int)round((0.+nc)/nbStage*.7));
   const int RANKFREE = std::max(1,(int)round(whiteNoise(NR,0.6)));
-  const int RANKLINKED = round(whiteNoise(NR,1));
+  const int RANKLINKED = round(whiteNoise(NR,1))+1;
   sotDEBUG(1) << "mean_NR = " << NR << "; mean_RF = " << RANKFREE << "; mean_RL = " << RANKLINKED << endl;
 
   rankfree.resize( nbStage );
@@ -173,6 +173,8 @@ struct ULV
     Ainit=A;
 #endif
 
+    if( rank==0 ) return;
+
     qru.compute( A );
     Rt = qru.matrixQR().topRows(rank).triangularView<Upper>().transpose();
     qrv.compute( Rt );
@@ -180,6 +182,11 @@ struct ULV
 
   void disp( bool check=false )
   {
+    if( rank==0 )
+      {
+	sotDEBUG(5) << "ULV: Empty rank."  << endl;
+	return;
+      }
 
     sotDEBUG(5) << "U = " << (MATLAB)(MatrixXd)qru.householderQ() << endl;
     sotDEBUG(5) << "R = " << (MATLAB)(MatrixXd)Rt.transpose() << endl;
@@ -202,38 +209,43 @@ struct ULV
   /* Solve min||Ax-b|| for a matrix A whose rank is given. */
   VectorXd solve( const VectorXd& b ) const
   {
-    VectorXd sol = b;  // s = b
-    sol.applyOnTheLeft(qru.householderQ().adjoint()); // s = U'*s
-    sol.applyOnTheLeft(qrv.colsPermutation());  // s = Pu*s
+    if( rank==0 ) return VectorXd::Zero(NC);
+
+    VectorXd sol = b;  /* s = b */
+    sol.applyOnTheLeft(qru.householderQ().adjoint()); /* s = U'*s */
+    sol.applyOnTheLeft(qrv.colsPermutation().transpose());  /* s = Pu'*s */
     sotDEBUG(5) << "PuUtb = " << (MATLAB)sol;
 
     VectorXd solv(NC); solv.setZero();
     solv.head(rank) = sol.head(rank);
     qrv.matrixQR().topRows(rank).transpose().triangularView<Lower>()
-      .solveInPlace( solv.head(rank) );  // s = Linv*s
+      .solveInPlace( solv.head(rank) );  /* s = Linv*s */
     sotDEBUG(5) << "LiPuUtb = " << (MATLAB)solv;
 
-    solv.applyOnTheLeft(qrv.householderQ());  // s = V*s
-    solv.applyOnTheLeft(qru.colsPermutation().transpose()); // s = Pv'*s
+    solv.applyOnTheLeft(qrv.householderQ());  /* s = V*s */
+    solv.applyOnTheLeft(qru.colsPermutation()); /* s = Pv*s */
     sotDEBUG(5) << "VLUe = " << (MATLAB)solv << endl;
     return solv;
   }
 
   MatrixXd matrixV(void) const
   {
-    MatrixXd V = qru.colsPermutation().transpose();
+    if( rank==0 ){ return MatrixXd::Identity(NC,NC); }
+    MatrixXd V = qru.colsPermutation();
     V.applyOnTheRight(qrv.householderQ());
     return V;
   }
   MatrixXd matrixU(void) const
   {
+    if( rank==0 ){ return MatrixXd::Identity(NR,NR); }
     MatrixXd U = MatrixXd::Identity(NR,NR);
-    U.topLeftCorner(rank,rank) = qrv.colsPermutation().transpose();
-    U.applyOnTheLeft(qru.householderQ());  // U = H*U
+    U.topLeftCorner(rank,rank) = qrv.colsPermutation(); /* I think Pu is always 1.*/
+    U.applyOnTheLeft(qru.householderQ());  /* U = H*U */
     return U;
   }
   void decreaseProjector( MatrixXd & P ) const
-  { // Highly suboptimal ...
+  { /* Highly suboptimal ... */
+    if( rank==0 ) return;
     MatrixXd V1 = matrixV().leftCols(rank);
     P -= V1*V1.transpose();
   }
@@ -247,7 +259,10 @@ int main (int argc, char** argv)
   {
     struct timeval tv;
     gettimeofday(&tv,NULL);
-    int seed = 986; //tv.tv_usec % 7919;
+
+    int seed = tv.tv_usec % 7919; //= 7594;
+    if( argc == 2 )
+      {  seed = atoi(argv[1]);  }
     std::cout << "seed = " << seed << std::endl;
     soth::Random::setSeed(seed);
   }
@@ -265,8 +280,8 @@ int main (int argc, char** argv)
 
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
-      //std::cout << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
-      //std::cout << "e"<<i+1<< " = " << b[i] << ";"<<std::endl;
+      std::cout << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
+      std::cout << "e"<<i+1<< " = " << b[i] << ";"<<std::endl;
     }
   //  assert( std::abs(J[0](0,0)-(-1.1149))<1e-5 );
 
@@ -280,7 +295,7 @@ int main (int argc, char** argv)
 
   VectorXd solution;
   hcod.activeSearch( solution );
-  //hcod.show(std::cout);
+  if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
 
   /* --- CHECK --- */
@@ -297,6 +312,8 @@ int main (int argc, char** argv)
 
       sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
       assert( st.checkBound(u,du,NULL,NULL) );
+
+      if( st.sizeA()==0 ) continue;
 
       SubMatrix<MatrixXd,RowPermutation> Jai = st.Jactive(J_);
       SubMatrix<VectorXd,RowPermutation> eai = st.eactive(e_);
