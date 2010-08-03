@@ -55,10 +55,13 @@ namespace soth
     void computeSolution( bool compute_u = true );
     void computeLagrangeMultipliers( void );
     double computeStepAndUpdate( void );
+    double computeStep( void );
     bool searchAndDowndate( void );
+    bool search( void );
 
     void makeStep( double tau, bool compute_u = true );
     void makeStep( bool compute_u = true );
+
 
 
     /* --- The big one --- */
@@ -79,7 +82,7 @@ namespace soth
   protected:
     HCOD( void ) : Y(0) {};
 
-  protected:
+  protected:public://DEBUG
     unsigned int sizeProblem;
     soth::BaseY Y;
     stage_sequence_t stages;

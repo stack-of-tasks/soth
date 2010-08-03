@@ -1,5 +1,5 @@
-#define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 15
+//#define SOTH_DEBUG
+//#define SOTH_DEBUG_MODE 15
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
 
@@ -124,7 +124,7 @@ namespace soth
   initialize( void )
   {
     if(! isReset) reset(); // TODO: should it be automatically reset?
-    assert( isReset&&(!isInit) ); isInit=true;
+    assert( isReset&&(!isInit) );
 
     /* Compute the initial COD for each stage. */
     unsigned int previousRank = 0;
@@ -136,7 +136,8 @@ namespace soth
 	previousRank
 	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
       }
-    Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+    //Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+    isReset=false; isInit=true;
   }
   void HCOD::
   update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
@@ -263,6 +264,21 @@ namespace soth
      }
     return tau;
   }
+  double HCOD::
+  computeStep( void )
+  {
+    assert(isSolutionCpt);
+
+    double tau = 1.0; Stage::ConstraintRef cst;
+    stage_iter_t stageUp;
+    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+      {
+	sotDEBUG(5) << "Check stage " << (*iter)->name << "." << std::endl;
+	if(! (*iter)->checkBound( solution,du,cst,tau ) )
+	  stageUp=iter;
+      }
+    return tau;
+  }
 
   void HCOD::
   makeStep( double tau, bool compute_u )
@@ -293,6 +309,19 @@ namespace soth
       {
 	downdate(stageDown,row);
 	return true;
+      }
+    return false;
+  }
+
+  bool HCOD::
+  search( void )
+  {
+    double lambdamax = Stage::EPSILON; unsigned int row;
+    stage_iter_t stageDown = stages.end();
+    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+      {
+	if( (*iter)->maxLambda( lambdamax,row ) )
+	  stageDown=iter;
       }
     return false;
   }
@@ -347,6 +376,7 @@ namespace soth
 	   "order of arguments in LinSpaced, please correct");
 
     initialize();
+    Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
     bool endCondition = true;
     do
       {

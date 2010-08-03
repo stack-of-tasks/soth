@@ -8,10 +8,14 @@
 #include "soth/debug.h"
 #include "MatrixRnd.h"
 #include <sys/time.h>
+#include <iostream>
 #include <Eigen/SVD>
 
 using namespace soth;
 using std::endl;
+using std::cout;
+using std::cerr;
+
 
 void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 			       std::vector<soth::bound_vector_t> &b,
@@ -53,27 +57,27 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	  }
 	}
 
-      for( unsigned int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
+      for( unsigned int i=0;i<NR[s];++i )
+	{
+	  double x = Random::rand<double>() * 2; // DEBUG: should b U*2-1
+	  double y = Random::rand<double>() * -2;  // DEBUG
+	  switch( randu(1,4) )
+	    {
+	    case 1: // =
+	      b[s][i] = x;
+	      break;
+	    case 2: // <
+	      b[s][i] = soth::Bound(y,soth::Bound::BOUND_INF);
+	      break;
+	    case 3: // >
+	      b[s][i] = soth::Bound(x,soth::Bound::BOUND_SUP);
+	      break;
+	    case 4: // < <
+	      b[s][i] = std::make_pair( std::min(x,y),std::max(x,y) ) ;
+	      break;
+	    }
+	}
     }
-}
-
-
-double whiteNoise(void)
-{
-  const int ACC = 100;
-  double x=0;
-  for( int i=0;i<ACC;++i ) x=x+Random::rand<double>();
-  return (x-ACC/2.)*sqrt(12.0/ACC);
-}
-int whiteNoise( int mean,double var )
-{
-  double x=whiteNoise()*var+mean;
-  return std::max(0,(int)round(x));
-}
-int randu( int bmin,int bmax )
-{
-  assert( bmin<bmax );
-  return floor((bmax-bmin+1)*Random::rand<double>()+bmin);
 }
 
 void generateRandomProfile(int & nbStage,
@@ -83,16 +87,13 @@ void generateRandomProfile(int & nbStage,
 			   int & nc )
 {
   nc = Random::rand<int>() % 50 + 6;
-  nbStage = randu(1,nc/3);
-
-  //nc=30; nbStage=5;
-  nc=12; nbStage=3;
+  nbStage = randu(1,1+nc/5);
 
   sotDEBUG(1) << "nc = " << nc << endl;
   sotDEBUG(1) << "nbStage = " << nbStage << endl;
 
   const int NR = std::max(2,(int)round((0.+nc)/nbStage*.7));
-  const int RANKFREE = std::max(1,(int)round(whiteNoise(NR,0.6)));
+  const int RANKFREE = std::max(1,(int)round(whiteNoise(NR,0.2)));
   const int RANKLINKED = round(whiteNoise(NR,1))+1;
   sotDEBUG(1) << "mean_NR = " << NR << "; mean_RF = " << RANKFREE << "; mean_RL = " << RANKLINKED << endl;
 
@@ -304,11 +305,72 @@ int main (int argc, char** argv)
   VectorXd ea,eaprec;
   MatrixXd Pa = MatrixXd::Identity(NC,NC);
   VectorXd usvd = VectorXd::Zero(NC);
+  const double EPSILON = 10*Stage::EPSILON;
 
   for( unsigned int i=0;i<hcod.nbStages();++i )
     {
       Stage & st = hcod[i];
       MatrixXd J_(NR[i],NC); VectorXd e_(NR[i]);
+
+      std::cout << "Stage " << i << "... " << endl;
+      {
+	for( int r=0;r<NR[i];++r )
+	  {
+	    double Ju = J[i].row(r)*solution;
+	    cout << "   "<<i << ":" << r << "\t";
+	    switch( b[i][r].getType() )
+	      {
+	      case Bound::BOUND_TWIN:
+		{
+		  double x = b[i][r].getBound( Bound::BOUND_TWIN );
+		  if( std::abs( x-Ju )<EPSILON )
+		    cout << " (=)    :  \t  Ju="  << Ju
+			 << " ~ " << x << "=b" << endl;
+		  else
+		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+			 << " != " << x << "=b" << endl;
+		  break;
+		}
+	      case Bound::BOUND_INF:
+		{
+		  double x = b[i][r].getBound( Bound::BOUND_INF );
+		  if( x<Ju+EPSILON )
+		    cout << " (b<.)  :  \t  Ju="  << Ju
+			 << " > " << x << "=b" << endl;
+		  else
+		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+			 << " !< " << x << "=b" << endl;
+		  break;
+		}
+	      case Bound::BOUND_SUP:
+		{
+		  double x = b[i][r].getBound( Bound::BOUND_SUP );
+		  if( Ju<x+EPSILON )
+		    cout << " (.<b)  :  \t  Ju="  << Ju
+			 << " < " << x << "=b" << endl;
+		  else
+		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+			 << " !> " << x << "=b" << endl;
+		  break;
+		}
+	      case Bound::BOUND_DOUBLE:
+		{
+		  double xi = b[i][r].getBound( Bound::BOUND_INF );
+		  double xs = b[i][r].getBound( Bound::BOUND_SUP );
+		  if( (xi<Ju+EPSILON)&&(Ju<xs+EPSILON) )
+		    cout << " (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
+			 << " < " << xs << "=bsup" << endl;
+		  else
+		    cout << " (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
+			 << " !< " << xs << "=bsup" << endl;
+		  break;
+		}
+	      }
+
+
+	  }
+      }
+
 
       sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
       assert( st.checkBound(u,du,NULL,NULL) );

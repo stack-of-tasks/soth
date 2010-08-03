@@ -1,15 +1,16 @@
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
+
 //SOTH_OPEN_DEBUG;
 #include "soth/debug.h"
-namespace soth
-{
-  class stage__INIT
-  {
-  public:stage__INIT( void ) { }// sotDebugTrace::openFile(); }
-  };
-  stage__INIT sotSOT_initiator;
-};
+// namespace soth
+// {
+//   class stage__INIT
+//   {
+//   public:stage__INIT( void ) { }// sotDebugTrace::openFile(); }
+//   };
+//   stage__INIT sotSOT_initiator;
+// };
 
 
 #include "soth/Stage.hpp"

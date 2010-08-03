@@ -1,14 +1,19 @@
 /*
  *  Copyright
  */
-#define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 45
+//#define SOTH_DEBUG
+//#define SOTH_DEBUG_MODE 45
 #include "soth/debug.h"
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
 #include "MatrixRnd.h"
 #include <sys/time.h>
 #include <Eigen/SVD>
+
+namespace Eigen
+{
+  #include "soth/DestructiveColPivQR.h"
+}
 
 using namespace soth;
 using std::endl;
@@ -123,7 +128,9 @@ int main (int argc, char** argv)
     std::cout << "seed = " << seed << std::endl;
     soth::Random::setSeed(seed);
   }
+#ifdef SOTH_DEBUG
   sotDebugTrace::openFile();
+#endif
 
   /* Decide the size of the problem. */
   // int NB_STAGE = 6,NC = 46;
@@ -134,7 +141,8 @@ int main (int argc, char** argv)
   int NB_STAGE = 4,NC = 30;
   Eigen::VectorXd NR(NB_STAGE),RANKLINKED(NB_STAGE),RANKFREE(NB_STAGE);
   NR         << 6, 3, 6, 6;
-  RANKFREE   << 6, 3, 4, 4;
+  RANKFREE   << 6, 3, 6, 6;
+  //  RANKFREE   << 6, 3, 4, 4;
   RANKLINKED << 0, 0, 2, 2;
 
   /* Initialize J and b. */
@@ -161,41 +169,89 @@ int main (int argc, char** argv)
   Now t0;
   struct timeval tv0,tv1;
 
-  gettimeofday(&tv0,NULL);
-  hcod.initialize();
-  gettimeofday(&tv1,NULL);
-  {
-    std::cout << tv1.tv_sec-tv0.tv_sec <<"s"<< endl;
-    std::cout << tv1.tv_usec-tv0.tv_usec <<"us"<< endl;
-  }
+  for( unsigned int i=0;i<1000;++i )
+    {   hcod.reset(); hcod.initialize(); }
 
   Now t1;
-  hcod.computeSolution();
+  for( unsigned int i=0;i<1000;++i )
+    hcod.Y.computeExplicitly();
 
   Now t2;
-  hcod.reset();
+  for( unsigned int i=0;i<1000;++i )
+    hcod.computeSolution(true);
 
   Now t3;
-  hcod.activeSearch( solution );
+  for( unsigned int i=0;i<1000;++i )
+    hcod.reset();
+
+  Now t4;
+  for( unsigned int i=0;i<1000;++i )
+    double tau = hcod.computeStep();
+
+  Now t5;
+  for( unsigned int i=0;i<1000;++i )
+    hcod.computeLagrangeMultipliers();
+
+  Now t6;
+  for( unsigned int i=0;i<1000;++i )
+    bool down = hcod.search();
+
+  Now t7;
+  for( unsigned int i=0;i<1000;++i )
+    hcod.activeSearch( solution );
 
   Now tf;
-  std::cout << "HCOD = " <<t1-t0 <<"ms"<< endl;
-  std::cout << "Inv = " << t2-t1 <<"ms"<< endl;
-  std::cout << "reset = " << t3-t2 <<"ms"<< endl;
-  std::cout << "activesearch = " << tf-t3 <<"ms"<< endl;
+  std::cout << "HCOD = " <<(t1-t0) <<"us"<< endl;
+  std::cout << "Y = " << (t2-t1) <<"us"<< endl;
+  std::cout << "Inv = " << (t3-t2) <<"us"<< endl;
+  std::cout << "reset = " << (t4-t3) <<"us"<< endl;
+  std::cout << "check = " << (t5-t4) <<"us"<< endl;
+  std::cout << "lagrange = " << (t6-t5) <<"us"<< endl;
+  std::cout << "l<0 = " << (t7-t6) <<"us"<< endl;
+  std::cout << "activesearch = " << (tf-t7) <<"us"<< endl;
 
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
+  std::cout << " --- UNITCHRONO --------------------------------- " << endl;
+
+  { // simple QR test
+    const int Nctest = NC;
+    const int Nrtest = 21;
+    MatrixXd A = MatrixXd::Random(Nrtest,Nctest);
+    MatrixXd Y(Nctest,Nctest);
+
+    Now t3;
+    for( int i=0;i<1000;++i )
+      Eigen::DestructiveColPivQR<MatrixXd,MatrixXd> mQR(A,Y,1e-6);
+    Now tf;
+    std::cout << "QR " << Nctest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
+  }
+
+  { // simple Linv test
+    const int Nctest = NC;
+    const int Nrtest = 21;
+    MatrixXd A = MatrixXd::Random(Nrtest,Nctest);
+    VectorXd b(Nrtest);
+
+    Now t3;
+    for( int i=0;i<1000;++i )
+      solveInPlaceWithLowerTriangular( A.leftCols(Nrtest),b );
+    Now tf;
+    std::cout << "Linv " << Nrtest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
+  }
 
 
   { // Double test with matrix multiplication, just to be sure.
-    MatrixXd A = MatrixXd::Random(100,100);
-    MatrixXd B = MatrixXd::Random(100,100);
+    const int Nctest = NC;
+    const int Nrtest = 21;
+    MatrixXd A = MatrixXd::Random(Nrtest,Nctest);
+    MatrixXd B = MatrixXd::Random(Nctest,Nctest);
 
+    MatrixXd C(Nrtest,Nctest);
     Now t3;
-    MatrixXd C=A*B;
+    for( int i=0;i<1000;++i ) C=A*B;
     Now tf;
-    std::cout << "100x100 = " << tf-t3 <<"ms"<< endl;
+    std::cout << Nctest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
     std::cout << C(0,0);
   }
 
