@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cmath>
 #include "soth/Bound.hpp"
 
 namespace soth
@@ -66,6 +67,30 @@ namespace soth
       case BOUND_DOUBLE:
 	if( val<valInf ) return BOUND_INF;
 	if( valSup<val ) return BOUND_SUP;
+      }
+    return BOUND_NONE;
+  }
+
+  /* Return the bound that is violated, NONE if bound are OK.
+   * In case of twin-bounds, no check is performed, NONE is always returned. */
+  Bound::bound_t Bound::
+  checkSaturation( const double & val,const double & EPSILON ) const
+  {
+    assert( type!=BOUND_NONE );
+    switch( type )
+      {
+      case BOUND_INF:
+	if( std::abs(val-valInf)<EPSILON ) return BOUND_INF;
+	break;
+      case BOUND_SUP:
+	if( std::abs(val-valSup)<EPSILON ) return BOUND_SUP;
+	break;
+      case BOUND_TWIN:
+	break;
+      case BOUND_DOUBLE:
+	if( std::abs(val-valInf)<EPSILON ) return BOUND_INF;
+	if( std::abs(val-valSup)<EPSILON ) return BOUND_SUP;
+	break;
       }
     return BOUND_NONE;
   }

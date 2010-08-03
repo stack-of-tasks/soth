@@ -890,14 +890,21 @@ namespace soth
 		    << " -- Jupdu = " << val+dval << endl;
 	assert( (b.check(val+10*EPSILON)==Bound::BOUND_NONE)
 		||(b.check(val-10*EPSILON)==Bound::BOUND_NONE) );
+
+	Bound::bound_t saturation = b.checkSaturation(val,EPSILON);
+	if( saturation!=Bound::BOUND_NONE )
+	  { sotDEBUG(5) << "Saturation at " << ((saturation==Bound::BOUND_INF)?"-":"+")<<i << endl; }
 	Bound::bound_t btype = b.check(val+dval);
+
 	if( btype != Bound::BOUND_NONE )
 	  {
+	    assert( (saturation==Bound::BOUND_NONE)||(saturation==Bound::BOUND_INF)||(saturation==Bound::BOUND_SUP) );
 	    assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
-	    sotDEBUG(5) << "Violation at "
-			<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+	    sotDEBUG(5) << "Violation at " << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+
 	    const double & bval = b.getBound(btype);
-	    double btau = (bval-val)/dval;
+	    double btau;
+	    if( saturation==btype) btau=0; else btau = (bval-val)/dval;
 	    assert(btau>=0); assert(btau<1);
 	    if( btau<taumax )
 	      {
@@ -942,7 +949,8 @@ namespace soth
 	  case Bound::BOUND_TWIN:
 	    break; // Nothing to do.
 	  case Bound::BOUND_SUP:
-	    if( lambda(i,0)>lmax )
+	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
+	    if( -lambda(i,0)>lmax )
 	      {
 		res=true;
 		lmax=lambda(i,0);
@@ -950,6 +958,7 @@ namespace soth
 	      }
 	    break;
 	  case Bound::BOUND_INF:
+	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
 	    if( lambda(i,0)>lmax ) // TODO: Why???
 	      {
 		res=true;

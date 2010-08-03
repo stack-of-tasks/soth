@@ -35,6 +35,8 @@ namespace soth
     /* Return the bound that is violated, NONE if bound are OK.
      * In case of twin-bounds, no check is performed, NONE is always returned. */
     bound_t check( const double & val ) const;
+    /* Return the bound b s.t. |b-val|<EPSILON, and NONE if none. */
+    bound_t checkSaturation( const double & val, const double & EPSILON  ) const;
 
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);

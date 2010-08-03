@@ -93,7 +93,7 @@ void generateRandomProfile(int & nbStage,
   sotDEBUG(1) << "nbStage = " << nbStage << endl;
 
   const int NR = std::max(2,(int)round((0.+nc)/nbStage*.7));
-  const int RANKFREE = std::max(1,(int)round(whiteNoise(NR,0.2)));
+  const int RANKFREE = std::max(1,(int)round(whiteNoise(NR/2,0.2)));
   const int RANKLINKED = round(whiteNoise(NR,1))+1;
   sotDEBUG(1) << "mean_NR = " << NR << "; mean_RF = " << RANKFREE << "; mean_RL = " << RANKLINKED << endl;
 
@@ -105,7 +105,7 @@ void generateRandomProfile(int & nbStage,
       if( Random::rand<double>()<0.7 )
 	{
 	  sotDEBUG(1) << i<<": normal rank." <<endl;
-	  rankfree[i] = randu(2,std::max(RANKFREE,3));//whiteNoise( RANKFREE,3 );
+	  rankfree[i] = randu(0,RANKFREE);//whiteNoise( RANKFREE,3 );
 	  ranklinked[i] = randu(0,RANKLINKED); //whiteNoise( RANKLINKED,3 );
 	  nr[i] = randu(1,NR);
 	}
@@ -361,7 +361,7 @@ int main (int argc, char** argv)
 		    cout << " (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
 			 << " < " << xs << "=bsup" << endl;
 		  else
-		    cout << " (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
+		    cout << "!! (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
 			 << " !< " << xs << "=bsup" << endl;
 		  break;
 		}
