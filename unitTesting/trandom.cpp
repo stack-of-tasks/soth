@@ -2,7 +2,7 @@
  *  Copyright
  */
 #define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 45
+#define SOTH_DEBUG_MODE 1
 #include "soth/debug.h"
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
@@ -75,6 +75,12 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	    case 4: // < <
 	      b[s][i] = std::make_pair( std::min(x,y),std::max(x,y) ) ;
 	      break;
+	    }
+	  if(s==3)
+	    {
+	      // if( i==0 ) b[s][i]=x;
+	      // if( i==1 ) b[s][i]=y;
+	      // if( i==2 ) b[s][i]=x;
 	    }
 	}
     }
@@ -181,6 +187,23 @@ struct ULV
     qrv.compute( Rt );
   }
 
+  void compute( const MatrixXd& A, const double & svmin )
+  {
+    NC=A.cols(); NR=A.rows();
+#ifdef DEBUG
+    Ainit=A;
+#endif
+
+    qru.compute( A );
+
+    const MatrixXd& QR = qru.matrixQR();
+    for( rank=0;rank<NR;++rank ) if( std::abs(QR(rank,rank))<=svmin ) break;
+    if( rank==0 ) return; 
+
+    Rt = qru.matrixQR().topRows(rank).triangularView<Upper>().transpose();
+    qrv.compute( Rt );
+  }
+
   void disp( bool check=false )
   {
     if( rank==0 )
@@ -251,6 +274,256 @@ struct ULV
     P -= V1*V1.transpose();
   }
 };
+
+/* -------------------------------------------------------------------------- */
+/* --- SOTH SOLVER ---------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/* This piece of code tries all the possible active set, looking for the best
+ * solution, and compare this solution with the current solution. The function
+ * to be run is explore, with the constraints J and b as arguments, as well
+ * as the optimum to be checked. */
+namespace DummyActiveSet
+{
+
+
+  VectorXd SOT_Solver( std::vector<Eigen::MatrixXd> J,
+		       std::vector<VectorXd> e )
+  {
+    const unsigned int NC = J[0].cols();
+
+    VectorXd u = VectorXd::Zero(NC);
+    MatrixXd Pa = MatrixXd::Identity(NC,NC);
+    const double EPSILON = Stage::EPSILON;
+
+    for( unsigned int i=0;i<J.size();++i )
+      {
+	if( J[i].rows() == 0 ) continue;
+	MatrixXd JPi = J[i]*Pa;
+	ULV ulv; ulv.compute(JPi,EPSILON);
+	u += ulv.solve( e[i]-J[i]*u );
+	ulv.decreaseProjector( Pa );
+      }
+
+    return u;
+
+
+  }
+
+  std::vector<double> stageErrors( const std::vector<Eigen::MatrixXd>& Jref,
+				   const std::vector<soth::bound_vector_t>& bref,
+				   const VectorXd& usot )
+  {
+    std::vector<double> errors(Jref.size());
+    for( unsigned int i=0;i<Jref.size();++i )
+      {
+	const MatrixXd& J = Jref[i];
+	const soth::bound_vector_t& b = bref[i];
+
+	VectorXd e = J*usot;
+	errors[i]=0;
+	for( unsigned int r = 0;r<J.rows();++r )
+	  {
+	    double x = b[r].distance(e(r));
+	    errors[i] += x*x;
+	  }
+	sotDEBUG(5) << "err(" << i << ") = " << errors[i] << endl;
+      }
+    return errors;
+  }
+
+  /* Alphalexical order */
+  //template<>
+  bool isLess ( const std::vector< double > & m1, const std::vector<double> & m2 )
+  {
+    assert( m1.size()==m2.size() );
+    for( unsigned int i=0;i<m1.size();++i )
+      {
+	if( m1[i]-Stage::EPSILON>m2[i] ) return false;
+      }
+    return true;
+  }
+
+
+  /* Use the old SOT solver for the given active set. The optimum
+   * is then compared to the bound. If the found solution is valid, compare its
+   * norm to the reference optimum. Return true is the solution found by SOT is valid and
+   * better. */
+  bool compareSolvers( const std::vector<Eigen::MatrixXd>& Jref,
+		       const std::vector<soth::bound_vector_t>& bref,
+		       const std::vector< std::vector<int> >& active,
+		       const std::vector< std::vector<Bound::bound_t> >& bounds,
+		       const double & urefnorm,
+		       const std::vector<double> & erefnorm )
+  {
+    /* Build the SOT problem. */
+    const unsigned int NC = Jref[0].cols();
+    std::vector<Eigen::MatrixXd> Jsot(Jref.size());
+    std::vector<VectorXd> esot(Jref.size());
+    for( unsigned int i=0;i<Jref.size();++i )
+      {
+	MatrixXd& J = Jsot[i]; VectorXd& e= esot[i];
+	const std::vector<int> & Aset = active[i];
+	const std::vector<Bound::bound_t> & Bset = bounds[i];
+	const unsigned int NR = Aset.size();
+
+	J.resize(NR,NC); e.resize(NR);
+	for( unsigned int r=0;r<NR;++r )
+	  {
+	    sotDEBUG(5) << "Get " << i<<"," << Aset[r] <<" ("<<r<<")" << endl;
+	    J.row(r) = Jref[i].row( Aset[r] );
+	    e(r) = bref[i][Aset[r]].getBound( Bset[Aset[r]] );
+	  }
+
+	sotDEBUG(45) << "J" << i << " = " << (MATLAB)J << endl;
+	sotDEBUG(45) << "e" << i << " = " << (MATLAB)e << endl;
+      }
+
+    /* Find the optimum. */
+    VectorXd usot = SOT_Solver( Jsot,esot );
+    sotDEBUG(45) << "usot" <<" = " << (MATLAB)usot << endl;
+    if( usot.norm()-Stage::EPSILON >= urefnorm) return false;
+
+    /* Check the bounds. */
+    if( isLess( stageErrors(Jref,bref,usot),erefnorm ) )
+      {
+	std::cout << endl << endl << " * * * * * * * * * * * * * " << endl
+		  <<  "usot" <<" = " << (MATLAB)usot << endl;
+	std::cout << "aset = {";
+	for( unsigned int i=0;i<Jref.size();++i )
+	  {
+	    std::cout << "\n        [ ";
+	    for( unsigned int r=0;r<active[i].size();++r )
+	      {
+		const int ref = active[i][r];
+		if( bref[i][ref].getType() ==  Bound::BOUND_DOUBLE )
+		  if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
+		  else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
+		std::cout <<active[i][r] << " ";
+	      }
+	    std::cout << " ]";
+	  }
+	std::cout << "} " << endl;
+	std::cout << "norm solution = " << usot.norm() << " ~~ " << urefnorm << " = norm ref." << endl;
+      }
+    else return false;
+
+  }
+
+  void intToVbool( const int nbConstraint, const unsigned long int ref,
+		   std::vector<bool>& res )
+  {
+    res.resize(nbConstraint);
+    sotDEBUG(45) << "ref" <<" = " << ref << endl;
+    for( unsigned int i=0;i<nbConstraint;++i )
+      {
+	sotDEBUG(45) << i << ": " << (0x01&(ref>>i)) << endl;
+	res[i]=( 0x01&(ref>>i) );
+      }
+  }
+
+  void selectConstraint( const std::vector<int> & NR,
+			 const std::vector<bool>& activeBool,
+			 std::vector< std::vector<int> > & aset )
+  {
+    int NRprec=0; aset.resize(NR.size());
+    for( unsigned int i=0;i<NR.size();++i )
+      {
+	for( unsigned int r=0;r<NR[i];++r )
+	  if(activeBool[NRprec+r]) aset[i].push_back(r);
+	NRprec += NR[i];
+
+	// std::cout << "a" << i << " = [ ";
+	// for( unsigned int r=0;r<aset[i].size();++r )
+	// 	std::cout << aset[i][r] << " ";
+	// std::cout << "];" << endl;
+      }
+  }
+
+  void selectBool( const std::vector<soth::bound_vector_t>& bref,
+		   std::vector<std::vector<int> > aset,
+		   const std::vector<bool>& boundBool,
+		   std::vector< std::vector<Bound::bound_t> >& boundSelec )
+  {
+    int boolPrec=0;
+    boundSelec.resize(bref.size());
+    for( unsigned int i=0;i<bref.size();++i )
+      {
+	boundSelec[i].resize(bref[i].size(),Bound::BOUND_NONE);
+	for( unsigned int r=0;r<aset[i].size();++r )
+	  {
+	    if( bref[i][aset[i][r]].getType() == Bound::BOUND_DOUBLE )
+	      {
+		sotDEBUG(5) << "Fill " << i<<"," << aset[i][r] <<" ("<<r<<")" << endl;
+		boundSelec[i][aset[i][r]] = (boundBool[boolPrec++])?Bound::BOUND_INF:Bound::BOUND_SUP;
+	      }
+	    else
+	      {
+		boundSelec[i][aset[i][r]] = bref[i][aset[i][r]].getType();
+	      }
+	    assert( (boundSelec[i][aset[i][r]]!=Bound::BOUND_DOUBLE)&&(boundSelec[i][aset[i][r]]!=Bound::BOUND_NONE) );
+	  }
+      }
+  }
+
+  int computeNbDouble( const std::vector<soth::bound_vector_t>& bref,
+		       std::vector<std::vector<int> > aset )
+  {
+    int nbDoubleConstraint = 0;
+    for( unsigned int i=0;i<bref.size();++i )
+      {
+	const soth::bound_vector_t& b = bref[i];
+	for( unsigned int r = 0;r<aset[i].size();++r )
+	  {
+	    if( bref[i][aset[i][r]].getType() == Bound::BOUND_DOUBLE ) nbDoubleConstraint++;
+	  }
+      }
+    return nbDoubleConstraint;
+  }
+
+  int computeNbConst( const std::vector<soth::bound_vector_t>& bref,
+		      std::vector<int>& nr )
+  {
+    int nbConstraint = 0; nr.resize(bref.size());
+    for( unsigned int i=0;i<bref.size();++i )  { nr[i]=bref[i].size(); nbConstraint += nr[i]; }
+    return nbConstraint;
+  }
+
+
+  /* Explore all the possible active set.
+   */
+  void explore( const std::vector<Eigen::MatrixXd>& Jref,
+		const std::vector<soth::bound_vector_t>& bref,
+		const VectorXd& uref )
+  {
+    std::vector<int> nr(Jref.size());
+    int nbConstraint = computeNbConst(bref,nr);
+    const double urefnorm = uref.norm();
+    const std::vector<double> erefnorm = stageErrors( Jref,bref,uref );
+
+    sotDEBUG(1) << "Nb posibilities = " << (1<<(nbConstraint))-1 << endl;
+    for( unsigned long int refc =0;refc< (1<<(nbConstraint))-1; ++refc )
+      {
+	if( !( refc%1000) ) std::cout << refc << " ... " << endl;
+	std::vector<bool> abool; std::vector<std::vector<int> > aset;
+	intToVbool(nbConstraint,refc,abool); selectConstraint(nr,abool,aset);
+
+	int nbDoubleConstraint = computeNbDouble(bref,aset);
+	sotDEBUG(15) << "Nb double = " << nbDoubleConstraint << endl;
+	for( unsigned long int refb =0;refb< (1<<(nbDoubleConstraint))-1; ++refb )
+	  {
+	    std::vector<bool> bbool; std::vector< std::vector<Bound::bound_t> > bset;
+
+	    intToVbool(nbDoubleConstraint,refb,bbool); selectBool( bref,aset,bbool,bset );
+
+	    if(  compareSolvers( Jref,bref,aset,bset,urefnorm,erefnorm ) )
+	      { std::cout << refc << "/" << refb << "  ...  One more-optimal solution!! " << endl; }
+	  }
+      }
+  }
+
+};
+
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -387,7 +660,7 @@ int main (int argc, char** argv)
 	}
 
       MatrixXd JPi = Jai*Pa;
-      const int rank = st.rank();
+      const unsigned int rank = st.rank();
       sotDEBUG(5) << "e"<<i<< " = " << (MATLAB)eai << endl;
       sotDEBUG(5) << "J"<<i<< " = " << (MATLAB)Jai << endl;
       sotDEBUG(5) << "JP"<<i<< " = " << (MATLAB)JPi << endl;
@@ -405,4 +678,7 @@ int main (int argc, char** argv)
       assert( std::abs(( eai-Jai*u ).norm() - ( eai-Jai*usvd ).norm()) < 10*Stage::EPSILON );
     }
 
+
+
+  DummyActiveSet::explore(J,b,solution);
 }
