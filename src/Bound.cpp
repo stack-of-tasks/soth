@@ -95,6 +95,32 @@ namespace soth
     return BOUND_NONE;
   }
 
+  double Bound::distance( const double & val ) const
+  {
+    assert( type!=BOUND_NONE );
+    double res;
+    switch( type )
+      {
+      case BOUND_INF:
+	if( val>valInf ) res=0; else res=valInf-val;
+	break;
+      case BOUND_SUP:
+	if( val<valSup ) res=0; else res=val-valSup;
+	break;
+      case BOUND_TWIN:
+	res = std::abs( val-valTwin );
+	break;
+      case BOUND_DOUBLE:
+	if( val>valInf )
+	  if( val<valSup ) res=0;
+	  else res=val-valSup;
+	else res=valInf-val;
+	break;
+      }
+    assert(res>=0);
+    return res;
+  }
+
   Bound& Bound::operator= ( const Bound& clone )
   {
     valInf=clone.valInf;

@@ -37,6 +37,8 @@ namespace soth
     bound_t check( const double & val ) const;
     /* Return the bound b s.t. |b-val|<EPSILON, and NONE if none. */
     bound_t checkSaturation( const double & val, const double & EPSILON  ) const;
+    /* Return the distance to the bounds, 0 if satisfy, and real distance in the TWIN case. */
+    double distance( const double & val ) const;
 
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);
