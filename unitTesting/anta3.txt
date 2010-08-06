@@ -1,0 +1,23 @@
+variable size 3
+
+level
+equalities 0
+inequalities 2
+    1 0 0       -1e25   1
+    2 2 0       -1e25   2
+
+level
+equalities 2
+    1 2 0         3
+    0 1 1         4
+inequalities 0
+
+level
+equalities 1
+    0 0 1         5
+inequalities 0
+
+
+
+end
+
