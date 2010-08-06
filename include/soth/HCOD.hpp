@@ -72,6 +72,7 @@ namespace soth
     /* --- Tests --- */
   public:
     void show( std::ostream& os, bool check=false );
+    void showActiveSet( std::ostream& os ) const;
     bool testRecomposition( std::ostream* os );
     bool testLagrangeMultipliers( std::ostream* os ) const;
     bool testLagrangeMultipliers( std::ostream& os ) const

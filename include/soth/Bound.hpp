@@ -34,7 +34,7 @@ namespace soth
     const double& getBound( bound_t type ) const;
     /* Return the bound that is violated, NONE if bound are OK.
      * In case of twin-bounds, no check is performed, NONE is always returned. */
-    bound_t check( const double & val ) const;
+    bound_t check( const double & val,const double & EPSILON=0 ) const;
     /* Return the bound b s.t. |b-val|<EPSILON, and NONE if none. */
     bound_t checkSaturation( const double & val, const double & EPSILON  ) const;
     /* Return the distance to the bounds, 0 if satisfy, and real distance in the TWIN case. */

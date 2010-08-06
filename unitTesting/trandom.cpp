@@ -2,7 +2,7 @@
  *  Copyright
  */
 #define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 1
+#define SOTH_DEBUG_MODE 45
 #include "soth/debug.h"
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
@@ -16,7 +16,92 @@ using std::endl;
 using std::cout;
 using std::cerr;
 
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
+#include <fstream>
+void parseProblemFile( const std::string name,
+		       std::vector<Eigen::MatrixXd> &J,
+		       std::vector<soth::bound_vector_t> &b,
+		       int& NB_STAGE,
+		       std::vector<int> & NR,
+		       int& NC )
+{
+  std::ifstream fin(name.c_str());
+  std::string syntax1,syntax2;
+  MatrixXd Ji,eiinf,eisup;
+
+  fin >> syntax1 >> syntax2 >> NC;
+  assert( (syntax1 == "variable")&&(syntax2 == "size") );
+  NB_STAGE=0;  int & s= NB_STAGE;
+  fin >> syntax1;
+  do
+    {
+      NR.resize(s+1); J.resize(s+1); b.resize(s+1);
+
+      unsigned int nre;
+      fin >> syntax2 >> nre;
+      assert( (syntax1 == "level")&&(syntax2 == "equalities") );
+
+      MatrixXd Je; VectorXd ee;
+      if( nre>0 )
+	{
+	  Je.resize(nre,NC); ee.resize(nre);
+	  for( unsigned int i=0;i<nre;++i )
+	    {
+	      for( unsigned int j=0;j<NC;++j )
+		fin >> Je(i,j);
+	      fin >> ee(i);
+	    }
+	}
+
+      fin >> syntax1 >>  NR[s];
+      assert( (syntax1 == "inequalities") );
+
+      /* Copy the equalities line into the total matrix. */
+      NR[s]+=nre; assert(NR[s]>0);
+      J[s].resize(NR[s],NC); b[s].resize(NR[s]);
+      if( nre>0 )
+	{
+	  J[s].topRows(nre)=Je;
+	  for( unsigned int i=0;i<nre;++i )  b[s][i] = ee(i);
+	}
+
+      /* Parse the inequalities. */
+      if( NR[s]>nre )
+	{
+	  double bi,bu;
+	  for( unsigned int i=nre;i<NR[s];++i )
+	    {
+	      for( unsigned int j=0;j<NC;++j )
+		fin >> J[s](i,j);
+	      fin >> bi>>bu;
+	      if( bi<-1e10 ) // bound sup only
+		{
+		  assert( bu<=1e10 );
+		  b[s][i] = Bound( bu,Bound::BOUND_SUP );
+		}
+	      else if( 1e10<bu ) // bound inf only
+		{
+		  b[s][i] = Bound( bi,Bound::BOUND_INF );
+		}
+	      else // double bound
+		{
+		  b[s][i] = std::make_pair( bi,bu );
+		}
+	    }
+	}
+      sotDEBUG(5) << "J"<<s<<" = " << (MATLAB)J[s] << endl;
+      sotDEBUG(5) << "b"<<s<<" = " << b[s] << endl;
+      fin >> syntax1; s++;
+    } while( syntax1 == "level" );
+
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 			       std::vector<soth::bound_vector_t> &b,
 			       const int NB_STAGE,
@@ -61,7 +146,9 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	{
 	  double x = Random::rand<double>() * 2; // DEBUG: should b U*2-1
 	  double y = Random::rand<double>() * -2;  // DEBUG
-	  switch( randu(1,4) )
+	  int btype = randu(1,4);
+	  if( i==0 ) btype= randu(2,4);
+	  switch( btype )
 	    {
 	    case 1: // =
 	      b[s][i] = x;
@@ -76,12 +163,6 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	      b[s][i] = std::make_pair( std::min(x,y),std::max(x,y) ) ;
 	      break;
 	    }
-	  if(s==3)
-	    {
-	      // if( i==0 ) b[s][i]=x;
-	      // if( i==1 ) b[s][i]=y;
-	      // if( i==2 ) b[s][i]=x;
-	    }
 	}
     }
 }
@@ -93,7 +174,7 @@ void generateRandomProfile(int & nbStage,
 			   int & nc )
 {
   nc = Random::rand<int>() % 50 + 6;
-  nbStage = randu(1,1+nc/5);
+  nbStage = 2; //randu(1,1+nc/5);
 
   sotDEBUG(1) << "nc = " << nc << endl;
   sotDEBUG(1) << "nbStage = " << nbStage << endl;
@@ -190,6 +271,7 @@ struct ULV
   void compute( const MatrixXd& A, const double & svmin )
   {
     NC=A.cols(); NR=A.rows();
+    const int N=std::min(NC,NR);
 #ifdef DEBUG
     Ainit=A;
 #endif
@@ -197,8 +279,8 @@ struct ULV
     qru.compute( A );
 
     const MatrixXd& QR = qru.matrixQR();
-    for( rank=0;rank<NR;++rank ) if( std::abs(QR(rank,rank))<=svmin ) break;
-    if( rank==0 ) return; 
+    for( rank=0;rank<N;++rank ) if( std::abs(QR(rank,rank))<=svmin ) break;
+    if( rank==0 ) return;
 
     Rt = qru.matrixQR().topRows(rank).triangularView<Upper>().transpose();
     qrv.compute( Rt );
@@ -354,7 +436,8 @@ namespace DummyActiveSet
 		       const std::vector< std::vector<int> >& active,
 		       const std::vector< std::vector<Bound::bound_t> >& bounds,
 		       const double & urefnorm,
-		       const std::vector<double> & erefnorm )
+		       const std::vector<double> & erefnorm,
+		       const bool verbose = false )
   {
     /* Build the SOT problem. */
     const unsigned int NC = Jref[0].cols();
@@ -382,10 +465,11 @@ namespace DummyActiveSet
     /* Find the optimum. */
     VectorXd usot = SOT_Solver( Jsot,esot );
     sotDEBUG(45) << "usot" <<" = " << (MATLAB)usot << endl;
-    if( usot.norm()-Stage::EPSILON >= urefnorm) return false;
+    //if( (!verbose)&&(usot.norm()+Stage::EPSILON >= urefnorm) ) return false;
 
     /* Check the bounds. */
-    if( isLess( stageErrors(Jref,bref,usot),erefnorm ) )
+    std::vector<double> esotnorm = stageErrors(Jref,bref,usot);
+    if( verbose||isLess( esotnorm,erefnorm ) )
       {
 	std::cout << endl << endl << " * * * * * * * * * * * * * " << endl
 		  <<  "usot" <<" = " << (MATLAB)usot << endl;
@@ -404,7 +488,13 @@ namespace DummyActiveSet
 	    std::cout << " ]";
 	  }
 	std::cout << "} " << endl;
-	std::cout << "norm solution = " << usot.norm() << " ~~ " << urefnorm << " = norm ref." << endl;
+	std::cout << "norm solution = " << usot.norm() << " ~?~ " << urefnorm << " = norm ref." << endl;
+	std::cout << "e = [" ;
+	for( unsigned int s=0;s<esotnorm.size();++s )
+	  { std::cout << esotnorm[s] << "    "; }
+	std::cout << " ];" << endl;
+
+	return true;
       }
     else return false;
 
@@ -422,16 +512,17 @@ namespace DummyActiveSet
       }
   }
 
-  void selectConstraint( const std::vector<int> & NR,
+  void selectConstraint( const std::vector<soth::bound_vector_t>& bref,
 			 const std::vector<bool>& activeBool,
 			 std::vector< std::vector<int> > & aset )
   {
-    int NRprec=0; aset.resize(NR.size());
-    for( unsigned int i=0;i<NR.size();++i )
+    aset.resize(bref.size());
+    int cst = 0;
+    for( unsigned int i=0;i<bref.size();++i )
       {
-	for( unsigned int r=0;r<NR[i];++r )
-	  if(activeBool[NRprec+r]) aset[i].push_back(r);
-	NRprec += NR[i];
+	for( unsigned int r=0;r<bref[i].size();++r )
+	  if( (bref[i][r].getType() == Bound::BOUND_TWIN)
+	      || (activeBool[cst++]) ) aset[i].push_back(r);
 
 	// std::cout << "a" << i << " = [ ";
 	// for( unsigned int r=0;r<aset[i].size();++r )
@@ -485,7 +576,13 @@ namespace DummyActiveSet
 		      std::vector<int>& nr )
   {
     int nbConstraint = 0; nr.resize(bref.size());
-    for( unsigned int i=0;i<bref.size();++i )  { nr[i]=bref[i].size(); nbConstraint += nr[i]; }
+    for( unsigned int i=0;i<bref.size();++i )
+      {
+	nr[i]=bref[i].size();
+	for( unsigned int r = 0;r<bref[i].size();++r )
+	  if(bref[i][r].getType() != Bound::BOUND_TWIN)
+	    nbConstraint ++;
+      }
     return nbConstraint;
   }
 
@@ -501,16 +598,16 @@ namespace DummyActiveSet
     const double urefnorm = uref.norm();
     const std::vector<double> erefnorm = stageErrors( Jref,bref,uref );
 
-    sotDEBUG(1) << "Nb posibilities = " << (1<<(nbConstraint))-1 << endl;
-    for( unsigned long int refc =0;refc< (1<<(nbConstraint))-1; ++refc )
+    std::cout << "Nb posibilities = " << (1<<(nbConstraint)) << endl;
+    for( unsigned long int refc =0;refc< (1<<(nbConstraint)); ++refc )
       {
 	if( !( refc%1000) ) std::cout << refc << " ... " << endl;
 	std::vector<bool> abool; std::vector<std::vector<int> > aset;
-	intToVbool(nbConstraint,refc,abool); selectConstraint(nr,abool,aset);
+	intToVbool(nbConstraint,refc,abool); selectConstraint(bref,abool,aset);
 
 	int nbDoubleConstraint = computeNbDouble(bref,aset);
 	sotDEBUG(15) << "Nb double = " << nbDoubleConstraint << endl;
-	for( unsigned long int refb =0;refb< (1<<(nbDoubleConstraint))-1; ++refb )
+	for( unsigned long int refb =0;refb< (1<<(nbDoubleConstraint)); ++refb )
 	  {
 	    std::vector<bool> bbool; std::vector< std::vector<Bound::bound_t> > bset;
 
@@ -522,7 +619,27 @@ namespace DummyActiveSet
       }
   }
 
+
+  void detailActiveSet( const std::vector<Eigen::MatrixXd>& Jref,
+			const std::vector<soth::bound_vector_t>& bref,
+			const VectorXd& uref,
+			unsigned long int refc,unsigned long int refb )
+  {
+    std::vector<int> nr(Jref.size());
+    int nbConstraint = computeNbConst(bref,nr);
+    const double urefnorm = uref.norm();
+    const std::vector<double> erefnorm = stageErrors( Jref,bref,uref );
+
+    std::vector<bool> abool; std::vector<std::vector<int> > aset;
+    intToVbool(nbConstraint,refc,abool); selectConstraint(bref,abool,aset);
+    int nbDoubleConstraint = computeNbDouble(bref,aset);
+    std::vector<bool> bbool; std::vector< std::vector<Bound::bound_t> > bset;
+    intToVbool(nbDoubleConstraint,refb,bbool); selectBool( bref,aset,bbool,bset );
+
+    compareSolvers( Jref,bref,aset,bset,urefnorm,erefnorm,true );
+  }
 };
+
 
 
 /* -------------------------------------------------------------------------- */
@@ -530,28 +647,36 @@ namespace DummyActiveSet
 /* -------------------------------------------------------------------------- */
 int main (int argc, char** argv)
 {
-  {
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-
-    int seed = tv.tv_usec % 7919; //= 7594;
-    if( argc == 2 )
-      {  seed = atoi(argv[1]);  }
-    std::cout << "seed = " << seed << std::endl;
-    soth::Random::setSeed(seed);
-  }
   sotDebugTrace::openFile();
 
-  /* Decide the size of the problem. */
   int NB_STAGE,NC;
   std::vector<int> NR,RANKLINKED,RANKFREE;
-  generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+  std::vector<Eigen::MatrixXd> J;
+  std::vector<soth::bound_vector_t> b;
 
-  /* Initialize J and b. */
-  std::vector<Eigen::MatrixXd> J(NB_STAGE);
-  std::vector<soth::bound_vector_t> b(NB_STAGE);
-  generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+  if( (argc==3)&& std::string(argv[1])=="-file")
+    {
+      parseProblemFile( argv[2],J,b,NB_STAGE,NR,NC);
+    }
+  else
+    {
+      /* Initialize the seed. */
+      struct timeval tv;
+      gettimeofday(&tv,NULL);
+      int seed = tv.tv_usec % 7919; //= 7594;
+      if( argc == 2 )
+	{  seed = atoi(argv[1]);  }
+      std::cout << "seed = " << seed << std::endl;
+      soth::Random::setSeed(seed);
 
+      /* Decide the size of the problem. */
+      generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+
+      /* Initialize J and b. */
+      generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+    }
+
+  std::cout << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       std::cout << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
@@ -570,7 +695,7 @@ int main (int argc, char** argv)
   VectorXd solution;
   hcod.activeSearch( solution );
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-
+  cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
 
   /* --- CHECK --- */
   VectorXd u=solution,du = VectorXd::Zero(NC);
@@ -590,17 +715,17 @@ int main (int argc, char** argv)
 	for( int r=0;r<NR[i];++r )
 	  {
 	    double Ju = J[i].row(r)*solution;
-	    cout << "   "<<i << ":" << r << "\t";
+	    cout << "   "<<i << ":" << r << (hcod[i].isActive(r)?"a":" ") <<"\t";
 	    switch( b[i][r].getType() )
 	      {
 	      case Bound::BOUND_TWIN:
 		{
 		  double x = b[i][r].getBound( Bound::BOUND_TWIN );
 		  if( std::abs( x-Ju )<EPSILON )
-		    cout << " (=)    :  \t  Ju="  << Ju
+		    cout << "    (=)    :  \t  Ju="  << Ju
 			 << " ~ " << x << "=b" << endl;
 		  else
-		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+		    cout << "!! " << " (=):  \t  Ju="  << Ju
 			 << " != " << x << "=b" << endl;
 		  break;
 		}
@@ -608,10 +733,10 @@ int main (int argc, char** argv)
 		{
 		  double x = b[i][r].getBound( Bound::BOUND_INF );
 		  if( x<Ju+EPSILON )
-		    cout << " (b<.)  :  \t  Ju="  << Ju
+		    cout << "    (b<.)  :  \t  Ju="  << Ju
 			 << " > " << x << "=b" << endl;
 		  else
-		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+		    cout << "!! " << " (b<.):  \t  Ju="  << Ju
 			 << " !< " << x << "=b" << endl;
 		  break;
 		}
@@ -619,10 +744,10 @@ int main (int argc, char** argv)
 		{
 		  double x = b[i][r].getBound( Bound::BOUND_SUP );
 		  if( Ju<x+EPSILON )
-		    cout << " (.<b)  :  \t  Ju="  << Ju
+		    cout << "    (.<b)  :  \t  Ju="  << Ju
 			 << " < " << x << "=b" << endl;
 		  else
-		    cerr << "!! " << " (=):  \t  Ju="  << Ju
+		    cout << "!! " << " (.<b):  \t  Ju="  << Ju
 			 << " !> " << x << "=b" << endl;
 		  break;
 		}
@@ -631,10 +756,10 @@ int main (int argc, char** argv)
 		  double xi = b[i][r].getBound( Bound::BOUND_INF );
 		  double xs = b[i][r].getBound( Bound::BOUND_SUP );
 		  if( (xi<Ju+EPSILON)&&(Ju<xs+EPSILON) )
-		    cout << " (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
+		    cout << "    (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
 			 << " < " << xs << "=bsup" << endl;
 		  else
-		    cout << "!! (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
+		    cout << "!!  (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
 			 << " !< " << xs << "=bsup" << endl;
 		  break;
 		}
@@ -646,7 +771,7 @@ int main (int argc, char** argv)
 
 
       sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
-      assert( st.checkBound(u,du,NULL,NULL) );
+      // DEBUG assert( st.checkBound(u,du,NULL,NULL) );
 
       if( st.sizeA()==0 ) continue;
 
@@ -681,4 +806,7 @@ int main (int argc, char** argv)
 
 
   DummyActiveSet::explore(J,b,solution);
+  // DummyActiveSet::detailActiveSet( J,b,solution,2720,0 );
+  // DummyActiveSet::detailActiveSet( J,b,solution,2721,1 );
+  // DummyActiveSet::detailActiveSet( J,b,solution,2736,0 );
 }

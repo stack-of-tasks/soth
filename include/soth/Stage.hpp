@@ -167,6 +167,7 @@ namespace soth
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
     void recompose( MatrixXd& WMLY ) const;
     void show( std::ostream& os, unsigned int stageRef, bool check=false ) const;
+    void showActiveSet( std::ostream& os ) const;
 
     /* Return a sub matrix containing the active rows of J, in the
      * same order as given by W. J_ is a matrix where th full
@@ -181,6 +182,7 @@ namespace soth
     /* For debug purpose, give the line of an active constraint (assert the activity). */
     Index where( unsigned int cst ) const;
     ConstraintRef which( unsigned int row ) const;
+    bool isActive( unsigned int cst ) const;
 
   public:
     /* --- ACCESSORS --- */

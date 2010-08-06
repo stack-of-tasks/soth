@@ -316,7 +316,7 @@ namespace soth
      */
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
     //sotDEBUGPRIOR(+45);
-    sotDEBUG(5) << " --- DOWNDATE ---------------------------- " << std::endl;
+    sotDEBUG(5) << " --- DOWNDATE ----------------------------" << std::endl;
     unsigned int colToRemove = removeInW( position );
     bool rankDef = colToRemove >= sizeN();
     removeACrossFromW(position,colToRemove);
@@ -491,7 +491,7 @@ namespace soth
   unsigned int Stage::
   update( const ConstraintRef & cst,GivensSequence & Yup )
   {
-    sotDEBUG(5) << " --- UPDATE ---------------------------- " << std::endl;
+    sotDEBUG(5) << " --- UPDATE ----------------------------" << std::endl;
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
     /*
      * Inew = Unused.pop();
@@ -522,11 +522,13 @@ namespace soth
     assert( (wrowup >= 0)&&(wrowup<nr) );
     sotDEBUG(5) << "wr=" << wrowup << " wc=" << wcolup << endl;
 
-    sotDEBUG(5) << "cst=" << cst.first << " bound=" << cst.second << endl;
-    e_(wrowup) = bounds[cst.first].getBound(cst.second);
+    assert( (cst.second==Bound::BOUND_SUP)||(cst.second==Bound::BOUND_INF) );
+    double sign = (cst.second==Bound::BOUND_SUP)?+1:-1;
+    sotDEBUG(5) << "cst=" << cst.first << " bound=" << cst.second << "  (" << sign << ")." << endl;
+    e_(wrowup) = sign*bounds[cst.first].getBound(cst.second);
     sotDEBUG(5) << "bound="<<bounds[cst.first].getBound(cst.second) <<  endl;
     RowML JupY = ML_.row(wcolup);
-    JupY = J.row(cst.first); Y.applyThisOnTheLeft(JupY);
+    JupY = sign*J.row(cst.first); Y.applyThisOnTheLeft(JupY);
     double norm2=0; int rankJ=sizeM;
     for( Index i=nc-1;i>=sizeM;--i )
       {
@@ -700,25 +702,26 @@ namespace soth
 
     sotDEBUG(25) << "Ytu = " << (MATLAB)Ytu << std::endl;
     sotDEBUG(25) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+    sotDEBUG(45) << "Wr = " << (MATLAB)Wr << std::endl;
 
     /* TODO: when L0 is full rank, a permuation of e should be enough (W=Id). */
     We = Wr.transpose()*e;
-    sotDEBUG(25) << "We = " << (MATLAB)We << std::endl;
+    sotDEBUG(25) << "Wre = " << (MATLAB)We << std::endl;
     if(! init )
       {
 	We.noalias() -= getLtri()*ulprec;
       }
-    sotDEBUG(25) << "We = " << (MATLAB)We << std::endl;
+    sotDEBUG(25) << "Wre_Lu = " << (MATLAB)We << std::endl;
     if( sizeM >0 )
       {
 	We.noalias() -= Mr*(umprec+dum); /* TODO: this sum u+du could be done
 					  * only once, while it is done at each
 					  *  stage now. */
       }
-    sotDEBUG(5) << "We = " << (MATLAB)We << std::endl;
+    sotDEBUG(5) << "Wre_Lu_Mru_Mrdu = " << (MATLAB)We << std::endl;
 
     soth::solveInPlaceWithLowerTriangular(L,We);
-    sotDEBUG(5) << "LiWe = " << (MATLAB)We << std::endl;
+    sotDEBUG(5) << "LiWrde = " << (MATLAB)We << std::endl;
     sotDEBUG(45) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
   }
 
@@ -731,7 +734,7 @@ namespace soth
   computeErrorFromJu(const VectorXd& MLYtu, VectorXd& err) const
   {
     assert(MLYtu.size() == sizeA());
-    err.noalias() = W*MLYtu-e;
+    err.noalias() =  W*MLYtu-e; // DEBUG  e-W*MLYtu
   }
 
   /* Compute W'Ju = MLYtu = M*Ytu.head + L*Ytu.tail.
@@ -743,6 +746,12 @@ namespace soth
     MLYtu.noalias() = M*Ytu.head(sizeM);
     MLYtu.tail(sizeL).noalias()
       += getLtri()*Ytu.segment(sizeM, sizeL);
+
+    sotDEBUG(45) << "Ytu = " << (MATLAB)Ytu << endl;
+    sotDEBUG(45) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(45) << "L = " << (MATLAB)(MatrixXd)getLtri() << endl;
+    sotDEBUG(45) << "MLYtu = " << (MATLAB)MLYtu << endl;
+
   }
 
   /* err = Ju-e = W [M L 0] Y^u - e
@@ -812,11 +821,11 @@ namespace soth
      * ... maybe not for u=u0+du, with non null u0. */
 
     /* Ytrho := [M L]' * MLYtu = [ M L ]' ( W'e - [M L] Ytu ). */
-    Ytrho.resize( nc );
+    Ytrho.resize( nc ); /* TODO: should be resize only once at the construction of the HCOD. */
     Ytrho.head(sizeM).noalias() = M.transpose()*MLYtu;
     Ytrho.segment(sizeM,sizeL).noalias()
       = getLtri().transpose()*MLYtu.tail(sizeL);
-    Ytrho.tail(nc-sizeM-sizeL).setZero();
+    Ytrho.tail(nc-sizeM-sizeL).setZero(); /* TODO: nobody ever will access the tail, could be neglected. */
   }
 
 
@@ -829,22 +838,33 @@ namespace soth
   void Stage::
   computeLagrangeMultipliers( VectorXd& rho, VectorXd& l ) const
   {
-    assert( isInit );
-    assert( rho.rows() == nc );
 
-    if( sizeL==0 )
-      {	l.resize(sizeA()); l.setZero(); return; }
-    VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
-    sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
-
-    solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
-    sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
-
-    l.noalias() = W.rightCols(sizeL) * rho_i;
-    if( sizeM>0 )
+    if( 1 )
       {
-	VectorBlock<VectorXd> rho_under = rho.head(sizeM);
-	rho_under.noalias() -= M.bottomRows(sizeL).transpose()*rho_i;
+	assert( isInit );
+	assert( rho.rows() == nc );
+
+	if( sizeL==0 )
+	  {	l.resize(sizeA()); l.setZero(); return; }
+	VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
+	sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
+
+	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+	sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
+
+	l.noalias() = W.rightCols(sizeL) * rho_i;
+	if( sizeM>0 )
+	  {
+	    VectorBlock<VectorXd> rho_under = rho.head(sizeM);
+	    rho_under.noalias() -= M.bottomRows(sizeL).transpose()*rho_i;
+	  }
+      }
+    else // DEBUG!!
+      {
+	MatrixXd J_(nr,nc); VectorXd e_(nr);
+	SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(J_);
+	SubVectorXd ea = eactive(e_);
+	l = Ja*rho-ea;
       }
   }
 
@@ -856,6 +876,7 @@ namespace soth
     VectorXd ltmp; computeLagrangeMultipliers(rho,ltmp);
     lambda.setRowIndices( e.getRowIndices() );
     TRANSFERT_IN_SUBVECTOR(ltmp,lambda);
+    sotDEBUG(1) << "l = " << (MATLAB)lambda << endl;
     isLagrangeCpt=true;
   }
 
@@ -886,32 +907,34 @@ namespace soth
 	double dval = J.row(i)*du;
 	const Bound & b = bounds[i];
 	sotDEBUG(5) << "bound = " << b << endl;
-	sotDEBUG(5) << "Ju = " << val << "  --  Jdu = " << dval
-		    << " -- Jupdu = " << val+dval << endl;
-	assert( (b.check(val+10*EPSILON)==Bound::BOUND_NONE)
-		||(b.check(val-10*EPSILON)==Bound::BOUND_NONE) );
+	sotDEBUG(5) << "Ju = " << val << "  --  Jdu = " << dval  << " -- Jupdu = " << val+dval << endl;
 
-	Bound::bound_t saturation = b.checkSaturation(val,EPSILON);
-	if( saturation!=Bound::BOUND_NONE )
-	  { sotDEBUG(5) << "Saturation at " << ((saturation==Bound::BOUND_INF)?"-":"+")<<i << endl; }
-	Bound::bound_t btype = b.check(val+dval);
-
-	if( btype != Bound::BOUND_NONE )
+	Bound::bound_t btype = b.check(val,EPSILON);
+	if( btype!=Bound::BOUND_NONE )
 	  {
-	    assert( (saturation==Bound::BOUND_NONE)||(saturation==Bound::BOUND_INF)||(saturation==Bound::BOUND_SUP) );
 	    assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
-	    sotDEBUG(5) << "Violation at " << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-
-	    const double & bval = b.getBound(btype);
-	    double btau;
-	    if( saturation==btype) btau=0; else btau = (bval-val)/dval;
-	    assert(btau>=0); assert(btau<1);
-	    if( btau<taumax )
+	    sotDEBUG(5) << "Violation Ju at " <<name <<" " << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+	    taumax=0; cstmax = std::make_pair(i,btype);
+	    return false;
+	  }
+	else
+	  {
+	    btype = b.check(val+dval);//,EPSILON
+	    if( btype!=Bound::BOUND_NONE )
 	      {
-		sotDEBUG(1) << "Max violation (tau="<<btau<<") at "
-			    << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-		res=false;
-		taumax=btau; cstmax = std::make_pair(i,btype);
+		assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
+		sotDEBUG(5) << "Violation at " <<name <<" "<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+
+		const double & bval = b.getBound(btype);
+		double btau = (bval-val)/dval;
+		assert(btau>=0); assert(btau<1);
+		if( btau<taumax )
+		  {
+		    sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
+				<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+		    res=false;
+		    taumax=btau; cstmax = std::make_pair(i,btype);
+		  }
 	      }
 	  }
       }
@@ -941,7 +964,7 @@ namespace soth
     bool res=false;
     EI_FOREACH( i,lambda )
       {
-	const unsigned int cstref = activeSet.whichConstraint(i);
+	const unsigned int cstref = activeSet.whichConstraint(W.getRowIndices()(i));
 	Bound::bound_t btype = activeSet.whichBound(cstref);
 	assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
 	switch( btype )
@@ -950,7 +973,7 @@ namespace soth
 	    break; // Nothing to do.
 	  case Bound::BOUND_SUP:
 	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
-	    if( -lambda(i,0)>lmax )
+	    if( lambda(i,0)>lmax )
 	      {
 		res=true;
 		lmax=lambda(i,0);
@@ -1048,10 +1071,11 @@ namespace soth
     MatrixXd Ja_;   SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(Ja_);
     sotDEBUG(15) << "Jrec="<<(MATLAB)Jrec << endl;
     sotDEBUG(15) << "Ja="<<(MATLAB)Ja << endl;
-    bool res;
-    if( sizeA() ) res = ((Jrec-Ja).norm()<=EPSILON);
+    bool res; double norm=0;
+    if( sizeA() ) { norm=(Jrec-Ja).norm(); res = (norm<=10*EPSILON); }
     else res = ( (Jrec.cols()==Ja.cols())&&(Jrec.rows()==Jrec.rows()) );
-    sotDEBUG(5) <<"% J: Recomposition  " << ((res)?"OK.":"wrong.") << std::endl;
+    sotDEBUG(5) <<"% J: Recomposition  " << ((res)?"OK":"wrong")
+		<< " (||.||="<<norm<<")."<< std::endl;
 
     VectorXd ea_;
     bool vres;
@@ -1082,6 +1106,12 @@ namespace soth
     res.second = activeSet.whichBound( res.first );
     return res;
   }
+  bool Stage::
+  isActive( unsigned int cst ) const
+  {
+    assert( cst<nr );
+    return activeSet.isActive(cst);
+  }
 
    /* Return a sub matrix containing the active rows of J, in the
    * same order as given by W. J_ is a matrix where th full
@@ -1094,7 +1124,7 @@ namespace soth
       {
 	if( activeSet.isActive(i) )
 	  {
-	    J_.row(activeSet.where(i)) = J.row(i);
+	    J_.row(activeSet.where(i)) = activeSet.sign(i)*J.row(i);
 	    sotDEBUG(15) << "where(" << i << ") = " << activeSet.where(i) << endl;
 	  }
       }
@@ -1112,7 +1142,7 @@ namespace soth
       {
 	if( activeSet.isActive(i) )
 	  {
-	    e_(activeSet.where(i)) = bounds[i].getBound(activeSet.whichBound(i));
+	    e_(activeSet.where(i)) = activeSet.sign(i)*bounds[i].getBound(activeSet.whichBound(i));
 	  }
       }
 
@@ -1124,7 +1154,7 @@ namespace soth
   {
     sotDEBUGIN(5);
 
-    if( sotDEBUGFLOW.outputbuffer.good() ) activeSet.disp( sotDEBUGFLOW.outputbuffer );
+    if( sotDEBUG_ENABLE(55) && sotDEBUGFLOW.outputbuffer.good() ) activeSet.disp( sotDEBUGFLOW.outputbuffer );
     os << "sa{"<<stageRef<<"} = " << (MATLAB)sizeA() << endl;
     os << "r{"<<stageRef<<"} = " << (MATLAB)sizeL << endl;
     os << "sn{"<<stageRef<<"} = " << (MATLAB)sizeN() << endl;
@@ -1136,22 +1166,23 @@ namespace soth
       {
 	if( activeSet.isActive(i) )
 	  {
-	    J_.row(activeSet.where(i)) = J.row(i);
-	    e_(activeSet.where(i)) = bounds[i].getBound(activeSet.whichBound(i));
-	    sotDEBUG(15) << "where(" << i << ") = " << activeSet.where(i) << endl;
+	    double sign = (activeSet.whichBound(i)==Bound::BOUND_INF)?-1:+1;
+	    J_.row(activeSet.where(i)) = sign*J.row(i);
+	    e_(activeSet.where(i)) = sign*bounds[i].getBound(activeSet.whichBound(i));
+	    sotDEBUG(55) << "where(" << i << ") = " << activeSet.where(i) << endl;
 	  }
       }
 
     SubMatrix<MatrixXd,RowPermutation> Ja(J_,W.getRowIndices());
     SubVectorXd ea(e_,W.getRowIndices());
 
-    sotDEBUG(5) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
+    sotDEBUG(55) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
     sotDEBUG(5) << "Iw2{"<<stageRef<<"} = " << (MATLAB)W.getColIndices() << std::endl;
-    sotDEBUG(25) << "Ie{"<<stageRef<<"} = " << (MATLAB)e.getRowIndices() << std::endl;
-    sotDEBUG(25) << "Il{"<<stageRef<<"} = " << (MATLAB)L.getRowIndices() << std::endl;
-    sotDEBUG(25) << "J{"<<stageRef<<"}_ = " << (MATLAB)J_ << std::endl;
-    sotDEBUG(5) << "e{"<<stageRef<<"} = " << (MATLAB)ea << std::endl;
-    sotDEBUG(25) << "ML{"<<stageRef<<"}_ = " << (MATLAB)ML_ << std::endl;
+    sotDEBUG(55) << "Ie{"<<stageRef<<"} = " << (MATLAB)e.getRowIndices() << std::endl;
+    sotDEBUG(55) << "Il{"<<stageRef<<"} = " << (MATLAB)L.getRowIndices() << std::endl;
+    sotDEBUG(55) << "J_{"<<stageRef<<"} = " << (MATLAB)J_ << std::endl;
+    sotDEBUG(25) << "ML_{"<<stageRef<<"} = " << (MATLAB)ML_ << std::endl;
+    sotDEBUG(5) << "erec{"<<stageRef<<"} = " << (MATLAB)ea << std::endl;
 
     os << "a{"<<stageRef<<"} = " << (MATLAB)(Indirect)activeSet << std::endl;
     os << "J{"<<stageRef<<"} = " << (MATLAB)Ja << std::endl;
@@ -1183,6 +1214,22 @@ namespace soth
 	os << "l{"<<stageRef<<"} = " << (MATLAB)lambda << std::endl;
       }
   }
+
+  void Stage::
+  showActiveSet( std::ostream& os ) const
+  {
+    os << " [ ";
+    for( unsigned int r=0;r<nr;++r )
+      {
+	if(! activeSet.isActive(r) ) continue;
+	if( bounds[r].getType() ==  Bound::BOUND_DOUBLE )
+	  if( activeSet.whichBound(r) == Bound::BOUND_INF ) os << "-";
+	  else if( activeSet.whichBound(r) == Bound::BOUND_SUP ) os << "+";
+	os <<r << " ";
+      }
+    os << " ]";
+  }
+
 
   std::ostream& operator<<( std::ostream&os,const Stage::ConstraintRef& cst )
   {

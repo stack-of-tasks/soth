@@ -51,22 +51,22 @@ namespace soth
   /* Return the bound that is violated, NONE if bound are OK.
    * In case of twin-bounds, no check is performed, NONE is always returned. */
   Bound::bound_t Bound::
-  check( const double & val ) const
+  check( const double & val,const double & EPSILON ) const
   {
     assert( type!=BOUND_NONE );
     switch( type )
       {
       case BOUND_INF:
-	if( val<valInf ) return BOUND_INF;
+	if( val<valInf-EPSILON ) return BOUND_INF;
 	break;
       case BOUND_SUP:
-	if( valSup<val ) return BOUND_SUP;
+	if( valSup+EPSILON<val ) return BOUND_SUP;
 	break;
       case BOUND_TWIN:
 	break;
       case BOUND_DOUBLE:
-	if( val<valInf ) return BOUND_INF;
-	if( valSup<val ) return BOUND_SUP;
+	if( val<valInf-EPSILON ) return BOUND_INF;
+	if( valSup+EPSILON<val ) return BOUND_SUP;
       }
     return BOUND_NONE;
   }

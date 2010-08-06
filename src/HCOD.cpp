@@ -132,7 +132,7 @@ namespace soth
       {
 	assert( stages[i]!=0 );
 	sotDEBUG(5) <<" --- STAGE " <<i
-		    << " --------------------------------- " << std::endl;
+		    << " ---------------------------------" << std::endl;
 	previousRank
 	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
       }
@@ -215,11 +215,15 @@ namespace soth
   computeLagrangeMultipliers()
   {
     assert( isSolutionCpt );
-    stages.back()->computeRho(Ytu,rho,true);
+    stages.back()->computeRho(Ytu,rho,true); // This is Ytrho, not rho.
     sotDEBUG(5) << "rho = " << (MATLAB)rho << std::endl;
+    //DEBUG
     for( stage_riter_t iter=stages.rbegin()+1;iter!=stages.rend();++iter )
+    //rho = Ytu; // DEBUG!!
+  //    for( stage_riter_t iter=stages.rbegin();iter!=stages.rend();++iter )
       {
 	(*iter)->computeLagrangeMultipliers(rho);
+	sotDEBUG(5) << "lag = " << (MATLAB)(*iter)->getLagrangeMultipliers() << std::endl;
       }
   }
 
@@ -228,18 +232,24 @@ namespace soth
   {
     assert(isInit);
 
+    // Ytu.setZero(); // DEBUG
+    // solution.setZero(); // DEBUG
+
     /* Initial solve. */
-    Ytdu.setZero(); /* Ytdu.head(nullspace) only could be set to 0.
+    Ytdu = -Ytu; /* DEBUG.setZero(); /* Ytdu.head(nullspace) only could be set to 0.
 		     *  Does it make any diff? */
     for( unsigned int i=0;i<stages.size();++i )
       {
 	stages[i]->computeSolution(Ytu,Ytdu,!isSolutionCpt);
       }
-    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytdu << std::endl;
+
+    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
+    sotDEBUG(5) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
     if( compute_u )
       {
 	Y.multiply(Ytdu,du);
-	sotDEBUG(5) << "u = " << (MATLAB)du << std::endl;
+	sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
+	sotDEBUG(5) << "du = " << (MATLAB)du << std::endl;
       }
 
     isSolutionCpt=true;
@@ -377,33 +387,43 @@ namespace soth
 
     initialize();
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+
     bool endCondition = true;
     do
       {
-	if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 
+	//solution.setZero(); Ytu.setZero();//DEBUG
 	computeSolution();
 	double tau = computeStepAndUpdate();
 	if( tau<1 )
 	  {
+	    assert( testRecomposition(&std::cerr) );
 	    sotDEBUG(5) << "Update done, make step <1." << std::endl;
 	    makeStep(tau);
+	    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 	  }
 	else
 	  {
-	    makeStep();
 	    sotDEBUG(5) << "No update, make step ==1." << std::endl;
+	    makeStep();
+
 	    computeLagrangeMultipliers();
+	    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+	    //assert( testLagrangeMultipliers(std::cerr) );
 	    if( searchAndDowndate() )
 	      {
 		sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
+		assert( testRecomposition(&std::cerr) );
 	      }
 	    else
 	      {
 		sotDEBUG(5) << "Lagrange>=0, no downdate." << std::endl;
 		endCondition = false;
 	      }
+
 	  }
+
       } while(endCondition);
 
     u=solution;
@@ -448,6 +468,7 @@ namespace soth
   void HCOD::
   show( std::ostream& os, bool check )
   {
+    sotDEBUGIN(15);
     for( unsigned int i=0;i<stages.size();++i )
       {
 	stages[i]->show(os,i+1,check);
@@ -460,7 +481,25 @@ namespace soth
       {
 	os << "u = " << (MATLAB)solution << std::endl;
 	os << "du = " << (MATLAB)du << std::endl;
+	os << "Ytu = " << (MATLAB)Ytu << std::endl;
+	os << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+	assert( (solution-Y.matrixExplicit*Ytu).norm() < Stage::EPSILON );
+	assert( (du-Y.matrixExplicit*Ytdu).norm() < Stage::EPSILON );
       }
+    sotDEBUGOUT(15);
+  }
+
+  void HCOD::
+  showActiveSet( std::ostream& os ) const
+  {
+    sotDEBUGIN(15);
+    os << "{" << std::endl;
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	os<< "    "; stages[i]->showActiveSet(os); os << std::endl;
+      }
+    os << "}" << std::endl;
+    sotDEBUGOUT(15);
   }
 
 

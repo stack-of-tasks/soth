@@ -100,7 +100,12 @@ namespace soth
     {
       return( v[ref].first != Bound::BOUND_NONE );
     }
-
+    double sign( unsigned int ref ) const
+    {
+      assert( v[ref].first != Bound::BOUND_NONE );
+      assert( v[ref].first != Bound::BOUND_DOUBLE );
+      return (v[ref].first==Bound::BOUND_INF)?-1:+1;
+    }
 
     /* Return a compact of the active line, ordered by row values. */
     operator VectorXi (void) const
