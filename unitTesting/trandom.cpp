@@ -147,7 +147,9 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	  double x = Random::rand<double>() * 2; // DEBUG: should b U*2-1
 	  double y = Random::rand<double>() * -2;  // DEBUG
 	  int btype = randu(1,4);
-	  if( i==0 ) btype= randu(2,4);
+	  if( s==0 ) btype= randu(2,4); // DEBUG
+	  if( s!=0 ) btype= 1; // DEBUG
+	  cout << s << " " << btype << endl;
 	  switch( btype )
 	    {
 	    case 1: // =
@@ -173,8 +175,8 @@ void generateRandomProfile(int & nbStage,
 			   std::vector<int>& nr,
 			   int & nc )
 {
-  nc = Random::rand<int>() % 50 + 6;
-  nbStage = 2; //randu(1,1+nc/5);
+  nc = Random::rand<int>() % 10+3; // DEBUG 50 + 6;
+  nbStage = 2; // DEBUG randu(1,1+nc/5);
 
   sotDEBUG(1) << "nc = " << nc << endl;
   sotDEBUG(1) << "nbStage = " << nbStage << endl;
@@ -696,6 +698,8 @@ int main (int argc, char** argv)
   hcod.activeSearch( solution );
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
+
+  exit(0); // DEBUG
 
   /* --- CHECK --- */
   VectorXd u=solution,du = VectorXd::Zero(NC);
