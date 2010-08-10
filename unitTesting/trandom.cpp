@@ -1,15 +1,15 @@
 /*
  *  Copyright
  */
-#define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 45
+//#define SOTH_DEBUG
+//#define SOTH_DEBUG_MODE 45
 #include "soth/debug.h"
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
+#include "soth/COD.hpp"
 #include "MatrixRnd.h"
 #include <sys/time.h>
 #include <iostream>
-#include <Eigen/SVD>
 
 using namespace soth;
 using std::endl;
@@ -149,7 +149,6 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	  int btype = randu(1,4);
 	  if( s==0 ) btype= randu(2,4); // DEBUG
 	  if( s!=0 ) btype= 1; // DEBUG
-	  cout << s << " " << btype << endl;
 	  switch( btype )
 	    {
 	    case 1: // =
@@ -175,8 +174,8 @@ void generateRandomProfile(int & nbStage,
 			   std::vector<int>& nr,
 			   int & nc )
 {
-  nc = Random::rand<int>() % 10+3; // DEBUG 50 + 6;
-  nbStage = 2; // DEBUG randu(1,1+nc/5);
+  nc = Random::rand<int>() %  10+3;// 50 + 6;
+  nbStage = 3; // DEBUG randu(1,1+nc/5);
 
   sotDEBUG(1) << "nc = " << nc << endl;
   sotDEBUG(1) << "nbStage = " << nbStage << endl;
@@ -220,6 +219,9 @@ void generateRandomProfile(int & nbStage,
       sotDEBUG(1) << "rf"<<i<<" = " << rankfree[i] <<";   rl"<<i<<" = " << ranklinked[i]
 		  << ";  nr"<<i<<" = " << nr[i] << endl;
 
+      // DEBUG
+      if(rankfree[i]==0 ) rankfree[i]++;
+
     }
 }
 
@@ -238,126 +240,6 @@ MatrixXd stack( const MatrixBase<D1>& m1, const MatrixBase<D2>& m2 )
   return res;
 }
 
-/* --------------------------------------------------------------------------- */
-/* --- COD SOLVER ------------------------------------------------------------ */
-/* --------------------------------------------------------------------------- */
-/* Compute the decomposition A=U.L.V', with U and L rotation matrices, and
- * L = [ L0 0 ; 0 0 ] with L0 triangular inf, with non zero diagonal.
- * Use this decompo to solve min||Ax-b||.
- *
- * This class is for debug only. The computations involved in the solver
- * along with the ones in the projection are very suboptimal, and should
- * be properly rewritten for real times used.
- */
-struct ULV
-{
-  ColPivHouseholderQR<MatrixXd> qru;
-  MatrixXd Rt,Ainit;
-  ColPivHouseholderQR<MatrixXd> qrv;
-  int rank,NC,NR;
-
-  void compute( const MatrixXd& A, const unsigned int & rank_ )
-  {
-    rank=rank_; NC=A.cols(); NR=A.rows();
-#ifdef DEBUG
-    Ainit=A;
-#endif
-
-    if( rank==0 ) return;
-
-    qru.compute( A );
-    Rt = qru.matrixQR().topRows(rank).triangularView<Upper>().transpose();
-    qrv.compute( Rt );
-  }
-
-  void compute( const MatrixXd& A, const double & svmin )
-  {
-    NC=A.cols(); NR=A.rows();
-    const int N=std::min(NC,NR);
-#ifdef DEBUG
-    Ainit=A;
-#endif
-
-    qru.compute( A );
-
-    const MatrixXd& QR = qru.matrixQR();
-    for( rank=0;rank<N;++rank ) if( std::abs(QR(rank,rank))<=svmin ) break;
-    if( rank==0 ) return;
-
-    Rt = qru.matrixQR().topRows(rank).triangularView<Upper>().transpose();
-    qrv.compute( Rt );
-  }
-
-  void disp( bool check=false )
-  {
-    if( rank==0 )
-      {
-	sotDEBUG(5) << "ULV: Empty rank."  << endl;
-	return;
-      }
-
-    sotDEBUG(5) << "U = " << (MATLAB)(MatrixXd)qru.householderQ() << endl;
-    sotDEBUG(5) << "R = " << (MATLAB)(MatrixXd)Rt.transpose() << endl;
-    sotDEBUG(5) << "V = " << (MATLAB)(MatrixXd)qrv.householderQ() << endl;
-    sotDEBUG(5) << "L = " << (MATLAB)(MatrixXd)qrv.matrixQR().topRows(rank).triangularView<Upper>().transpose() << endl;
-    sotDEBUG(5) << "Pcv = " << (MATLAB)(MatrixXd)(qru.colsPermutation()) << endl;
-    sotDEBUG(5) << "Pcu = " << (MATLAB)(MatrixXd)(qrv.colsPermutation()) << endl;
-
-    if( check )
-      {
-	MatrixXd L0(NR,NC); L0.setZero();
-	L0.topLeftCorner(rank,rank)
-	  = qrv.matrixQR().topRows(rank).triangularView<Upper>().transpose();
-	MatrixXd Arec = matrixU() * L0 * matrixV().transpose();
-	sotDEBUG(5) << "Arec = " << (MATLAB)Arec << endl;
-	assert( (Ainit-Arec).norm()< Stage::EPSILON );
-      }
-  }
-
-  /* Solve min||Ax-b|| for a matrix A whose rank is given. */
-  VectorXd solve( const VectorXd& b ) const
-  {
-    if( rank==0 ) return VectorXd::Zero(NC);
-
-    VectorXd sol = b;  /* s = b */
-    sol.applyOnTheLeft(qru.householderQ().adjoint()); /* s = U'*s */
-    sol.applyOnTheLeft(qrv.colsPermutation().transpose());  /* s = Pu'*s */
-    sotDEBUG(5) << "PuUtb = " << (MATLAB)sol;
-
-    VectorXd solv(NC); solv.setZero();
-    solv.head(rank) = sol.head(rank);
-    qrv.matrixQR().topRows(rank).transpose().triangularView<Lower>()
-      .solveInPlace( solv.head(rank) );  /* s = Linv*s */
-    sotDEBUG(5) << "LiPuUtb = " << (MATLAB)solv;
-
-    solv.applyOnTheLeft(qrv.householderQ());  /* s = V*s */
-    solv.applyOnTheLeft(qru.colsPermutation()); /* s = Pv*s */
-    sotDEBUG(5) << "VLUe = " << (MATLAB)solv << endl;
-    return solv;
-  }
-
-  MatrixXd matrixV(void) const
-  {
-    if( rank==0 ){ return MatrixXd::Identity(NC,NC); }
-    MatrixXd V = qru.colsPermutation();
-    V.applyOnTheRight(qrv.householderQ());
-    return V;
-  }
-  MatrixXd matrixU(void) const
-  {
-    if( rank==0 ){ return MatrixXd::Identity(NR,NR); }
-    MatrixXd U = MatrixXd::Identity(NR,NR);
-    U.topLeftCorner(rank,rank) = qrv.colsPermutation(); /* I think Pu is always 1.*/
-    U.applyOnTheLeft(qru.householderQ());  /* U = H*U */
-    return U;
-  }
-  void decreaseProjector( MatrixXd & P ) const
-  { /* Highly suboptimal ... */
-    if( rank==0 ) return;
-    MatrixXd V1 = matrixV().leftCols(rank);
-    P -= V1*V1.transpose();
-  }
-};
 
 /* -------------------------------------------------------------------------- */
 /* --- SOTH SOLVER ---------------------------------------------------------- */
@@ -423,11 +305,25 @@ namespace DummyActiveSet
     assert( m1.size()==m2.size() );
     for( unsigned int i=0;i<m1.size();++i )
       {
-	if( m1[i]-Stage::EPSILON>m2[i] ) return false;
+	if( m1[i]>m2[i] ) return false;
       }
     return true;
   }
 
+  std::vector< double >
+  operator+ ( const std::vector< double > & m1, const double & b)
+  {
+    std::vector< double > res; res.resize(m1.size() );
+    for( unsigned int i=0;i<m1.size();++i ) res[i]=m1[i]+b;
+    return res;
+  }
+  std::vector< double >
+  operator- ( const std::vector< double > & m1, const double & b)
+  {
+    std::vector< double > res; res.resize(m1.size() );
+    for( unsigned int i=0;i<m1.size();++i ) res[i]=m1[i]-b;
+    return res;
+  }
 
   /* Use the old SOT solver for the given active set. The optimum
    * is then compared to the bound. If the found solution is valid, compare its
@@ -471,7 +367,9 @@ namespace DummyActiveSet
 
     /* Check the bounds. */
     std::vector<double> esotnorm = stageErrors(Jref,bref,usot);
-    if( verbose||isLess( esotnorm,erefnorm ) )
+    if( verbose
+	||(isLess( esotnorm+Stage::EPSILON,erefnorm ) ) )
+	  //	   &&( usot.norm()+Stage::EPSILON < urefnorm) ) ) //DEBUG
       {
 	std::cout << endl << endl << " * * * * * * * * * * * * * " << endl
 		  <<  "usot" <<" = " << (MATLAB)usot << endl;
@@ -493,7 +391,7 @@ namespace DummyActiveSet
 	std::cout << "norm solution = " << usot.norm() << " ~?~ " << urefnorm << " = norm ref." << endl;
 	std::cout << "e = [" ;
 	for( unsigned int s=0;s<esotnorm.size();++s )
-	  { std::cout << esotnorm[s] << "    "; }
+	  { std::cout << (esotnorm+Stage::EPSILON)[s] << "    (" << erefnorm[s] << ")   "; }
 	std::cout << " ];" << endl;
 
 	return true;
@@ -591,7 +489,7 @@ namespace DummyActiveSet
 
   /* Explore all the possible active set.
    */
-  void explore( const std::vector<Eigen::MatrixXd>& Jref,
+  bool explore( const std::vector<Eigen::MatrixXd>& Jref,
 		const std::vector<soth::bound_vector_t>& bref,
 		const VectorXd& uref )
   {
@@ -600,6 +498,7 @@ namespace DummyActiveSet
     const double urefnorm = uref.norm();
     const std::vector<double> erefnorm = stageErrors( Jref,bref,uref );
 
+    bool res=true;
     std::cout << "Nb posibilities = " << (1<<(nbConstraint)) << endl;
     for( unsigned long int refc =0;refc< (1<<(nbConstraint)); ++refc )
       {
@@ -616,9 +515,14 @@ namespace DummyActiveSet
 	    intToVbool(nbDoubleConstraint,refb,bbool); selectBool( bref,aset,bbool,bset );
 
 	    if(  compareSolvers( Jref,bref,aset,bset,urefnorm,erefnorm ) )
-	      { std::cout << refc << "/" << refb << "  ...  One more-optimal solution!! " << endl; }
+	      {
+		std::cout << refc << "/" << refb
+			  << "  ...  One more-optimal solution!! " << endl;
+		res=false;
+	      }
 	  }
       }
+    return res;
   }
 
 
@@ -673,12 +577,19 @@ int main (int argc, char** argv)
 
       /* Decide the size of the problem. */
       generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+      // DEBUG
+      //RANKFREE[0] = NR[0];
+      //RANKFREE[1] = NR[1];
+      for( unsigned int i=0;i<NB_STAGE;++i )
+	{ cout << RANKFREE[i]<<"/"<<NR[i]<<",  "; }
+
 
       /* Initialize J and b. */
       generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
     }
 
   std::cout << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
+  cout << endl;
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
       std::cout << "J"<<i+1<<" = " << (soth::MATLAB)J[i] << std::endl;
@@ -699,7 +610,7 @@ int main (int argc, char** argv)
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
 
-  exit(0); // DEBUG
+  //exit(0); // DEBUG
 
   /* --- CHECK --- */
   VectorXd u=solution,du = VectorXd::Zero(NC);
@@ -715,66 +626,66 @@ int main (int argc, char** argv)
       MatrixXd J_(NR[i],NC); VectorXd e_(NR[i]);
 
       std::cout << "Stage " << i << "... " << endl;
-      {
-	for( int r=0;r<NR[i];++r )
-	  {
-	    double Ju = J[i].row(r)*solution;
-	    cout << "   "<<i << ":" << r << (hcod[i].isActive(r)?"a":" ") <<"\t";
-	    switch( b[i][r].getType() )
-	      {
-	      case Bound::BOUND_TWIN:
-		{
-		  double x = b[i][r].getBound( Bound::BOUND_TWIN );
-		  if( std::abs( x-Ju )<EPSILON )
-		    cout << "    (=)    :  \t  Ju="  << Ju
-			 << " ~ " << x << "=b" << endl;
-		  else
-		    cout << "!! " << " (=):  \t  Ju="  << Ju
-			 << " != " << x << "=b" << endl;
-		  break;
-		}
-	      case Bound::BOUND_INF:
-		{
-		  double x = b[i][r].getBound( Bound::BOUND_INF );
-		  if( x<Ju+EPSILON )
-		    cout << "    (b<.)  :  \t  Ju="  << Ju
-			 << " > " << x << "=b" << endl;
-		  else
-		    cout << "!! " << " (b<.):  \t  Ju="  << Ju
-			 << " !< " << x << "=b" << endl;
-		  break;
-		}
-	      case Bound::BOUND_SUP:
-		{
-		  double x = b[i][r].getBound( Bound::BOUND_SUP );
-		  if( Ju<x+EPSILON )
-		    cout << "    (.<b)  :  \t  Ju="  << Ju
-			 << " < " << x << "=b" << endl;
-		  else
-		    cout << "!! " << " (.<b):  \t  Ju="  << Ju
-			 << " !> " << x << "=b" << endl;
-		  break;
-		}
-	      case Bound::BOUND_DOUBLE:
-		{
-		  double xi = b[i][r].getBound( Bound::BOUND_INF );
-		  double xs = b[i][r].getBound( Bound::BOUND_SUP );
-		  if( (xi<Ju+EPSILON)&&(Ju<xs+EPSILON) )
-		    cout << "    (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
-			 << " < " << xs << "=bsup" << endl;
-		  else
-		    cout << "!!  (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
-			 << " !< " << xs << "=bsup" << endl;
-		  break;
-		}
-	      }
+      // {
+      // 	for( int r=0;r<NR[i];++r )
+      // 	  {
+      // 	    double Ju = J[i].row(r)*solution;
+      // 	    cout << "   "<<i << ":" << r << (hcod[i].isActive(r)?"a":" ") <<"\t";
+      // 	    switch( b[i][r].getType() )
+      // 	      {
+      // 	      case Bound::BOUND_TWIN:
+      // 		{
+      // 		  double x = b[i][r].getBound( Bound::BOUND_TWIN );
+      // 		  if( std::abs( x-Ju )<EPSILON )
+      // 		    cout << "    (=)    :  \t  Ju="  << Ju
+      // 			 << " ~ " << x << "=b" << endl;
+      // 		  else
+      // 		    cout << "!! " << " (=):  \t  Ju="  << Ju
+      // 			 << " != " << x << "=b" << endl;
+      // 		  break;
+      // 		}
+      // 	      case Bound::BOUND_INF:
+      // 		{
+      // 		  double x = b[i][r].getBound( Bound::BOUND_INF );
+      // 		  if( x<Ju+EPSILON )
+      // 		    cout << "    (b<.)  :  \t  Ju="  << Ju
+      // 			 << " > " << x << "=b" << endl;
+      // 		  else
+      // 		    cout << "!! " << " (b<.):  \t  Ju="  << Ju
+      // 			 << " !< " << x << "=b" << endl;
+      // 		  break;
+      // 		}
+      // 	      case Bound::BOUND_SUP:
+      // 		{
+      // 		  double x = b[i][r].getBound( Bound::BOUND_SUP );
+      // 		  if( Ju<x+EPSILON )
+      // 		    cout << "    (.<b)  :  \t  Ju="  << Ju
+      // 			 << " < " << x << "=b" << endl;
+      // 		  else
+      // 		    cout << "!! " << " (.<b):  \t  Ju="  << Ju
+      // 			 << " !> " << x << "=b" << endl;
+      // 		  break;
+      // 		}
+      // 	      case Bound::BOUND_DOUBLE:
+      // 		{
+      // 		  double xi = b[i][r].getBound( Bound::BOUND_INF );
+      // 		  double xs = b[i][r].getBound( Bound::BOUND_SUP );
+      // 		  if( (xi<Ju+EPSILON)&&(Ju<xs+EPSILON) )
+      // 		    cout << "    (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
+      // 			 << " < " << xs << "=bsup" << endl;
+      // 		  else
+      // 		    cout << "!!  (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
+      // 			 << " !< " << xs << "=bsup" << endl;
+      // 		  break;
+      // 		}
+      // 	      }
 
 
-	  }
-      }
+      // 	  }
+      // }
 
 
-      sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
+      // sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
       // DEBUG assert( st.checkBound(u,du,NULL,NULL) );
 
       if( st.sizeA()==0 ) continue;
@@ -809,7 +720,9 @@ int main (int argc, char** argv)
 
 
 
-  DummyActiveSet::explore(J,b,solution);
+  if(! DummyActiveSet::explore(J,b,solution) )
+    {      exit(-1);    }
+
   // DummyActiveSet::detailActiveSet( J,b,solution,2720,0 );
   // DummyActiveSet::detailActiveSet( J,b,solution,2721,1 );
   // DummyActiveSet::detailActiveSet( J,b,solution,2736,0 );

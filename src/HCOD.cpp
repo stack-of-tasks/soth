@@ -1,7 +1,8 @@
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 15
-#include "soth/HCOD.hpp"
 #include "soth/debug.h"
+#include "soth/COD.hpp"  // DEBUG
+#include "soth/HCOD.hpp"
 
 namespace soth
 {
@@ -218,13 +219,41 @@ namespace soth
     stages.back()->computeRho(Ytu,rho,true); // This is Ytrho, not rho.
     sotDEBUG(5) << "rho = " << (MATLAB)rho << std::endl;
     //DEBUG
-    for( stage_riter_t iter=stages.rbegin()+1;iter!=stages.rend();++iter )
+
     //rho = Ytu; // DEBUG!!
-  //    for( stage_riter_t iter=stages.rbegin();iter!=stages.rend();++iter )
+    //for( stage_riter_t iter=stages.rbegin();iter!=stages.rend();++iter )
+    for( stage_riter_t iter=stages.rbegin()+1;iter!=stages.rend();++iter )
       {
 	(*iter)->computeLagrangeMultipliers(rho);
 	sotDEBUG(5) << "lag = " << (MATLAB)(*iter)->getLagrangeMultipliers() << std::endl;
       }
+
+    // DEBUG
+    // MatrixXd J( sizeA()-stages.back()->sizeA(),sizeProblem );
+    // int i=0;
+    // for( stage_iter_t iter=stages.begin();iter!=stages.end()-1;++iter )
+    //   {
+    // 	const int nr=(*iter)->sizeA();
+    // 	if( nr==0 ) continue;
+    // 	MatrixXd Ja_( (*iter)->nbConstraints(),sizeProblem);
+    // 	SubMatrix<MatrixXd,RowPermutation> Ja = (*iter)->Jactive(Ja_);
+    // 	J.block( i,0,nr,sizeProblem ) = Ja;
+    // 	i+=nr;
+    //   }
+
+    // if( i==0 ) return;
+
+    // ULV ulv; ulv.compute(J.transpose(),Stage::EPSILON);
+    // VectorXd lambda = ulv.solve( rho );
+
+    // i=0;
+    // for( stage_iter_t iter=stages.begin();iter!=stages.end()-1;++iter )
+    //   {
+    // 	const int nr=(*iter)->sizeA();
+    // 	if( nr==0 ) continue;
+    // 	(*iter)->setLagrangeMultipliers( lambda.segment(i,nr) );
+    // 	i+=nr;
+    //   }
   }
 
   void HCOD::
@@ -312,7 +341,7 @@ namespace soth
     stage_iter_t stageDown = stages.end();
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
-	if( (*iter)->maxLambda( lambdamax,row ) )
+	if( (*iter)->maxLambda( solution,lambdamax,row ) )
 	  stageDown=iter;
       }
     if( stages.end()!=stageDown )
@@ -330,7 +359,7 @@ namespace soth
     stage_iter_t stageDown = stages.end();
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
-	if( (*iter)->maxLambda( lambdamax,row ) )
+	if( (*iter)->maxLambda( solution,lambdamax,row ) )
 	  stageDown=iter;
       }
     return false;
@@ -390,11 +419,14 @@ namespace soth
     if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 
     bool endCondition = true;
+    int iter = 0;
     do
       {
+	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
 
 	//solution.setZero(); Ytu.setZero();//DEBUG
 	computeSolution();
+
 	double tau = computeStepAndUpdate();
 	if( tau<1 )
 	  {

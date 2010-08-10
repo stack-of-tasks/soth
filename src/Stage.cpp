@@ -956,8 +956,8 @@ namespace soth
 
   }
 
-  bool Stage::
-  maxLambda( double & lmax,unsigned int& row ) const
+  bool Stage:: // TODO: Ytu could be passed instead of u.
+  maxLambda( const VectorXd& u, double & lmax,unsigned int& row ) const
   {
     /* TODO: unactive the search for TWINS. */
 
@@ -973,20 +973,28 @@ namespace soth
 	    break; // Nothing to do.
 	  case Bound::BOUND_SUP:
 	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
-	    if( lambda(i,0)>lmax )
+	    if( -lambda(i,0)>lmax )
 	      {
-		res=true;
-		lmax=lambda(i,0);
-		row=i;
+		double Ju = J.row(cstref)*u;
+		if( Ju<=bounds[cstref].getBound( Bound::BOUND_SUP )+EPSILON )
+		  {
+		    res=true;
+		    lmax=-lambda(i,0);
+		    row=i;
+		  }
 	      }
 	    break;
 	  case Bound::BOUND_INF:
 	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
-	    if( lambda(i,0)>lmax ) // TODO: Why???
+	    if( -lambda(i,0)>lmax ) // TODO: change the sign of the bound-inf cst.
 	      {
-		res=true;
-		lmax=lambda(i,0);
-		row=i;
+		double Ju = J.row(cstref)*u;
+		if( bounds[cstref].getBound( Bound::BOUND_INF )-EPSILON<=Ju )
+		  {
+		    res=true;
+		    lmax=-lambda(i,0);
+		    row=i;
+		  }
 	      }
 	    break;
 	  }
@@ -1211,7 +1219,7 @@ namespace soth
     }
     if( isLagrangeCpt )
       {
-	os << "l{"<<stageRef<<"} = " << (MATLAB)lambda << std::endl;
+	os << "lag{"<<stageRef<<"} = " << (MATLAB)lambda << std::endl;
       }
   }
 

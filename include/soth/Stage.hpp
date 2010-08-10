@@ -151,7 +151,7 @@ namespace soth
     bool checkBound( const VectorXd& u,const VectorXd& du,
 		     ConstraintRef& cstmax, double& taumax );
 
-    bool maxLambda( double & lmax, unsigned int & row ) const;
+    bool maxLambda( const VectorXd& u, double & lmax, unsigned int & row ) const;
     //void damp( const double & damping );
 
   protected:
@@ -197,6 +197,14 @@ namespace soth
     const_SubVectorXd gete() const { return e; }
     SubVectorXd getLagrangeMultipliers() { return lambda; }
     const_SubVectorXd getLagrangeMultipliers() const { return lambda; }
+    template< typename D>
+    void setLagrangeMultipliers(const MatrixBase<D>& l) // DEBUG
+    {
+      const Indirect & Ie = e.getRowIndices();
+      lambda.setRowIndices( Ie );
+      TRANSFERT_IN_SUBVECTOR(l,lambda);
+      isLagrangeCpt =true;
+    } // DEBUG
 
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );
