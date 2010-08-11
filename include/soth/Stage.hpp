@@ -105,6 +105,9 @@ namespace soth
     void computeInitialJY( const ActiveSet & initialIr );
     void computeInitialJY_allRows(void);
 
+  public:
+    void freezeSlacks(const bool & slacks = true);
+
     /* --- DOWN ------------------------------------------------------------- */
   public:
     /* Return true if the rank re-increase operated at the current stage. */

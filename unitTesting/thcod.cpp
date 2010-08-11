@@ -94,8 +94,8 @@ int main (int argc, char** argv)
   hcod.makeStep(tau);
   assert((std::abs(tau-1.)<=10*soth::Stage::EPSILON)&&"Check bound test failed.");
 
-  hcod.computeLagrangeMultipliers();
-  bool testL = hcod.testLagrangeMultipliers(std::cout);
+  hcod.computeLagrangeMultipliers(hcod.nbStages());
+  bool testL = hcod.testLagrangeMultipliers(hcod.nbStages(),std::cout);
   sotDEBUG(5) << "Test multipliers: " << ((testL)?"Passed!":"Failed...") << std::endl;
   assert(testL&&"Lagrange Multipliers test failed.");
 }

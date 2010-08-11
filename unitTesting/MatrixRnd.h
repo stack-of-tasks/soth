@@ -1,3 +1,5 @@
+#include "soth/Algebra.h"
+
 namespace soth
 {
   class Random
@@ -18,24 +20,13 @@ namespace soth
       static ReturnType randMax();
   };
 
-  unsigned int Random::current = 33331;
 
-  unsigned int Random::next()
-  {
-    static const unsigned long long int m = static_cast<unsigned long long int>(MULT);
-    const unsigned long long int c = m * current;
-    current = c % SOTH_RND_MAX;
-    return current;
-  }
-
-  void Random::setSeed(unsigned int newSeed) {current = newSeed;}
-
-  template <> unsigned int Random::rand() {return next();}
-  template <> unsigned int Random::randMax() {return SOTH_RND_MAX;}
-  template <> int Random::rand() {return next()>>1;}
-  template <> int Random::randMax() {return SOTH_RND_MAX>>1;}
-  template <> double Random::rand() {return static_cast<double>(next())/SOTH_RND_MAX;}
-  template <> double Random::randMax() {return 1.;}
+  template <> inline unsigned int Random::rand() {return next();}
+  template <> inline unsigned int Random::randMax() {return SOTH_RND_MAX;}
+  template <> inline int Random::rand() {return next()>>1;}
+  template <> inline int Random::randMax() {return SOTH_RND_MAX>>1;}
+  template <> inline double Random::rand() {return static_cast<double>(next())/SOTH_RND_MAX;}
+  template <> inline double Random::randMax() {return 1.;}
 
 
   template<typename Scalar> 
@@ -74,26 +65,12 @@ namespace soth
 
 
   // Simulate a white noise with mean 0 and var 1.
-  double whiteNoise(void)
-  {
-    const int ACC = 100;
-    double x=0;
-    for( int i=0;i<ACC;++i ) x=x+Random::rand<double>();
-    return (x-ACC/2.)*sqrt(12.0/ACC);
-  }
+  double whiteNoise(void);
   // Simulate any white noise.
-  int whiteNoise( int mean,double var )
-  {
-    double x=whiteNoise()*var+mean;
-    return std::max(0,(int)round(x));
-  }
+  int whiteNoise( int mean,double var );
   // Simulate a discrete uniform law inside [ bmin,bmax ] (each bound
   // being reached).
-  int randu( int bmin,int bmax )
-  {
-    assert( bmin<bmax );
-    return floor((bmax-bmin+1)*Random::rand<double>()+bmin);
-  }
+  int randu( int bmin,int bmax );
 
 
 }; // namespace soth.

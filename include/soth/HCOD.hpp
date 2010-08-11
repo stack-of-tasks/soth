@@ -53,11 +53,11 @@ namespace soth
     /* --- Computations --- */
   public:
     void computeSolution( bool compute_u = true );
-    void computeLagrangeMultipliers( void );
+    void computeLagrangeMultipliers( const unsigned int & stageRef );
     double computeStepAndUpdate( void );
     double computeStep( void );
-    bool searchAndDowndate( void );
-    bool search( void );
+    bool searchAndDowndate( const unsigned int & stageRef );
+    bool search( const unsigned int & stageRef );
 
     void makeStep( double tau, bool compute_u = true );
     void makeStep( bool compute_u = true );
@@ -74,9 +74,9 @@ namespace soth
     void show( std::ostream& os, bool check=false );
     void showActiveSet( std::ostream& os ) const;
     bool testRecomposition( std::ostream* os );
-    bool testLagrangeMultipliers( std::ostream* os ) const;
-    bool testLagrangeMultipliers( std::ostream& os ) const
-    { testLagrangeMultipliers(&os); }
+    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream* os ) const;
+    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream& os ) const
+    { testLagrangeMultipliers(stageRef,&os); }
 
     void setNameByOrder( const std::string root = ""  );
 

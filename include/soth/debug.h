@@ -46,6 +46,10 @@
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+#ifdef NDEBUG
+#   undef SOTH_DEBUG
+#endif
+
 
 #ifndef SOTH_DEBUG_MODE
 #define SOTH_DEBUG_MODE 0
@@ -130,15 +134,13 @@ class sotDEBUGPRIORclass
     int previousLevel;
     sotDEBUGPRIORclass( void ) {};
  public:
- sotDEBUGPRIORclass( unsigned int prior )
+ sotDEBUGPRIORclass( int prior )
      : previousLevel(sotDEBUGFLOW.debugPrior)
 	{
-	    std::cout <<"Was " << sotDEBUGFLOW.debugPrior<<" set to "<<prior << std::endl;
 	    sotDEBUGFLOW.debugPrior=prior;
 	}
     ~sotDEBUGPRIORclass( void )
 	{
-	    std::cout <<"Was " << sotDEBUGFLOW.debugPrior<<" set to "<<previousLevel << std::endl;
 	    sotDEBUGFLOW.debugPrior=previousLevel;
 	}
 };

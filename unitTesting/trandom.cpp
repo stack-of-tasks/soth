@@ -1,13 +1,14 @@
 /*
  *  Copyright
  */
-//#define SOTH_DEBUG
-//#define SOTH_DEBUG_MODE 45
+#define SOTH_DEBUG
+#define SOTH_DEBUG_MODE 45
 #include "soth/debug.h"
 #include "soth/HCOD.hpp"
 #include "soth/debug.h"
 #include "soth/COD.hpp"
 #include "MatrixRnd.h"
+#include "RandomGenerator.h"
 #include <sys/time.h>
 #include <iostream>
 
@@ -19,211 +20,6 @@ using std::cerr;
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
-
-#include <fstream>
-void parseProblemFile( const std::string name,
-		       std::vector<Eigen::MatrixXd> &J,
-		       std::vector<soth::bound_vector_t> &b,
-		       int& NB_STAGE,
-		       std::vector<int> & NR,
-		       int& NC )
-{
-  std::ifstream fin(name.c_str());
-  std::string syntax1,syntax2;
-  MatrixXd Ji,eiinf,eisup;
-
-  fin >> syntax1 >> syntax2 >> NC;
-  assert( (syntax1 == "variable")&&(syntax2 == "size") );
-  NB_STAGE=0;  int & s= NB_STAGE;
-  fin >> syntax1;
-  do
-    {
-      NR.resize(s+1); J.resize(s+1); b.resize(s+1);
-
-      unsigned int nre;
-      fin >> syntax2 >> nre;
-      assert( (syntax1 == "level")&&(syntax2 == "equalities") );
-
-      MatrixXd Je; VectorXd ee;
-      if( nre>0 )
-	{
-	  Je.resize(nre,NC); ee.resize(nre);
-	  for( unsigned int i=0;i<nre;++i )
-	    {
-	      for( unsigned int j=0;j<NC;++j )
-		fin >> Je(i,j);
-	      fin >> ee(i);
-	    }
-	}
-
-      fin >> syntax1 >>  NR[s];
-      assert( (syntax1 == "inequalities") );
-
-      /* Copy the equalities line into the total matrix. */
-      NR[s]+=nre; assert(NR[s]>0);
-      J[s].resize(NR[s],NC); b[s].resize(NR[s]);
-      if( nre>0 )
-	{
-	  J[s].topRows(nre)=Je;
-	  for( unsigned int i=0;i<nre;++i )  b[s][i] = ee(i);
-	}
-
-      /* Parse the inequalities. */
-      if( NR[s]>nre )
-	{
-	  double bi,bu;
-	  for( unsigned int i=nre;i<NR[s];++i )
-	    {
-	      for( unsigned int j=0;j<NC;++j )
-		fin >> J[s](i,j);
-	      fin >> bi>>bu;
-	      if( bi<-1e10 ) // bound sup only
-		{
-		  assert( bu<=1e10 );
-		  b[s][i] = Bound( bu,Bound::BOUND_SUP );
-		}
-	      else if( 1e10<bu ) // bound inf only
-		{
-		  b[s][i] = Bound( bi,Bound::BOUND_INF );
-		}
-	      else // double bound
-		{
-		  b[s][i] = std::make_pair( bi,bu );
-		}
-	    }
-	}
-      sotDEBUG(5) << "J"<<s<<" = " << (MATLAB)J[s] << endl;
-      sotDEBUG(5) << "b"<<s<<" = " << b[s] << endl;
-      fin >> syntax1; s++;
-    } while( syntax1 == "level" );
-
-}
-
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-			       std::vector<soth::bound_vector_t> &b,
-			       const int NB_STAGE,
-			       const std::vector<int> & RANKFREE,
-			       const std::vector<int> & RANKLINKED,
-			       const std::vector<int> & NR,
-			       const int NC )
-{
-  /* Initialize J and b. */
-  J.resize(NB_STAGE);
-  b.resize(NB_STAGE);
-
-  unsigned int s = 0;
-  for( int s=0;s<NB_STAGE;++s )
-    {
-      b[ s].resize(NR[ s]);
-
-      assert( (RANKFREE[s]>0)||(RANKLINKED[s]>0) );
-
-      J[s].resize( NR[s],NC ); J[s].setZero();
-      if( RANKFREE[s]>0 )
-	{
-	  Eigen::MatrixXd Xhifree( NR[s],RANKFREE[s] );
-	  Eigen::MatrixXd Jfr( RANKFREE[s],NC );
-	  soth::MatrixRnd::randomize( Xhifree );
-	  soth::MatrixRnd::randomize( Jfr );
-	  if( Xhifree.cols()>0 ) J[s] += Xhifree*Jfr;
-	}
-      if( RANKLINKED[s]>0 )
-	{
-	  Eigen::MatrixXd Xhilinked( NR[s],RANKLINKED[s] );
-	  soth::MatrixRnd::randomize( Xhilinked );
-	  for( int sb=0;sb<s;++sb )
-	  {
-	    Eigen::MatrixXd Alinked( RANKLINKED[s],NR[sb] );
-	    soth::MatrixRnd::randomize( Alinked );
-	    J[s] += Xhilinked*Alinked*J[sb];
-	  }
-	}
-
-      for( unsigned int i=0;i<NR[s];++i )
-	{
-	  double x = Random::rand<double>() * 2; // DEBUG: should b U*2-1
-	  double y = Random::rand<double>() * -2;  // DEBUG
-	  int btype = randu(1,4);
-	  if( s==0 ) btype= randu(2,4); // DEBUG
-	  if( s!=0 ) btype= 1; // DEBUG
-	  switch( btype )
-	    {
-	    case 1: // =
-	      b[s][i] = x;
-	      break;
-	    case 2: // <
-	      b[s][i] = soth::Bound(y,soth::Bound::BOUND_INF);
-	      break;
-	    case 3: // >
-	      b[s][i] = soth::Bound(x,soth::Bound::BOUND_SUP);
-	      break;
-	    case 4: // < <
-	      b[s][i] = std::make_pair( std::min(x,y),std::max(x,y) ) ;
-	      break;
-	    }
-	}
-    }
-}
-
-void generateRandomProfile(int & nbStage,
-			   std::vector<int>& rankfree,
-			   std::vector<int>& ranklinked,
-			   std::vector<int>& nr,
-			   int & nc )
-{
-  nc = Random::rand<int>() %  10+3;// 50 + 6;
-  nbStage = 3; // DEBUG randu(1,1+nc/5);
-
-  sotDEBUG(1) << "nc = " << nc << endl;
-  sotDEBUG(1) << "nbStage = " << nbStage << endl;
-
-  const int NR = std::max(2,(int)round((0.+nc)/nbStage*.7));
-  const int RANKFREE = std::max(1,(int)round(whiteNoise(NR/2,0.2)));
-  const int RANKLINKED = round(whiteNoise(NR,1))+1;
-  sotDEBUG(1) << "mean_NR = " << NR << "; mean_RF = " << RANKFREE << "; mean_RL = " << RANKLINKED << endl;
-
-  rankfree.resize( nbStage );
-  ranklinked.resize( nbStage );
-  nr.resize( nbStage );
-  for( int i=0;i<nbStage;++i )
-    {
-      if( Random::rand<double>()<0.7 )
-	{
-	  sotDEBUG(1) << i<<": normal rank." <<endl;
-	  rankfree[i] = randu(0,RANKFREE);//whiteNoise( RANKFREE,3 );
-	  ranklinked[i] = randu(0,RANKLINKED); //whiteNoise( RANKLINKED,3 );
-	  nr[i] = randu(1,NR);
-	}
-      else if( Random::rand<double>()<0.05 )
-	{
-	  sotDEBUG(1) << i<<":  rank def." <<endl;
-	  rankfree[i] = randu(0,RANKFREE);//whiteNoise( RANKFREE,3 );
-	  ranklinked[i] = randu(0,RANKLINKED); //whiteNoise( RANKLINKED,3 );
-	  nr[i] = randu(1,NR);
-	}
-      else
-	{
-	  sotDEBUG(1) << i<<": full rank." <<endl;
-	  ranklinked[i] = whiteNoise( RANKLINKED,3 );
-	  nr[i] = randu(1,NR);
-	  rankfree[i] = nr[i];
-	}
-      rankfree[i]=std::min(nr[i],rankfree[i]);
-      ranklinked[i]=std::min(nr[i],ranklinked[i]);
-      if( i==0 ) { ranklinked[i] = 0; rankfree[i]=std::max(1,rankfree[i] ); }
-      else ranklinked[i]=std::min( ranklinked[i],nr[i-1] );
-      if( rankfree[i]==0 ) ranklinked[i]=std::max(1,ranklinked[i]);
-      sotDEBUG(1) << "rf"<<i<<" = " << rankfree[i] <<";   rl"<<i<<" = " << ranklinked[i]
-		  << ";  nr"<<i<<" = " << nr[i] << endl;
-
-      // DEBUG
-      if(rankfree[i]==0 ) rankfree[i]++;
-
-    }
-}
 
 
 /* Compute [m1;m2] from m1 and m2 of same col number. */
@@ -553,7 +349,9 @@ namespace DummyActiveSet
 /* -------------------------------------------------------------------------- */
 int main (int argc, char** argv)
 {
+# ifndef NDEBUG
   sotDebugTrace::openFile();
+#endif
 
   int NB_STAGE,NC;
   std::vector<int> NR,RANKLINKED,RANKFREE;
@@ -562,7 +360,7 @@ int main (int argc, char** argv)
 
   if( (argc==3)&& std::string(argv[1])=="-file")
     {
-      parseProblemFile( argv[2],J,b,NB_STAGE,NR,NC);
+      readProblemFromFile( argv[2],J,b,NB_STAGE,NR,NC);
     }
   else
     {
@@ -577,13 +375,6 @@ int main (int argc, char** argv)
 
       /* Decide the size of the problem. */
       generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
-      // DEBUG
-      //RANKFREE[0] = NR[0];
-      //RANKFREE[1] = NR[1];
-      for( unsigned int i=0;i<NB_STAGE;++i )
-	{ cout << RANKFREE[i]<<"/"<<NR[i]<<",  "; }
-
-
       /* Initialize J and b. */
       generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
     }
@@ -620,7 +411,13 @@ int main (int argc, char** argv)
   VectorXd usvd = VectorXd::Zero(NC);
   const double EPSILON = 10*Stage::EPSILON;
 
-  for( unsigned int i=0;i<hcod.nbStages();++i )
+  /* Checks and recheck ...
+   * These checks are not valid: first, checking if the bound is
+   * or is not respected has little meaning, when the stages are not full rank.
+   * Second, when a slack is freezed, it is not possible to check its value any
+   * more with the initial reference value. .. TODO again
+
+     for( unsigned int i=0;i<hcod.nbStages();++i )
     {
       Stage & st = hcod[i];
       MatrixXd J_(NR[i],NC); VectorXd e_(NR[i]);
@@ -716,7 +513,7 @@ int main (int argc, char** argv)
 
       sotDEBUG(1) << "Check pinv of " << i << "." << endl;
       assert( std::abs(( eai-Jai*u ).norm() - ( eai-Jai*usvd ).norm()) < 10*Stage::EPSILON );
-    }
+      } */
 
 
 

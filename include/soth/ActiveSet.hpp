@@ -12,8 +12,13 @@ namespace soth
     ActiveSet( unsigned int nr )
       :v(nr),freerow(nr),nba(0)
     {
+      reset();
+    }
+    void reset( void )
+    {
       std::fill( v.begin(),v.end(),cstref_t(Bound::BOUND_NONE,-1) );
       std::fill( freerow.begin(),freerow.end(),true );
+      nba=0;
     }
 
     /* Return the number of active constraint. */
@@ -65,6 +70,15 @@ namespace soth
 	}
       freerow[row]=true;
       nba--;
+    }
+
+    /* Pass the constraint to a twin mode. */
+    void freeze( unsigned int ref )
+    {
+      assert( ref<v.size() );
+      assert( v[ref].first != Bound::BOUND_NONE );
+      assert( v[ref].first != Bound::BOUND_TWIN );
+      v[ref].first = Bound::BOUND_TWIN;
     }
 
     void permuteRows( const VectorXi & P )

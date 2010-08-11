@@ -213,47 +213,27 @@ namespace soth
    * The result is stored in the stages (getLagrangeMultipliers()).
    */
   void HCOD::
-  computeLagrangeMultipliers()
+  computeLagrangeMultipliers( const unsigned int & stageRef )
   {
     assert( isSolutionCpt );
-    stages.back()->computeRho(Ytu,rho,true); // This is Ytrho, not rho.
-    sotDEBUG(5) << "rho = " << (MATLAB)rho << std::endl;
-    //DEBUG
+    assert( stageRef<=stages.size() );
 
-    //rho = Ytu; // DEBUG!!
-    //for( stage_riter_t iter=stages.rbegin();iter!=stages.rend();++iter )
-    for( stage_riter_t iter=stages.rbegin()+1;iter!=stages.rend();++iter )
+    stage_iter_t iter=stages.begin()+stageRef;
+
+    if( iter==stages.end() )
+      {   rho = - Ytu;     }
+    else
       {
+	(*iter)->computeRho(Ytu,rho,true); // This is Ytrho, not rho.
+      }
+    sotDEBUG(5) << "rho = " << (MATLAB)rho << std::endl;
+
+    while ( iter!=stages.begin() )
+      {
+	iter--;
 	(*iter)->computeLagrangeMultipliers(rho);
 	sotDEBUG(5) << "lag = " << (MATLAB)(*iter)->getLagrangeMultipliers() << std::endl;
       }
-
-    // DEBUG
-    // MatrixXd J( sizeA()-stages.back()->sizeA(),sizeProblem );
-    // int i=0;
-    // for( stage_iter_t iter=stages.begin();iter!=stages.end()-1;++iter )
-    //   {
-    // 	const int nr=(*iter)->sizeA();
-    // 	if( nr==0 ) continue;
-    // 	MatrixXd Ja_( (*iter)->nbConstraints(),sizeProblem);
-    // 	SubMatrix<MatrixXd,RowPermutation> Ja = (*iter)->Jactive(Ja_);
-    // 	J.block( i,0,nr,sizeProblem ) = Ja;
-    // 	i+=nr;
-    //   }
-
-    // if( i==0 ) return;
-
-    // ULV ulv; ulv.compute(J.transpose(),Stage::EPSILON);
-    // VectorXd lambda = ulv.solve( rho );
-
-    // i=0;
-    // for( stage_iter_t iter=stages.begin();iter!=stages.end()-1;++iter )
-    //   {
-    // 	const int nr=(*iter)->sizeA();
-    // 	if( nr==0 ) continue;
-    // 	(*iter)->setLagrangeMultipliers( lambda.segment(i,nr) );
-    // 	i+=nr;
-    //   }
   }
 
   void HCOD::
@@ -335,16 +315,19 @@ namespace soth
   /* Return true iff the search is positive, ie if downdate was
    * needed and performed. */
   bool HCOD::
-  searchAndDowndate( void )
+  searchAndDowndate( const unsigned int & stageRef )
   {
+    assert( stageRef<=stages.size() );
     double lambdamax = Stage::EPSILON; unsigned int row;
-    stage_iter_t stageDown = stages.end();
-    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+
+    const stage_iter_t refend = stages.begin()+std::min(stages.size(),stageRef+1);
+    stage_iter_t stageDown =  refend;
+    for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
 	if( (*iter)->maxLambda( solution,lambdamax,row ) )
 	  stageDown=iter;
       }
-    if( stages.end()!=stageDown )
+    if( refend!=stageDown )
       {
 	downdate(stageDown,row);
 	return true;
@@ -353,16 +336,18 @@ namespace soth
   }
 
   bool HCOD::
-  search( void )
+  search( const unsigned int & stageRef )
   {
+    assert( stageRef<=stages.size() );
     double lambdamax = Stage::EPSILON; unsigned int row;
-    stage_iter_t stageDown = stages.end();
-    for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
+    const stage_iter_t refend = stages.begin()+std::min(stages.size(),stageRef+1);
+    stage_iter_t stageDown = refend;
+    for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
 	if( (*iter)->maxLambda( solution,lambdamax,row ) )
 	  stageDown=iter;
       }
-    return false;
+    return ( refend!=stageDown );
   }
 
 
@@ -391,6 +376,7 @@ namespace soth
 
   void HCOD::activeSearch( VectorXd & u )
   {
+    sotDEBUGIN(15);
     /*
      * foreach stage: stage.initCOD(Ir_init)
      * u = 0
@@ -418,13 +404,14 @@ namespace soth
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
     if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 
-    bool endCondition = true;
     int iter = 0;
+    int stageMinimal = 0;
     do
       {
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
 
 	//solution.setZero(); Ytu.setZero();//DEBUG
+	if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 	computeSolution();
 
 	double tau = computeStepAndUpdate();
@@ -433,32 +420,38 @@ namespace soth
 	    assert( testRecomposition(&std::cerr) );
 	    sotDEBUG(5) << "Update done, make step <1." << std::endl;
 	    makeStep(tau);
-	    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+	    stageMinimal = 0; // TODO: is that necessary?
 	  }
 	else
 	  {
 	    sotDEBUG(5) << "No update, make step ==1." << std::endl;
 	    makeStep();
 
-	    computeLagrangeMultipliers();
-	    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
-	    //assert( testLagrangeMultipliers(std::cerr) );
-	    if( searchAndDowndate() )
+	    for( ;stageMinimal<=stages.size();++stageMinimal )
 	      {
-		sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
-		assert( testRecomposition(&std::cerr) );
-	      }
-	    else
-	      {
-		sotDEBUG(5) << "Lagrange>=0, no downdate." << std::endl;
-		endCondition = false;
-	      }
+		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 
+		computeLagrangeMultipliers(stageMinimal);
+		//assert( testLagrangeMultipliers(std::cerr) );
+		if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+		if( searchAndDowndate(stageMinimal) )
+		  {
+		    sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
+		    assert( testRecomposition(&std::cerr) );
+		    break;
+		  }
+
+		for( unsigned int i=0;i<stageMinimal;++i )
+		  stages[i]->freezeSlacks(false);
+		if( stageMinimal<stages.size() )
+		  stages[stageMinimal]->freezeSlacks(true);
+	      }
 	  }
-
-      } while(endCondition);
+      } while(stageMinimal<=stages.size());
+    sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
 
     u=solution;
+    sotDEBUGOUT(15);
   }
 
 
@@ -469,6 +462,7 @@ namespace soth
   bool HCOD::
   testRecomposition( std::ostream* os )
   {
+    sotDEBUGPRIOR(+40);
     bool res = true;
     for( unsigned int i=0;i<stages.size();++i )
       {
@@ -480,10 +474,17 @@ namespace soth
   }
 
   bool HCOD::
-  testLagrangeMultipliers( std::ostream* os ) const
+  testLagrangeMultipliers( int unsigned stageRef,std::ostream* os ) const
   {
-    VectorXd verifL(sizeProblem); verifL.setZero();
-    for( int i=0;i<stages.size();++i )
+    assert( stageRef<=stages.size() );
+    VectorXd verifL(sizeProblem);
+
+    if( stageRef==stages.size() )
+      { verifL = solution; stageRef -- ; }
+    else
+      verifL.setZero();
+
+    for( unsigned int i=0;i<stageRef;++i )
       {
 	const Stage s = *stages[i];
 	MatrixXd J_(s.nbConstraints(),sizeProblem);
