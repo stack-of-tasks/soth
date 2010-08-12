@@ -119,19 +119,18 @@ struct ei_choose_container_impl<MatrixType, RowAndColPermutation>
 };
 
 
-
 //--------------------Row Implementations---------------------//
 
 template<typename MatrixType, bool IsSub=true>
-class NoRowSelectionImpl  // : public MatrixContainer<MatrixType>
+class NoRowSelectionImpl // : public MatrixContainer<MatrixType>
 {
 public:
   typedef typename MatrixType::Index Index;
   typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic), 1> RowIndices;
 
 protected:
-  NoRowSelectionImpl(MatrixType& m, bool defaultPermutation=false) : m_contain(m) {}
-  NoRowSelectionImpl(MatrixType& m, RowIndices& indices) :  m_contain(m) {}
+  NoRowSelectionImpl(MatrixType& m, bool defaultPermutation = false) : m_contain(m) {}
+  NoRowSelectionImpl(MatrixType& m, RowIndices& indices) : m_contain(m) {}
   MatrixContainer<MatrixType> m_contain;
 
 public:
@@ -139,9 +138,6 @@ public:
   Index rows() const {return m_contain.m_matrix.rows();}
 };
 
-
-
-/* Vector-storred permutation matrix, with simple accessors and modifiors: push, permute, etc. */
 template <typename MatrixType, bool IsSub=true>
 class RowSelectionImpl
 {
@@ -150,41 +146,39 @@ public:
   typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic), 1> RowIndices;
 
   RowSelectionImpl(MatrixType& m, bool defaultPermutation = false)
-    :rowIndices(defaultPermutation?ei_range_helper<RowIndices>::generate(0, m.rows()):RowIndices())
+    : m_contain(m),owned_rowIndices(),rowIndices( owned_rowIndices )
   {
+    if( defaultPermutation ) setRowRange(0,m.rows());
   }
 
-  RowSelectionImpl(MatrixType& m, const RowIndices indices)
-    :rowIndices(indices)
-  {//TODO ? : check indices, need to know the matrix size
-  }
+  /* No copy of the indices, but a storage of the reference. */
+  RowSelectionImpl(MatrixType& m,RowIndices& indices)
+    : m_contain(m),owned_rowIndices(),rowIndices( indices )
+  { }
 
+  /* --- Kernel implementation --- */
   Index rowIndex(Index i) const
   {
-    ei_assert(i>=0 && i<rowIndices.size());
+    ei_assert( inIdxRange(i) );
+    ei_assert( inMRange(rowIndices[i]) );
     return rowIndices[i];
   }
-
   Index rows() const {return rowIndices.size();}
+  const RowIndices& getRowIndices() const { return rowIndices; }
+  bool rowIndicesOwned() { return &rowIndices==owned_rowIndices; }
 
-  const RowIndices& getRowIndices() const
-  {
-    return rowIndices;
-  }
-
+  /* --- Basic setters --- */
   void setRowIndices(const RowIndices& indices)
   {
     //ei_assert(!IsSub || indices.size() < m_matrix.rows());
     rowIndices = indices;
   }
-
   void setRowRange(Index start, Index end)
   {
-    ei_assert(start>=0 && start<rows());
-    ei_assert(end>=start && start<rows());
+    ei_assert( inMRange(start) ); ei_assert( inMRange(std::max(0,end-1)) );
+    ei_assert( start<=end );
     rowIndices = ei_range_helper<RowIndices>::generate(start, end);
   }
-
   void permuteRows(Index i, Index j)
   {
     ei_assert(i>=0 && i<rows());
@@ -193,23 +187,22 @@ public:
     rowIndices[i] = rowIndices[j];
     rowIndices[j] = tmp;
   }
-
   void pushRowFront(Index index)
   {
-    //ei_assert(index<m_matrix.rows());
+    ei_assert( inMRange(index) );
     const Index s = rows();
     rowIndices.conservativeResize(s+1);
+    /* Cannot use block for this operation. */
     for (Index i=s; i>0; --i) {rowIndices[i]=rowIndices[i-1];}
     rowIndices[0] = index;
   }
-
   void pushRowBack(Index index)
   {
+    ei_assert( inMRange(index) );
     const Index s = rows();
     rowIndices.conservativeResize(s+1);
     rowIndices[s] = index;
   }
-
   Index removeRow(Index index)
   {
     assert(index<rows());
@@ -219,7 +212,6 @@ public:
     rowIndices.conservativeResize(rows()-1);
     return res;
   }
-
   Index popRowBack()
   {
     assert(rows()>0);
@@ -227,18 +219,19 @@ public:
     rowIndices.conservativeResize(rows()-1);
     return res;
   }
-
   Index popRowFront()
   {
     assert(rows()>0);
     return removeRow(0);
   }
 
-
 private:
-  RowIndices rowIndices;
+  MatrixContainer<MatrixType> m_contain;
+  RowIndices owned_rowIndices;
+  RowIndices & rowIndices;
+  bool inMRange( Index i ) const { return 0<=i && i<m_contain.m_matrix.rows(); }
+  bool inIdxRange( Index i ) const { return 0<=i && i<rows(); }
 };
-
 
 
 template<typename MatrixType, int PermutationType, bool IsSub>
@@ -256,15 +249,15 @@ struct ei_choose_row_impl<MatrixType, ColPermutation, IsSub>
 //--------------------Col Implementations---------------------//
 
 template<typename MatrixType, bool IsSub=true>
-class NoColSelectionImpl  // : public MatrixContainer<MatrixType>
+class NoColSelectionImpl // : public MatrixContainer<MatrixType>
 {
 public:
   typedef typename MatrixType::Index Index;
   typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic), 1> ColIndices;
 
 protected:
-  NoColSelectionImpl(MatrixType& m, bool defaultPermutation=false) : m_contain(m) {}
-  NoColSelectionImpl(MatrixType& m, ColIndices& indices) :  m_contain(m) {}
+  NoColSelectionImpl(MatrixType& m, bool defaultPermutation = false) : m_contain(m) {}
+  NoColSelectionImpl(MatrixType& m, ColIndices& indices) : m_contain(m) {}
   MatrixContainer<MatrixType> m_contain;
 
 public:
@@ -272,9 +265,6 @@ public:
   Index cols() const {return m_contain.m_matrix.cols();}
 };
 
-
-
-/* Vector-storred permutation matrix, with simple accessors and modifiors: push, permute, etc. */
 template <typename MatrixType, bool IsSub=true>
 class ColSelectionImpl
 {
@@ -283,41 +273,39 @@ public:
   typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic), 1> ColIndices;
 
   ColSelectionImpl(MatrixType& m, bool defaultPermutation = false)
-    :colIndices(defaultPermutation?ei_range_helper<ColIndices>::generate(0, m.cols()):ColIndices())
+    : m_contain(m),owned_colIndices(),colIndices( owned_colIndices )
   {
+    if( defaultPermutation ) setColRange(0,m.cols());
   }
 
-  ColSelectionImpl(MatrixType& m, const ColIndices indices)
-    :colIndices(indices)
-  {//TODO ? : check indices, need to know the matrix size
-  }
+  /* No copy of the indices, but a storage of the reference. */
+  ColSelectionImpl(MatrixType& m,ColIndices& indices)
+    : m_contain(m),owned_colIndices(),colIndices( indices )
+  {}
 
+  /* --- Kernel implementation --- */
   Index colIndex(Index i) const
   {
-    ei_assert(i>=0 && i<colIndices.size());
+    ei_assert( inIdxRange(i) );
+    ei_assert( inMRange(colIndices[i]) );
     return colIndices[i];
   }
-
   Index cols() const {return colIndices.size();}
+  const ColIndices& getColIndices() const { return colIndices; }
+  bool colIndicesOwned() { return &colIndices==owned_colIndices; }
 
-  const ColIndices& getColIndices() const
-  {
-    return colIndices;
-  }
-
+  /* --- Basic setters --- */
   void setColIndices(const ColIndices& indices)
   {
     //ei_assert(!IsSub || indices.size() < m_matrix.cols());
     colIndices = indices;
   }
-
   void setColRange(Index start, Index end)
   {
-    ei_assert(start>=0 && start<cols());
-    ei_assert(end>=start && start<cols());
+    ei_assert( inMRange(start) ); ei_assert( inMRange(std::max(0,end-1)) );
+    ei_assert( start<=end );
     colIndices = ei_range_helper<ColIndices>::generate(start, end);
   }
-
   void permuteCols(Index i, Index j)
   {
     ei_assert(i>=0 && i<cols());
@@ -326,23 +314,21 @@ public:
     colIndices[i] = colIndices[j];
     colIndices[j] = tmp;
   }
-
   void pushColFront(Index index)
   {
-    //ei_assert(index<m_matrix.cols());
+    ei_assert( inMRange(index) );
     const Index s = cols();
     colIndices.conservativeResize(s+1);
     for (Index i=s; i>0; --i) {colIndices[i]=colIndices[i-1];}
     colIndices[0] = index;
   }
-
   void pushColBack(Index index)
   {
+    ei_assert( inMRange(index) );
     const Index s = cols();
     colIndices.conservativeResize(s+1);
     colIndices[s] = index;
   }
-
   Index removeCol(Index index)
   {
     assert(index<cols());
@@ -352,7 +338,6 @@ public:
     colIndices.conservativeResize(cols()-1);
     return res;
   }
-
   Index popColBack()
   {
     assert(cols()>0);
@@ -360,18 +345,19 @@ public:
     colIndices.conservativeResize(cols()-1);
     return res;
   }
-
   Index popColFront()
   {
     assert(cols()>0);
     return removeCol(0);
   }
 
-
 private:
-  ColIndices colIndices;
+  MatrixContainer<MatrixType> m_contain;
+  ColIndices owned_colIndices;
+  ColIndices & colIndices;
+  bool inMRange( Index i ) const { return 0<=i && i<m_contain.m_matrix.cols(); }
+  bool inIdxRange( Index i ) const { return 0<=i && i<cols(); }
 };
-
 
 
 template<typename MatrixType, int PermutationType, bool IsSub>
@@ -385,7 +371,6 @@ struct ei_choose_col_impl<MatrixType, RowPermutation, IsSub>
 {
   typedef NoColSelectionImpl<MatrixType, IsSub> type;
 };
-
 
 
 /* --- SUB MATRIX CLASS ----------------------------------------------------- */
