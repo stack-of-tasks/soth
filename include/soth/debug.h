@@ -137,7 +137,7 @@ class sotDEBUGPRIORclass
  sotDEBUGPRIORclass( int prior )
      : previousLevel(sotDEBUGFLOW.debugPrior)
 	{
-	    sotDEBUGFLOW.debugPrior=prior;
+	    sotDEBUGFLOW.debugPrior+=prior;
 	}
     ~sotDEBUGPRIORclass( void )
 	{

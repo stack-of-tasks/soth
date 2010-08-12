@@ -82,7 +82,7 @@ namespace soth
      * W_*ML_ = W*[M [ zeros(In.size(),rank); L ] ]
      */
 
-    /* Check is the stage has been reset, initialized, if the optimum
+    /* Check if the stage has been reset, initialized, if the optimum
      * has been computed, and if the lagrange multipliers have been
      * computed. */
     bool isReset,isInit,isOptimumCpt,isLagrangeCpt;
@@ -104,9 +104,6 @@ namespace soth
     void nullifyLineDeficient( const Index row, const Index in_r );
     void computeInitialJY( const ActiveSet & initialIr );
     void computeInitialJY_allRows(void);
-
-  public:
-    void freezeSlacks(const bool & slacks = true);
 
     /* --- DOWN ------------------------------------------------------------- */
   public:
@@ -136,15 +133,20 @@ namespace soth
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
     void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init );
+    //void damp( const double & damping );
 
+    /* --- MULTIPLICATORS --------------------------------------------------- */
+  public:
     /* The const functions simultaneously set up the lambda member. */
-    /* computeRho(.,.,false) is const. What trick can we use to explicit that? TODO. */
     void computeError(const VectorXd& Ytu, VectorXd& err ) const;
     void computeError(const VectorXd& Ytu );
+    /* computeRho(.,.,false) is const. What trick can we use to explicit that? TODO. */
     void computeRho(const VectorXd& Ytu, VectorXd& Ytrho, bool inLambda = false );
     void computeLagrangeMultipliers( VectorXd& rho, VectorXd& l ) const;
     void computeLagrangeMultipliers( VectorXd& rho );
 
+    /* --- ACTIVE SEARCH ---------------------------------------------------- */
+  public:
     /* Return true if all bounds are checked with the specified tau.  If tau is
      * specified, the step is computed btw (with tau_out <= tau_in) and the
      * constraint to update is returned.
@@ -153,9 +155,9 @@ namespace soth
 		     ConstraintRef*, double* tau );
     bool checkBound( const VectorXd& u,const VectorXd& du,
 		     ConstraintRef& cstmax, double& taumax );
-
     bool maxLambda( const VectorXd& u, double & lmax, unsigned int & row ) const;
-    //void damp( const double & damping );
+    void freezeSlacks(const bool & slacks = true);
+
 
   protected:
     void computeErrorFromJu(const VectorXd& MLYtu);
@@ -214,6 +216,7 @@ namespace soth
     RowL rowML( const Index r );
     unsigned int rowSize( const Index r );
 
+    /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
     int nbConstraints( void ) const { return nr; }
     int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.

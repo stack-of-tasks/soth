@@ -10,7 +10,7 @@ namespace soth
   {
   public:
     ActiveSet( unsigned int nr )
-      :v(nr),freerow(nr),nba(0)
+      :v(nr),freerow(nr),freezed(nr),nba(0)
     {
       reset();
     }
@@ -18,6 +18,7 @@ namespace soth
     {
       std::fill( v.begin(),v.end(),cstref_t(Bound::BOUND_NONE,-1) );
       std::fill( freerow.begin(),freerow.end(),true );
+      std::fill( freezed.begin(),freezed.end(),false );
       nba=0;
     }
 
@@ -60,8 +61,6 @@ namespace soth
       assert( ! freerow[row] );
       for( unsigned int i=0;i<v.size();++i )
 	{
-	  // if( v[i].second>row ) v[i].second--;
-	  // else
 	  if( v[i].second == row )
 	    {
 	      assert( v[i].first != Bound::BOUND_NONE );
@@ -78,7 +77,15 @@ namespace soth
       assert( ref<v.size() );
       assert( v[ref].first != Bound::BOUND_NONE );
       assert( v[ref].first != Bound::BOUND_TWIN );
-      v[ref].first = Bound::BOUND_TWIN;
+      //v[ref].first = Bound::BOUND_TWIN;
+      assert(! freezed[ref] );
+      freezed[ref]=true;
+    }
+    bool isFreezed( unsigned int ref ) const
+    {
+      assert( ref<v.size() );
+      assert( v[ref].first != Bound::BOUND_NONE );
+      return  ( v[ref].first == Bound::BOUND_TWIN )||(freezed[ref]);
     }
 
     void permuteRows( const VectorXi & P )
@@ -153,7 +160,7 @@ namespace soth
     typedef std::pair<Bound::bound_t,int> cstref_t;
     typedef std::vector<cstref_t> cstref_vector_t;
     cstref_vector_t v;
-    std::vector<bool> freerow;
+    std::vector<bool> freerow,freezed;
     unsigned int nba;
   };
 

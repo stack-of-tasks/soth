@@ -437,6 +437,7 @@ namespace soth
 		if( searchAndDowndate(stageMinimal) )
 		  {
 		    sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
+		    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 		    assert( testRecomposition(&std::cerr) );
 		    break;
 		  }
@@ -462,7 +463,7 @@ namespace soth
   bool HCOD::
   testRecomposition( std::ostream* os )
   {
-    sotDEBUGPRIOR(+40);
+    sotDEBUGPRIOR(+20);
     bool res = true;
     for( unsigned int i=0;i<stages.size();++i )
       {

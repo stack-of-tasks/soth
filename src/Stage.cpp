@@ -317,7 +317,7 @@ namespace soth
 	    Bound::bound_t btype = activeSet.whichBound(cstref);
 	    assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
 
-	    if( btype!=Bound::BOUND_TWIN )
+	    if(! activeSet.isFreezed(cstref) )
 	      {
 		activeSet.freeze(cstref);
 		if(!slacks)
@@ -949,41 +949,46 @@ namespace soth
       {
 	if( activeSet.isActive(i) ) continue;
 	assert( bounds[i].getType()!=Bound::BOUND_TWIN );
+	assert(! activeSet.isFreezed(i) );
 
 	/* This has already been computed and could be avoided... TODO. */
 	double val = J.row(i)*u;
 	double dval = J.row(i)*du;
 	const Bound & b = bounds[i];
 	sotDEBUG(5) << "bound = " << b << endl;
-	sotDEBUG(5) << "Ju = " << val << "  --  Jdu = " << dval  << " -- Jupdu = " << val+dval << endl;
+	sotDEBUG(5) <<"Ju="<<val<<"  --  Jdu="<<dval<<" -- Jupdu="<<val+dval<<endl;
 
+	Bound::bound_t bdtype = b.check(val+dval,EPSILON);
+	if( bdtype!=Bound::BOUND_NONE )
+	  {
+	    assert( (bdtype==Bound::BOUND_INF)||(bdtype==Bound::BOUND_SUP) );
+	    sotDEBUG(5) << "Violation at " <<name <<" "
+			<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 
-	Bound::bound_t btype = b.check(val,EPSILON);
-	if( btype!=Bound::BOUND_NONE )
-	  {
-	    assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
-	    sotDEBUG(5) << "Violation Ju at " <<name <<" " << ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-	    taumax=0; cstmax = std::make_pair(i,btype);
-	    return false;
-	  }
-	else
-	  {
-	    btype = b.check(val+dval,EPSILON);//DEBUG
-	    if( btype!=Bound::BOUND_NONE )
+	    Bound::bound_t bitype = b.check(val,EPSILON);
+
+	    if( bitype==Bound::BOUND_NONE )
 	      {
-		assert( (btype==Bound::BOUND_INF)||(btype==Bound::BOUND_SUP) );
-		sotDEBUG(5) << "Violation at " <<name <<" "<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+		assert( ( b.checkSaturation(val,EPSILON)!=bdtype)
+			&& "Was saturated, and is now violate." );
 
-		const double & bval = b.getBound(btype);
+		const double & bval = b.getBound(bdtype);
 		double btau = (bval-val)/dval;
 		assert(btau>=0); assert(btau<1);
 		if( btau<taumax )
 		  {
 		    sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
-				<< ((btype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 		    res=false;
-		    taumax=btau; cstmax = std::make_pair(i,btype);
+		    taumax=btau; cstmax = std::make_pair(i,bdtype);
 		  }
+	      }
+	    else
+	      {
+		sotDEBUG(5) << "Violation Ju and Ju+du at " <<name <<" "
+			    << ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+		taumax=0; cstmax = std::make_pair(i,bdtype);
+		return false;
 	      }
 	  }
       }
@@ -1016,7 +1021,9 @@ namespace soth
 	const unsigned int cstref = activeSet.whichConstraint(W.getRowIndices()(i));
 	Bound::bound_t btype = activeSet.whichBound(cstref);
 	assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
-	switch( btype )
+
+	if( activeSet.isFreezed(cstref) ) continue;
+	switch( btype ) // TODO: the code is the same for +/-, factorize or change the sign of J.
 	  {
 	  case Bound::BOUND_TWIN:
 	    break; // Nothing to do.
@@ -1089,6 +1096,7 @@ namespace soth
   void Stage::
   recompose( MatrixXd& WMLY ) const
   {
+    sotDEBUGPRIOR(+40);
     sotDEBUGIN(5);
     if( sizeA()==0 )
       {
@@ -1099,10 +1107,10 @@ namespace soth
     WMLY.resize(sizeA(),nc); WMLY.setZero();
     WMLY.block(0,0,sizeA(),sizeM) = W*M;
 
-    sotDEBUG(5) << "UL = " << (MATLAB)WMLY.block(0,sizeM,sizeA(),sizeL) << std::endl;
-    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-    sotDEBUG(5) << "U = " << (MATLAB)W.block(0,sizeN(),sizeA(),sizeL) << std::endl;
-    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(25) << "UL = " << (MATLAB)WMLY.block(0,sizeM,sizeA(),sizeL) << std::endl;
+    sotDEBUG(25) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(25) << "U = " << (MATLAB)W.block(0,sizeN(),sizeA(),sizeL) << std::endl;
+    sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
 
     sotDEBUG(25) << "n = " << sizeN() <<" a = "<< sizeA()
 		<< " r = "<< sizeL << endl;
@@ -1111,15 +1119,16 @@ namespace soth
 
     if (sizeL != 0)
     {
-      sotDEBUG(5) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
+      sotDEBUG(25) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
       WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
     }
-    sotDEBUGIN(5);
-    sotDEBUG(5) << "WML = " << (MATLAB)WMLY << std::endl;
+
+    sotDEBUG(25) << "WML = " << (MATLAB)WMLY << std::endl;
 
     Y.applyTransposeOnTheLeft(WMLY);
-    sotDEBUG(5) << "WMLY = " << (MATLAB)WMLY << std::endl;
-  }
+    sotDEBUG(25) << "WMLY = " << (MATLAB)WMLY << std::endl;
+    sotDEBUGOUT(5);
+ }
 
   bool Stage::
   testRecomposition( void ) const
@@ -1195,13 +1204,15 @@ namespace soth
   eactive( VectorXd& e_ ) const
   {
     e_.resize(nr); e_.setConstant(-1.11111);
-    for( unsigned int i=0;i<nr;++i )
-      {
-	if( activeSet.isActive(i) )
-	  {
-	    e_(activeSet.where(i)) = activeSet.sign(i)*bounds[i].getBound(activeSet.whichBound(i));
-	  }
-      }
+
+    // When the active set is freezed, eactive cannot work any more.
+    // for( unsigned int i=0;i<nr;++i )
+    //   {
+    // 	if( activeSet.isActive(i) )
+    // 	  {
+    // 	    e_(activeSet.where(i)) = activeSet.sign(i)*bounds[i].getBound(activeSet.whichBound(i));
+    // 	  }
+    //   }
 
     return  SubVectorXd(e_,W.getRowIndices());
   }
@@ -1217,21 +1228,10 @@ namespace soth
     os << "sn{"<<stageRef<<"} = " << (MATLAB)sizeN() << endl;
     os << "sm{"<<stageRef<<"} = " << (MATLAB)sizeM << endl;
 
-    MatrixXd J_(nr,nc); J_.setConstant(-1.11111);
-    VectorXd e_(nr); e_.setConstant(-1.11111);
-    for( unsigned int i=0;i<nr;++i )
-      {
-	if( activeSet.isActive(i) )
-	  {
-	    double sign = (activeSet.whichBound(i)==Bound::BOUND_INF)?-1:+1;
-	    J_.row(activeSet.where(i)) = sign*J.row(i);
-	    //DEBUGe_(activeSet.where(i)) = sign*bounds[i].getBound(activeSet.whichBound(i));
-	    sotDEBUG(55) << "where(" << i << ") = " << activeSet.where(i) << endl;
-	  }
-      }
-
-    SubMatrix<MatrixXd,RowPermutation> Ja(J_,W.getRowIndices());
-    SubVectorXd ea(e_,W.getRowIndices());
+    MatrixXd J_;
+    VectorXd e_;
+    SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(J_);
+    SubVectorXd ea= eactive(e_);
 
     sotDEBUG(55) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
     sotDEBUG(5) << "Iw2{"<<stageRef<<"} = " << (MATLAB)W.getColIndices() << std::endl;
@@ -1241,7 +1241,7 @@ namespace soth
     sotDEBUG(25) << "ML_{"<<stageRef<<"} = " << (MATLAB)ML_ << std::endl;
     sotDEBUG(5) << "erec{"<<stageRef<<"} = " << (MATLAB)ea << std::endl;
 
-    os << "a{"<<stageRef<<"} = " << (MATLAB)(Indirect)activeSet << std::endl;
+    os << "a{"<<stageRef<<"} = "; showActiveSet(os); os << std::endl;
     os << "J{"<<stageRef<<"} = " << (MATLAB)Ja << std::endl;
     os << "e{"<<stageRef<<"} = " << (MATLAB)e << std::endl;
     os << "W{"<<stageRef<<"} = " << (MATLAB)W << std::endl;
