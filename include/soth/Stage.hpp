@@ -50,7 +50,7 @@ namespace soth
 
     unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
 
-    ActiveSet activeSet;
+    //ActiveSet activeSet;
     std::vector<bool> freeML_;
 
     MatrixXd W_;
@@ -73,6 +73,8 @@ namespace soth
     const Indirect& Ir, &Irn;
     /* sizeL = card(Ir). sizeM = previousRank. */
     unsigned int sizeM,sizeL;
+
+    SubActiveSet<ActiveSet,Indirect> activeSetSub;
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -116,7 +118,7 @@ namespace soth
 
   protected:
     void regularizeHessenberg( GivensSequence & Ydown );
-    unsigned int removeInW( const  unsigned int position );
+    unsigned int nullifyACrossFromW( const  unsigned int position );
     void removeARowFromL( unsigned int row );
     void removeACrossFromW( const unsigned int & row, const unsigned int & col );
 
@@ -127,7 +129,7 @@ namespace soth
     void propagateUpdate( GivensSequence & Ydown,
 			  unsigned int decreasePreviousRank );
   protected:
-    void addARow( const Index & wrowup,const Index & wcolup,bool deficient=false );
+    void addARow( const Index & mlrowup,bool deficient=false );
 
     /* --- SOLVE ------------------------------------------------------------ */
   public:
@@ -218,7 +220,7 @@ namespace soth
 
     /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
     int nbConstraints( void ) const { return nr; }
-    int sizeA( void ) const { return activeSet.nbActive(); }
+    int sizeA( void ) const { return activeSetSub.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
     int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
 

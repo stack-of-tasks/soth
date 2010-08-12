@@ -402,7 +402,6 @@ namespace soth
 
     initialize();
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
-    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 
     int iter = 0;
     int stageMinimal = 0;
@@ -432,7 +431,7 @@ namespace soth
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 
 		computeLagrangeMultipliers(stageMinimal);
-		//assert( testLagrangeMultipliers(std::cerr) );
+		//TODO: assert( testLagrangeMultipliers(std::cerr) );
 		if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 		if( searchAndDowndate(stageMinimal) )
 		  {

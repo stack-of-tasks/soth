@@ -30,12 +30,14 @@ namespace soth
     : J(inJ), bounds(inbounds)
     ,Y(inY)
     ,nr(J.rows()),nc(J.cols())
-    ,activeSet(nr),freeML_(nr)
+      //,activeSet(nr)
+    ,freeML_(nr)
     ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
     ,M(ML_,false),L(ML_,false),e(e_,false),lambda(lambda_,false)
       //,isWIdenty(true)
     ,W(W_,false)
     ,Ir(L.getRowIndices()),Irn(M.getRowIndices() )
+    ,activeSetSub(nr,W.getRowIndices())
     ,sizeM(0),sizeL(0)
     ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
   {
@@ -54,7 +56,7 @@ namespace soth
     sotDEBUG(45) << "# In {" << name << endl;
     assert( !isReset );
     // TODO: disable the checks on release.
-    activeSet.reset();
+    activeSetSub.reset();
     std::fill( freeML_.begin(),freeML_.end(),true );
     isReset=true; isInit = false; isOptimumCpt = false; isLagrangeCpt = false;
     sotDEBUG(45) << "# Out }" << name << endl;
@@ -74,23 +76,23 @@ namespace soth
 	ML_.setZero(); return;
       }
 
-    activeSet=initialIr;
-    sotDEBUG(5) << "initIr = " << (MATLAB)(VectorXi)activeSet << std::endl;
+    activeSetSub.setInitialActivation(initialIr);
+    sotDEBUG(5) << "initIr = " << activeSetSub << std::endl;
 
     ML_.setZero();
-    SubMatrix<MatrixXd,RowPermutation> Jact( J,activeSet );
-    Block<MatrixXd> ML = ML_.topRows(activeSet.nbActive());
-    sotDEBUG(15) << "Ja = " << (MATLAB)Jact << std::endl;
+    SubMatrix<MatrixXd,RowPermutation> Jact( J,activeSetSub );
+    Block<MatrixXd> ML = ML_.topRows(activeSetSub.nbActive());
     ML = Jact;
+    sotDEBUG(15) << "Ja = " << (MATLAB)Jact << std::endl;
     sotDEBUG(15) << "Ja = " << (MATLAB)ML_ << std::endl;
     Y.applyThisOnTheLeft( ML );
 
-    for( unsigned int i=0;i<activeSet.nbActive();++i )
+    for( unsigned int i=0;i<activeSetSub.nbActive();++i )
       {	freeML_[i]=false; }
     for( unsigned int i=0;i<nr;++i )
       {
-	if( activeSet.isActive(i) )
-	  e_( activeSet.where(i) ) = bounds[i].getBound( activeSet.whichBound(i) );
+	if( activeSetSub.isActive(i) )
+	  e_( activeSetSub.where(i) ) = bounds[i].getBound( activeSetSub.whichBound(i) );
       }
 
     sotDEBUG(15) << "JY = " << (MATLAB)ML_ << std::endl;
@@ -134,13 +136,12 @@ namespace soth
 
     assert( isReset&&(!isInit ) );
     isInit=true; isReset=false;
-
     sotDEBUG(5) << "J = " << (MATLAB)J << std::endl;
 
     /* Compute ML=J(initIr,:)*Y. */
     computeInitialJY(initialIr);
 
-    W_.setIdentity();
+    W_.setIdentity(); // TODO: usefull here? could be done before 2. ?
 
     /* Set the size of M and L. L is supposed full rank yet. */
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
@@ -159,39 +160,33 @@ namespace soth
       L.setRowIndices(VectorXi());
       L.setColIndices(VectorXi());
       sizeL=0;
-      W.setRowRange(0,sizeA());
       W.setColRange(0,sizeA());
       e.setRowRange(0,sizeA());
       return previousRank;
     }
 
+    /* 1. Right side rotation for partial triangularization:
+     * J = I.[M L0 0 ].Y, with L0 non-full rank triangular. */
     Transpose<Block<MatrixXd> > subL = ML_.topRightCorner(sizeA(), nc-previousRank).transpose();
     Block<MatrixXd> subY = Yinit.getNextHouseholderEssential();
     Eigen::DestructiveColPivQR<Transpose<Block<MatrixXd> >, Block<MatrixXd> >
       mQR(subL,subY, EPSILON);
-    const MatrixXd & R = mQR.matrixR();
-    sotDEBUG(25) << "mR = " << (MATLAB)R << std::endl;
-    sotDEBUG(25) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
-    sotDEBUG(7) << "ML_ = " << (MATLAB)ML_ << std::endl;
-    //    for( Index i=0;i<L.rows();++i ) rowL0(i).tail(nc-sizeM-i-1).setZero();
+    sotDEBUG(45) << "mR = " << (MATLAB) mQR.matrixR() << std::endl;
+    sotDEBUG(45) << "mQ = " << (MATLAB)Y.getHouseholderEssential() << std::endl;
+    sotDEBUG(17) << "ML_ = " << (MATLAB)ML_ << std::endl;
 
     /* L=triu(mQR'); */
     const VectorXi & P = mQR.colsPermutation().indices();
-    L.setRowIndices(P);    M.setRowIndices(P);
+    L.setRowIndices(P);    M.setRowIndices(P); W.setColIndices(P);
     sotDEBUG(7) << "L0 = " << (MATLAB)L << std::endl;
     sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
-    W.setColIndices(P);
-
-    //TODO: is it necessary? don't think so ...
-    //activeSet.permuteRows(P);
-    W.setRowIndices(P);
-    e.setRowIndices(P);
-
+    /* Artificial permutation to ensure that W == I at this point. */
+    W.setRowIndices(P);    e.setRowIndices(P);
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "e0 = " << (MATLAB)e << std::endl;
 
-
+    /* 2. Left-side rotation to nullify the rank-def lines of L0: L0 == W.[0;L]. */
     /* for i=rank:-1:1
      *   if( L(i,i)!= 0 ) break;
      *     nullifyLineDeficient( i );
@@ -201,16 +196,14 @@ namespace soth
     while( sizeL>rank )
       {
 	/* Nullify the last line of L, which is of size rank. */
-	sotDEBUG(5) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
-	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(45) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
 	nullifyLineDeficient( sizeL-1,rank );
-	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
      }
     L.setColRange(sizeM,sizeM+sizeL);
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
 
-    /* Y=Y*Yup; */
+    /* 3. Preparate for the iteration at the next stage: Y:=Y*Yup; */
     Yinit.increaseRank(sizeL);
 
     return previousRank+sizeL;
@@ -245,11 +238,10 @@ namespace soth
 	ML.applyOnTheLeft( Ir(i),Ir(row),G1.transpose());
 	W_.applyOnTheRight( Ir(i),Ir(row),G1);
 
-	sotDEBUG(5) << "Widx2 = " << (MATLAB)W.getColIndices() << std::endl;
-	sotDEBUG(5) << Ir(i) << "  " << Ir(row) << std::endl;
-
-	sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-	sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+	sotDEBUG(25) << "Widx2 = " << (MATLAB)W.getColIndices() << std::endl;
+	sotDEBUG(45) << Ir(i) << "  " << Ir(row) << std::endl;
+	sotDEBUG(15) << "W = " << (MATLAB)W << std::endl;
+	sotDEBUG(15) << "L = " << (MATLAB)L << std::endl;
       }
 
     removeARowFromL( row );
@@ -265,21 +257,18 @@ namespace soth
     sotDEBUG(15) << "wrowdown =" << wrowdown << std::endl;
     sotDEBUG(15) << "wcoldown =" << wcoldown << std::endl;
 
-    W.removeRow(row);	W.removeCol(col);
     e.removeRow(row);
-
+    W.removeCol(col);
     M.removeRow(col);
-    if( col>=sizeN() )
-      { L.removeRow(col-sizeN()); sizeL--; }
-
-    activeSet.unactiveRow(wrowdown);
+    if( col>=sizeN() ) { L.removeRow(col-sizeN()); sizeL--; }
+    activeSetSub.unactiveRow(row);
     freeML_[wcoldown]=true;
 
-    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
-    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
-    sotDEBUG(10) << "Wi = " << (MATLAB)W.getColIndices() << std::endl;
-    sotDEBUG(10) << "Mi = " << (MATLAB)Irn << std::endl;
+    sotDEBUG(45) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(45) << "M = " << (MATLAB)M << std::endl;
+    sotDEBUG(45) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(50) << "Wi = " << (MATLAB)W.getColIndices() << std::endl;
+    sotDEBUG(50) << "Mi = " << (MATLAB)Irn << std::endl;
   }
 
   /* Remove a row of L, and commit the changes in M and W. */
@@ -312,20 +301,19 @@ namespace soth
       {
 	if( std::abs(lambda(i,0))>EPSILON )
 	  {
-	    const Index il = W.getRowIndices()(i);
-	    const unsigned int cstref = activeSet.whichConstraint(il);
-	    Bound::bound_t btype = activeSet.whichBound(cstref);
-	    assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
+	    const unsigned int cstref = activeSetSub.mapInv(i);
+	    Bound::bound_t btype = activeSetSub.whichBound(cstref,true);
 
-	    if(! activeSet.isFreezed(cstref) )
+	    if(! activeSetSub.isFreezed(cstref) )
 	      {
-		activeSet.freeze(cstref);
+		activeSetSub.freeze(cstref);
 		if(!slacks)
 		  { sotDEBUG(5)<<"Freeze cst "<<name<<":"<<cstref <<"."<<endl; }
 	      }
 	    /* Modify the bound when slack is l>0. */
 	    if( slacks )
 	      {
+		const Index il = W.getRowIndices()(i);
 		e_(il) += lambda(i,0);
 		sotDEBUG(5)<<"Freeze cst "<<name<<":"<<cstref<<" to "<<e(i,0)<< endl;
 	      }
@@ -363,18 +351,13 @@ namespace soth
      *   return res;
      */
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
-    //sotDEBUGPRIOR(+45);
     sotDEBUG(5) << " --- DOWNDATE ----------------------------" << std::endl;
-    unsigned int colToRemove = removeInW( position );
+    unsigned int colToRemove = nullifyACrossFromW( position );
     bool rankDef = colToRemove >= sizeN();
     removeACrossFromW(position,colToRemove);
 
     if( rankDef )
       { // Full-rank line removed and no rank promotion: resorbe Hessenberg and propagate.
-	sotDEBUG(5) << "Whss = " << (MATLAB)W << std::endl;
-	sotDEBUG(5) << "Mhss = " << (MATLAB)M << std::endl;
-	sotDEBUG(5) << "Lhss = " << (MATLAB)L << std::endl;
-
 	// TODO: use the knowledge that the first colToRemove-sizeN()
 	// of L are properly shaped and does not need any Hess.
 	regularizeHessenberg(Ydown);
@@ -382,7 +365,7 @@ namespace soth
 
 	sotDEBUG(5) << "W2 = " << (MATLAB)W << std::endl;
 	sotDEBUG(5) << "M2 = " << (MATLAB)M << std::endl;
-	sotDEBUG(5) << "L2= " << (MATLAB)L << std::endl;
+	sotDEBUG(5) << "L2 = " << (MATLAB)L << std::endl;
 
 	return false;
       }
@@ -413,13 +396,14 @@ namespace soth
      * return false
      */
 
+    /* Apply Ydown to ML:  MLi := MLi Ydown */
     EI_FOREACH( i,Irn )
       {
-	// MLi := MLi Ydown
 	RowL MLi = rowML(i);
 	Ydown.applyThisOnTheLeft(MLi);
       }
     if( decreasePreviousRank ) return true;
+
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
@@ -477,10 +461,8 @@ namespace soth
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
-	sotDEBUG(25) << "MLb = " << (MATLAB)rowMrL0(i) << std::endl;
 	Givens G1;
 	G1.makeGivensAndApply(MLi,sizeM+i,sizeM+i+1);
-	sotDEBUG(25) << "MLa = " << (MATLAB)rowMrL0(i) << std::endl;
 
 	for( unsigned r=i+1;r<sizeL;++r )
 	  {
@@ -495,15 +477,17 @@ namespace soth
   /* Rotate W so that W is 1 on position,position and L|position is
    * at worst hessenberg. */
   unsigned int Stage::
-  removeInW( const  unsigned int row )
+  nullifyACrossFromW( const  unsigned int row )
   {
     sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
 
+    /* Search for the first non-zero of W(row,:). */
     int col = 0;
     while( std::abs(W(row,col))< EPSILON ) col++;
 
+    /* Nullify all the coefficients of W(row,col+1:end), until W(row,col)==1. */
     for( unsigned int i=col+1;i<sizeA();++i )
       {
 	/* Compare ||rest||^2 = 1-(1-x)^2 ~ 2x, with x=Wrc. */
@@ -512,9 +496,9 @@ namespace soth
 	/* Wt(row,col) VS Wt(row,i) */
 	Givensd G1;
 	G1.makeGivens(W(row,col),W(row,i));
-
 	W_.applyOnTheRight( Irn(col),Irn(i),G1 );
 
+	/* Apply the Given Rotation to ML. */
 	const int rs = rowSize(i);
 	if( rs>0 )
 	  {
@@ -522,11 +506,11 @@ namespace soth
 	    Block<MatrixXd> ML(ML_,0,0,nr,rs);
 	    ML.applyOnTheLeft( Irn(col),Irn(i),G1.transpose());
 	  }
-  }
+      }
 
-    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
-    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
-    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
+    sotDEBUG(15) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(25) << "M = " << (MATLAB)M << std::endl;
+    sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "colToRemove = " << col << endl;
 
     return col;
@@ -563,18 +547,20 @@ namespace soth
      *   nullifyLineDeficient(Inew);
      *   return true;
      */
-    Index wrowup = activeSet.activeRow( cst.first,cst.second );
+    activeSetSub.activeRow( cst.first,cst.second );
     Index wcolup = -1;
     for( unsigned int i=0;i<nr;++i ) if( freeML_[i] ) { freeML_[i]= false; wcolup = i; break; }
     assert( (wcolup >= 0)&&(wcolup<nr) );
-    assert( (wrowup >= 0)&&(wrowup<nr) );
-    sotDEBUG(5) << "wr=" << wrowup << " wc=" << wcolup << endl;
+    sotDEBUG(5) << " wc=" << wcolup << endl;
 
+    /* Add a coefficient to e. */
     assert( (cst.second==Bound::BOUND_SUP)||(cst.second==Bound::BOUND_INF) );
     double sign = (cst.second==Bound::BOUND_SUP)?+1:-1;
+    e_(W.getRowIndices(activeSetSub.nbActive()-1)) = sign*bounds[cst.first].getBound(cst.second);
     sotDEBUG(5) << "cst=" << cst.first << " bound=" << cst.second << "  (" << sign << ")." << endl;
-    e_(wrowup) = sign*bounds[cst.first].getBound(cst.second);
     sotDEBUG(5) << "bound="<<bounds[cst.first].getBound(cst.second) <<  endl;
+
+    /* Add a line to ML. */
     RowML JupY = ML_.row(wcolup);
     JupY = sign*J.row(cst.first); Y.applyThisOnTheLeft(JupY);
     double norm2=0; int rankJ=sizeM;
@@ -587,11 +573,8 @@ namespace soth
     sotDEBUG(5) << "JupY = " << (MATLAB)JupY << endl;
     sotDEBUG(5) << "rankUp = " << rankJ << endl;
 
-    /* TODO: add a value in e. */
-
     if( rankJ>sizeM+sizeL )
-      { // Rank increase
-	/* Remove the tail of JuY. */
+      { /* Rank increase: remove the tail of JuY. */
 	for( Index i=rankJ-1;i>sizeM+sizeL;--i )
 	  {
 	    sotDEBUG(45) << "% Right-resorb " << i << endl;
@@ -599,19 +582,19 @@ namespace soth
 	    G1.makeGivensAndApply(JupY,i-1,i);
 	    Yup.push(G1);
 	  }
-	addARow(wrowup,wcolup);
+	addARow(wcolup);
 	L.pushColBack(sizeM+sizeL-1);
       }
     else
-      { // No rank increase: regularize.
+      { /* No rank increase: regularize. */
 	if( rankJ>sizeM )
 	  {
-	    addARow(wrowup,wcolup);
+	    addARow(wcolup);
 	    nullifyLineDeficient(sizeL-1,rankJ-sizeM);
 	  }
 	else
 	  {
-	    addARow(wrowup,wcolup,true);
+	    addARow(wcolup,true);
 	  }
       }
 
@@ -689,19 +672,19 @@ namespace soth
  }
 
   void Stage::
-  addARow( const Index & wrowup,const Index & wcolup,bool deficient )
+  addARow( const Index & wcolup,bool deficient )
   {
-    // TODO: clean this mess.
-     if(deficient)
+    // TODO: clean this mess, and rename the arg wcol into mlrow.
+    const Index & wrowup = W.getRowIndices()(sizeA()-1);
+    if(deficient)
        {
-     	M.pushRowFront( wcolup );
-     	W.pushColFront( wcolup );
-     	W.pushRowBack( wrowup );
-	e.pushRowBack( wrowup );
-     	// clean W.
-     	W_.row( wrowup ) .setZero();
-     	W_.col( wcolup ) .setZero();
-     	W_(wrowup,wcolup ) = 1.0;
+	 M.pushRowFront( wcolup );
+	 W.pushColFront( wcolup );
+	 e.pushRowBack( wrowup );
+	 // clean W.
+	 W_.row( wrowup ) .setZero();
+	 W_.col( wcolup ) .setZero();
+	 W_(wrowup,wcolup ) = 1.0;
        }
      else
       {
@@ -711,7 +694,6 @@ namespace soth
 	L.pushRowBack( wcolup );
 	M.pushRowBack( wcolup );
 	W.pushColBack( wcolup );
-	W.pushRowBack( wrowup );
 	e.pushRowBack( wrowup );
 	// clean W.
 	W_.row( wrowup ) .setZero();//setConstant(3.33); //setZero();
@@ -947,7 +929,7 @@ namespace soth
     bool res = true;
     for( unsigned int i=0;i<nr;++i )
       {
-	if( activeSet.isActive(i) ) continue;
+	if( activeSetSub.isActive(i) ) continue;
 	assert( bounds[i].getType()!=Bound::BOUND_TWIN );
 
 	/* This has already been computed and could be avoided... TODO. */
@@ -1017,11 +999,11 @@ namespace soth
     bool res=false;
     EI_FOREACH( i,lambda )
       {
-	const unsigned int cstref = activeSet.whichConstraint(W.getRowIndices()(i));
-	Bound::bound_t btype = activeSet.whichBound(cstref);
+	const unsigned int cstref = activeSetSub.mapInv(i);
+	Bound::bound_t btype = activeSetSub.whichBound(cstref);
 	assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
 
-	if( activeSet.isFreezed(cstref) ) continue;
+	if( activeSetSub.isFreezed(cstref) ) continue;
 	switch( btype ) // TODO: the code is the same for +/-, factorize or change the sign of J.
 	  {
 	  case Bound::BOUND_TWIN:
@@ -1156,26 +1138,21 @@ namespace soth
 
   Stage::Index Stage::
   where( unsigned int cst ) const
-  {
-    Index ref = activeSet.where(cst);
-    const Indirect & Idx = W.getRowIndices();
-    for( Index i=0;i<nr;++i )
-      { if( Idx(i)==ref )  return i; }
-  }
+  { return activeSetSub.map(cst); }
   Stage::ConstraintRef Stage::
   which( unsigned int row ) const
   {
     assert( row<sizeA() );
     ConstraintRef res;
-    res.first = activeSet.whichConstraint( W.getRowIndices()(row) );
-    res.second = activeSet.whichBound( res.first );
+    res.first = activeSetSub.mapInv(row);
+    res.second = activeSetSub.whichBound( res.first );
     return res;
   }
   bool Stage::
   isActive( unsigned int cst ) const
   {
     assert( cst<nr );
-    return activeSet.isActive(cst);
+    return activeSetSub.isActive(cst);
   }
 
    /* Return a sub matrix containing the active rows of J, in the
@@ -1185,12 +1162,12 @@ namespace soth
   Jactive( MatrixXd& J_ ) const
   {
     J_.resize(nr,nc); J_.setConstant(-1.11111);
-    for( unsigned int i=0;i<nr;++i )
+    for( unsigned int cst=0;cst<nr;++cst )
       {
-	if( activeSet.isActive(i) )
+	if( activeSetSub.isActive(cst) )
 	  {
-	    J_.row(activeSet.where(i)) = activeSet.sign(i)*J.row(i);
-	    sotDEBUG(15) << "where(" << i << ") = " << activeSet.where(i) << endl;
+	    const unsigned int row = activeSetSub.map(cst);
+	    J_.row( W.getRowIndices(row) ) = activeSetSub.sign(cst)*J.row(cst);
 	  }
       }
 
@@ -1204,6 +1181,7 @@ namespace soth
   {
     e_.resize(nr); e_.setConstant(-1.11111);
 
+    // TODO
     // When the active set is freezed, eactive cannot work any more.
     // for( unsigned int i=0;i<nr;++i )
     //   {
@@ -1221,7 +1199,7 @@ namespace soth
   {
     sotDEBUGIN(5);
 
-    if( sotDEBUG_ENABLE(55) && sotDEBUGFLOW.outputbuffer.good() ) activeSet.disp( sotDEBUGFLOW.outputbuffer );
+    if( sotDEBUG_ENABLE(55) && sotDEBUGFLOW.outputbuffer.good() ) activeSetSub.disp( sotDEBUGFLOW.outputbuffer,false );
     os << "sa{"<<stageRef<<"} = " << (MATLAB)sizeA() << endl;
     os << "r{"<<stageRef<<"} = " << (MATLAB)sizeL << endl;
     os << "sn{"<<stageRef<<"} = " << (MATLAB)sizeN() << endl;
@@ -1232,17 +1210,20 @@ namespace soth
     SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(J_);
     SubVectorXd ea= eactive(e_);
 
-    sotDEBUG(55) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
-    sotDEBUG(5) << "Iw2{"<<stageRef<<"} = " << (MATLAB)W.getColIndices() << std::endl;
+    sotDEBUG(45) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
+    sotDEBUG(45) << "Iw2{"<<stageRef<<"} = " << (MATLAB)W.getColIndices() << std::endl;
     sotDEBUG(55) << "Ie{"<<stageRef<<"} = " << (MATLAB)e.getRowIndices() << std::endl;
     sotDEBUG(55) << "Il{"<<stageRef<<"} = " << (MATLAB)L.getRowIndices() << std::endl;
     sotDEBUG(55) << "J_{"<<stageRef<<"} = " << (MATLAB)J_ << std::endl;
     sotDEBUG(25) << "ML_{"<<stageRef<<"} = " << (MATLAB)ML_ << std::endl;
     sotDEBUG(5) << "erec{"<<stageRef<<"} = " << (MATLAB)ea << std::endl;
 
-    os << "a{"<<stageRef<<"} = "; showActiveSet(os); os << std::endl;
+    os << "a{"<<stageRef<<"} = " << activeSetSub << std::endl;
+std::cout << __LINE__ << std::endl;
     os << "J{"<<stageRef<<"} = " << (MATLAB)Ja << std::endl;
+std::cout << __LINE__ << std::endl;
     os << "e{"<<stageRef<<"} = " << (MATLAB)e << std::endl;
+std::cout << __LINE__ << std::endl;
     os << "W{"<<stageRef<<"} = " << (MATLAB)W << std::endl;
     os << "M{"<<stageRef<<"} = " << (MATLAB)M << std::endl;
     os << "L{"<<stageRef<<"} = " << (MATLAB)L << std::endl;
@@ -1274,16 +1255,7 @@ namespace soth
   void Stage::
   showActiveSet( std::ostream& os ) const
   {
-    os << " [ ";
-    for( unsigned int r=0;r<nr;++r )
-      {
-	if(! activeSet.isActive(r) ) continue;
-	if( bounds[r].getType() ==  Bound::BOUND_DOUBLE )
-	  if( activeSet.whichBound(r) == Bound::BOUND_INF ) os << "-";
-	  else if( activeSet.whichBound(r) == Bound::BOUND_SUP ) os << "+";
-	os <<r << " ";
-      }
-    os << " ]";
+    os << activeSetSub << std::endl;
   }
 
 
