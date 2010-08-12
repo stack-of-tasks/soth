@@ -949,7 +949,6 @@ namespace soth
       {
 	if( activeSet.isActive(i) ) continue;
 	assert( bounds[i].getType()!=Bound::BOUND_TWIN );
-	assert(! activeSet.isFreezed(i) );
 
 	/* This has already been computed and could be avoided... TODO. */
 	double val = J.row(i)*u;
