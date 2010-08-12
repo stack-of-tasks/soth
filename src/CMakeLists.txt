@@ -8,7 +8,7 @@ SET(LIBRARY_NAME ${PROJECT_NAME})
 
 
 SET(${PROJECT_NAME}_SRC
-    soth.cpp
+    ActiveSet.cpp
     Algebra.cpp
     Bound.cpp
     Stage.cpp
