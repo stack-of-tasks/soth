@@ -1,7 +1,7 @@
 #include <Eigen/Core>
 namespace Eigen
 {
-  #include "soth/SubMatrix.h"
+  #include "soth/SubMatrix.hpp"
 }
 #include <iostream>
 #include <time.h>
@@ -21,12 +21,12 @@ void testSubMatrix()
   std::cout << p << std::endl << std::endl;
 
   std::cout << "permuting row 1 and 2" << std::endl;
-  p.permuteRow(1,2);
+  p.permuteRows(1,2);
   std::cout << p << std::endl << std::endl;
 
   std::cout << "permuting col 2 and 4 then 1 and 4" << std::endl;
-  p.permuteCol(2,4);
-  p.permuteCol(1,4);
+  p.permuteCols(2,4);
+  p.permuteCols(1,4);
   std::cout << "col permutation indices are " << p.getColIndices().transpose() << " and the permuted matrix is" << std::endl;
   std::cout << p << std::endl << std::endl;
 
@@ -46,7 +46,7 @@ void testSubMatrix()
   std::cout << pr << std::endl << std::endl;
 
   std::cout << "permuting row 1 and 2" << std::endl;
-  pr.permuteRow(1,2);
+  pr.permuteRows(1,2);
   std::cout << pr << std::endl << std::endl;
 
   std::cout << "*****Read access******" << std::endl;
@@ -68,74 +68,7 @@ void testSubMatrix()
   std::cout << pc << std::endl << std::endl;
 }
 
-void speedTest()
-{
-  int N=1000;
-  int n[] = {5,10,50,100,250};
-  for (int i=0; i<5; ++i)
-  {
-    std::cout << "size " << n[i] << std::endl; 
-    MatrixXd A = MatrixXd::Random(n[i],n[i]);
-    MatrixXd B = MatrixXd::Random(n[i],n[i]);
-    MatrixXd C1(n[i],n[i]);
-    MatrixXd C2(n[i],n[i]);
-    MatrixXd C3(n[i],n[i]);
-    MatrixXd C4(n[i],n[i]);
-    SubMatrix<MatrixXd> Prc(A);
-    SubMatrix<MatrixXd, RowPermutation> Pr(A);
-    SubMatrix<MatrixXd, ColPermutation> Pc(A);
-
-    double dummy;
-    clock_t start, stop;
-    double total;
-
-    dummy = 0;
-    start = clock();
-    for (int j=0; j<N; ++j)
-    {
-      C1.noalias() = A*B;
-      dummy += C1(0,0);
-    }
-    stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
-    std::cout << "normal mult : " << total  << "ms                     dummy=" << dummy << std::endl;
-
-    dummy = 0;
-    start = clock();
-    for (int j=0; j<N; ++j)
-    {
-      C2.noalias() = Prc*B;
-      dummy += C2(0,0);
-    }
-    stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
-    std::cout << "Perm*Normal: " << total  << "ms                     dummy=" << dummy << std::endl;
-
-    dummy = 0;
-    start = clock();
-    for (int j=0; j<N; ++j)
-    {
-      C3.noalias() = Pr*B;
-      dummy += C3(0,0);
-    }
-    stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
-    std::cout << "RowPerm*Normal : " << total  << "ms                     dummy=" << dummy << std::endl;
-
-    dummy = 0;
-    start = clock();
-    for (int j=0; j<N; ++j)
-    {
-      C4.noalias() = Pc*B;
-      dummy += C4(0,0);
-    }
-    stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
-    std::cout << "ColPerm*Normal : " << total  << "ms                     dummy=" << dummy << std::endl;
-  }
-}
-
-#include "soth/solvers.h"
+#include "soth/solvers.hpp"
 
 void testSolve()
 {
@@ -147,14 +80,14 @@ void testSolve()
   {
     int j = rand()%n;
     int k = rand()%n;
-    P1.permuteCol(j,k);
+    P1.permuteCols(j,k);
     P2.col(j).swap(P2.col(k));
   }
   for (int i=0; i<5; ++i)
   {
     int j = rand()%n;
     int k = rand()%n;
-    P1.permuteRow(j,k);
+    P1.permuteRows(j,k);
     P2.row(j).swap(P2.row(k));
   }
   //std::cout << (P1 - P2).isZero() << std::endl;
