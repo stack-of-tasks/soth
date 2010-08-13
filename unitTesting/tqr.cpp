@@ -2,7 +2,7 @@
  *  Copyright
  */
 
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 #include "soth/RotationHouseholder.hpp"
 #include <iostream>
 #include <Eigen/QR>
