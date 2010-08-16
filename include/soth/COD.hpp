@@ -1,7 +1,7 @@
 #ifndef __SOTH_COD__
 #define __SOTH_COD__
 
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 #include <Eigen/SVD>
 
 namespace soth

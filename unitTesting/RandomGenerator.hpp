@@ -2,7 +2,7 @@
 #ifndef __SOTH_RANDOM_GENERATOR__
 #define __SOTH_RANDOM_GENERATOR__
 
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 #include "soth/Bound.hpp"
 #include <vector>
 

@@ -1,4 +1,4 @@
-#include "MatrixRnd.h"
+#include "MatrixRnd.hpp"
 
 
 namespace soth

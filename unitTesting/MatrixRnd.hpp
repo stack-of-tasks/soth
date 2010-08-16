@@ -1,4 +1,4 @@
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 
 namespace soth
 {

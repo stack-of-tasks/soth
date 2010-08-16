@@ -1,5 +1,5 @@
 
-#include <soth/Algebra.h>
+#include "soth/Algebra.hpp"
 
 using namespace soth;
 

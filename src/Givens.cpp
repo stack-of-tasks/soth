@@ -1,4 +1,4 @@
-#include "soth/Givens.h"
+#include "soth/Givens.hpp"
 
 namespace soth
 {
@@ -10,7 +10,7 @@ namespace soth
   Givens::Givens(double a, double b, int i, int j, double* z)
     :i(i), j(j)
   {
-    G.makeGivens(a,b,z);
+    makeGivens(a,b,i,j,z);
   }
 
   void Givens::makeGivens(double a, double b, int i, int j, double* z)
@@ -18,5 +18,17 @@ namespace soth
     G.makeGivens(a,b,z);
     this->i = i;
     this->j = j;
+    Gt = G.adjoint();
   }
+
+
+
+
+  GivensSequence& GivensSequence::
+  push(const Givens& g)
+  {
+    G.push_back(g);
+    return *this;
+  }
+
 }

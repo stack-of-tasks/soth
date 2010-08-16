@@ -4,16 +4,13 @@
 #include <Eigen/Core>
 #include <list>
 #include <string>
-namespace Eigen
-{
-  #include "soth/SubMatrix.h"
-}
-#include "soth/solvers.h"
-#include "soth/Algebra.h"
+#include "soth/SubMatrix.hpp"
+#include "soth/solvers.hpp"
+#include "soth/Algebra.hpp"
 #include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
 #include "soth/ActiveSet.hpp"
-#include "soth/Givens.h"
+#include "soth/Givens.hpp"
 
 namespace soth
 {
@@ -29,18 +26,18 @@ namespace soth
     typedef MatrixXd::Index Index;
     typedef SubMatrix<MatrixXd>::RowIndices Indirect;
 
-    typedef SubMatrix<MatrixXd> SubMatrixXd;
-    typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
-    typedef TriangularView<SubMatrixXd,Lower> TriSubMatrixXd;
-    typedef SubMatrixXd const_SubMatrixXd;
-    typedef SubVectorXd const_SubVectorXd;
+    typedef SubMatrix<MatrixXd> SubMatrixXd; // TODO: Mv this in SubMatrix
+    typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd; // TODO: Mv this in SubMatrix
+    typedef SubMatrixXd const_SubMatrixXd; // TODO: Mv this in SubMatrix
+    typedef SubVectorXd const_SubVectorXd; // TODO: this too
+    typedef TriangularView<SubMatrixXd,Lower> TriSubMatrixXd; // TODO: usefull
     typedef TriangularView<const_SubMatrixXd,Lower> const_TriSubMatrixXd;
+
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
     typedef MatrixXd::RowXpr RowML;
 
-    typedef std::pair<Index,Bound::bound_t> ConstraintRef;
-
-    typedef PlanarRotation<double> Givensd;
+    typedef std::pair<Index,Bound::bound_t> ConstraintRef; // TODO: mv this type in Bound.h
+    typedef PlanarRotation<double> Givensd; // TODO: remove this type
 
   protected:
 
@@ -74,7 +71,7 @@ namespace soth
     /* sizeL = card(Ir). sizeM = previousRank. */
     unsigned int sizeM,sizeL;
 
-    SubActiveSet<ActiveSet,Indirect> activeSetSub;
+    SubActiveSet<ActiveSet,Indirect> activeSet;
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -220,7 +217,7 @@ namespace soth
 
     /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
     int nbConstraints( void ) const { return nr; }
-    int sizeA( void ) const { return activeSetSub.nbActive(); }
+    int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
     int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
 
@@ -239,8 +236,6 @@ namespace soth
 
 
   std::ostream& operator<<( std::ostream&os,const Stage::ConstraintRef& cst );
-
-
 
 
 }; // namespace soth

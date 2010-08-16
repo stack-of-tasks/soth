@@ -1,6 +1,6 @@
-#include "RandomGenerator.h"
-#include "MatrixRnd.h"
-#include "soth/debug.h"
+#include "RandomGenerator.hpp"
+#include "MatrixRnd.hpp"
+#include "soth/debug.hpp"
 #include <fstream>
 
 namespace soth

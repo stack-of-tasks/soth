@@ -1,7 +1,7 @@
 #ifndef __SOTH_ASET__
 #define __SOTH_ASET__
 
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 #include "soth/Bound.hpp"
 
 namespace soth
@@ -88,7 +88,7 @@ namespace soth
    */
   template< typename AS,typename Indirect >
   class SubActiveSet
-    : public AS
+    : protected AS
   {
   public:
     SubActiveSet( unsigned int nr );
@@ -105,13 +105,21 @@ namespace soth
     unsigned int          map( unsigned int ref ) const;
     /* For compatibility */
     inline unsigned int   whichConstraint( unsigned int row ) const { return mapInv(row); }
+    inline unsigned int   where( unsigned int cst ) const { return map(cst); }
+    VectorXi              getIndirection( void ) const;
     void                  disp( std::ostream& os, bool classic=true ) const;
+    inline                 operator VectorXi (void) const {  return getIndirection(); }
 
     void                  setInitialActivation( const AS& as0 );
 
   public:
     using AS::            size;
     using AS::            whichBound;
+    using AS::            nbActive;
+    using AS::            isActive;
+    using AS::            isFreezed;
+    using AS::            freeze;
+    using AS::            sign;
 
   protected: /* Protected for clarity. */
     void                  active( unsigned int ref, Bound::bound_t type, unsigned int row );
@@ -268,6 +276,21 @@ namespace soth
   template< typename AS,typename Indirect >
   std::ostream& operator<< ( std::ostream & os,const SubActiveSet<AS,Indirect>& as )
   {    as.disp(os); return os;  }
+
+  /*: Return a compact of the active line, ordered by row values. */
+  template< typename AS,typename Indirect >
+  VectorXi SubActiveSet<AS,Indirect>::
+  getIndirection(void) const
+  {
+    if (nba==0)
+      return VectorXi();
+
+    VectorXi res(nba);
+    int row = 0;
+    for( unsigned int i=0;i<size();++i )
+      if(! AS::freerow[i] ) res(row++) = whichConstraint(i);
+    return res;
+  }
 
   /* --- Protected --- */
 

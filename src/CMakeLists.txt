@@ -11,11 +11,11 @@ SET(${PROJECT_NAME}_SRC
     ActiveSet.cpp
     Algebra.cpp
     Bound.cpp
-    Stage.cpp
     BaseY.cpp
     HCOD.cpp
     Givens.cpp
     debug.cpp
+    Stage.cpp
 )
 
 

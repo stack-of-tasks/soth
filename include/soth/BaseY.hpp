@@ -2,9 +2,9 @@
 #define __SOTH_BASEY__
 
 
-#include "soth/Algebra.h"
+#include "soth/Algebra.hpp"
 #include <Eigen/Householder>
-#include "soth/Givens.h"
+#include "soth/Givens.hpp"
 
 namespace soth
 {
@@ -87,12 +87,6 @@ namespace soth
       if( isExplicit ) res = matrixExplicit.transpose()*m;
       else { res=m; applyTransposeOnTheRight(res); }
     }
-
-
-    // Y *= Yup. Carefull: there is some recopy here.
-//    void composeOnTheRight( const BaseY& Yp );
-    // Y *= HHup.
-//    void composeOnTheRight( const HouseholderSequence & hh );
 
   };
 

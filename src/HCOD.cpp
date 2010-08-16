@@ -1,6 +1,6 @@
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 15
-#include "soth/debug.h"
+#include "soth/debug.hpp"
 #include "soth/COD.hpp"  // DEBUG
 #include "soth/HCOD.hpp"
 

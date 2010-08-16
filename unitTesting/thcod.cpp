@@ -2,9 +2,9 @@
  *  Copyright
  */
 
+#include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "soth/debug.h"
-#include "MatrixRnd.h"
+#include "MatrixRnd.hpp"
 
 void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 			       std::vector<soth::bound_vector_t> &b,
