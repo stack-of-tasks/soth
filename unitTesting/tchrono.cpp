@@ -77,8 +77,8 @@ int main (int argc, char** argv)
   sotDebugTrace::openFile();
 #endif
 
-  int NB_STAGE,NC;
-  std::vector<int> NR,RANKLINKED,RANKFREE;
+  unsigned int NB_STAGE,NC;
+  std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
   std::vector<Eigen::MatrixXd> J;
   std::vector<soth::bound_vector_t> b;
 
@@ -123,16 +123,14 @@ int main (int argc, char** argv)
 
   /* --- TESTS -------------------------------------------------------------- */
 #ifdef NDEBUG
-  const int nbTest = 1000;
+  const unsigned int nbTest = 1000;
 #else
-  const int nbTest = 10;
+  const unsigned int nbTest = 10;
 #endif
 
   VectorXd solution;
 
   Now t0;
-  struct timeval tv0,tv1;
-
   for( unsigned int i=0;i<nbTest;++i )
     {   hcod.initialize(); }
 
@@ -150,7 +148,7 @@ int main (int argc, char** argv)
 
   Now t4;
   for( unsigned int i=0;i<nbTest;++i )
-    double tau = hcod.computeStep();
+    hcod.computeStep();
 
   Now t5;
   for( unsigned int i=0;i<nbTest;++i )
@@ -158,7 +156,7 @@ int main (int argc, char** argv)
 
   Now t6;
   for( unsigned int i=0;i<nbTest;++i )
-    bool down = hcod.search(hcod.nbStages());
+    hcod.search(hcod.nbStages());
 
   Now t7;
   for( unsigned int i=0;i<nbTest;++i )
@@ -179,13 +177,13 @@ int main (int argc, char** argv)
   std::cout << " --- UNITCHRONO --------------------------------- " << endl;
 
   { // simple QR test
-    const int Nctest = NC;
-    const int Nrtest = std::min(NC,21);
+    const unsigned int Nctest = NC;
+    const unsigned int Nrtest = std::min(NC,(unsigned int)21);
     MatrixXd A = MatrixXd::Random(Nrtest,Nctest);
     MatrixXd Y(Nctest,Nctest);
 
     Now t3;
-    for( int i=0;i<nbTest;++i )
+    for( unsigned int i=0;i<nbTest;++i )
       Eigen::DestructiveColPivQR<MatrixXd,MatrixXd> mQR(A,Y,1e-6);
     Now tf;
     std::cout << "QR " << Nctest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
@@ -193,12 +191,12 @@ int main (int argc, char** argv)
 
   { // simple Linv test
     const int Nctest = NC;
-    const int Nrtest = std::min(NC,21);
+    const int Nrtest = std::min(NC,(unsigned int)21);
     MatrixXd A = MatrixXd::Random(Nrtest,Nctest);
     VectorXd b(Nrtest);
 
     Now t3;
-    for( int i=0;i<nbTest;++i )
+    for( unsigned int i=0;i<nbTest;++i )
       solveInPlaceWithLowerTriangular( A.leftCols(Nrtest),b );
     Now tf;
     std::cout << "Linv " << Nrtest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
@@ -213,7 +211,7 @@ int main (int argc, char** argv)
 
     MatrixXd C(Nrtest,Nctest);
     Now t3;
-    for( int i=0;i<nbTest;++i ) C=A*B;
+    for( unsigned int i=0;i<nbTest;++i ) C=A*B;
     Now tf;
     std::cout << Nctest << "x" << Nrtest << " = " << tf-t3 <<"us"<< endl;
     std::cout << C(0,0);

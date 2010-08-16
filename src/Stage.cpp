@@ -29,8 +29,8 @@ namespace soth
     ,W(W_,false,false)
 
     ,Ir(L.getRowIndices()),Irn(M.getRowIndices() )
-    ,activeSet(nr,W.getRowIndices())
     ,sizeM(0),sizeL(0)
+    ,activeSet(nr,W.getRowIndices())
     ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
   {
     assert( bounds.size() == J.rows() );
@@ -185,7 +185,7 @@ namespace soth
      * sizeL = mQR.rank();
      */
     const Index rank = mQR.rank();
-    while( sizeL>rank )
+    while( int(sizeL)>rank )
       {
 	/* Nullify the last line of L, which is of size rank. */
 	sotDEBUG(45) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
@@ -248,7 +248,7 @@ namespace soth
     sotDEBUG(45) << "Wridx = " << (MATLAB)W.getRowIndices() << std::endl;
 
     /* Do this test before modifying sizeA/sizeN. */
-    const bool decreaseL = ( col>=sizeN() );
+    const bool decreaseL = ( int(col)>=sizeN() );
 
     e.removeRow(row);
     activeSet.unactiveRow(row);
@@ -298,8 +298,6 @@ namespace soth
 	if( std::abs(lambda[i])>EPSILON )
 	  {
 	    const unsigned int cstref = activeSet.mapInv(i);
-	    Bound::bound_t btype = activeSet.whichBound(cstref,true);
-
 	    if(! activeSet.isFreezed(cstref) )
 	      {
 		activeSet.freeze(cstref);
@@ -348,7 +346,7 @@ namespace soth
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
     sotDEBUG(5) << " --- DOWNDATE ----------------------------" << std::endl;
     unsigned int colToRemove = nullifyACrossFromW( position );
-    bool rankDef = colToRemove >= sizeN();
+    bool rankDef = int(colToRemove) >= sizeN();
     removeACrossFromW(position,colToRemove);
 
     if( rankDef )
@@ -406,7 +404,6 @@ namespace soth
     sizeM--;
 
     /* Check if one of the M's grown. */
-    //DBGSubMatrixXd Ln( ML_,Irn,(int)sizeM );
     SubCol<MatrixXd> Ln( ML_,Irn,(int)sizeM );
     for( Index i=0;i<sizeN();++i )
       {
@@ -440,7 +437,8 @@ namespace soth
     regularizeHessenberg(Ydown);
     L.popColBack();
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
-    for( int i=0;i<sizeN();++i ) { ML_(Irn(i),sizeM)=0.; } // PSEUDOZEROS
+    SubCol<MatrixXd>( ML_,Irn,(int)sizeM ).head( sizeN() ).setZero();  // PSEUDOZEROS
+
     return false;
   }
 
@@ -455,13 +453,13 @@ namespace soth
     for( unsigned int i=0;i<sizeL;++i )
       {
 	RowML MLi = rowMrL0(i);
-	Givens G1;
-	G1.makeGivens(MLi,sizeM+i,sizeM+i+1,true);
+	Givens G1(MLi,sizeM+i,sizeM+i+1,true);
 
 	for( unsigned r=i+1;r<sizeL;++r )
 	  {
 	    RowML MLr = rowMrL0(r) ;
-	    G1.applyThisOnTheLeft( MLr );
+	    MLr << G1;
+	    //G1.applyThisOnTheLeft( MLr );
 	  }
 	Ydown.push(G1);
       }
@@ -488,19 +486,18 @@ namespace soth
 	if( std::abs(W(row,col)-1)< EPSILON*EPSILON/2 ) break;
 
 	/* Wt(row,col) VS Wt(row,i) */
-	Givensd G1;
-	G1.makeGivens(W(row,col),W(row,i));
-	W_.applyOnTheRight( Irn(col),Irn(i),G1 );
+	Givens G1( W.row(row),col,i );
+	W << G1;
 
 	/* Apply the Given Rotation to ML. */
 	const int rs = rowSize(i);
 	if( rs>0 )
 	  {
 	    /* Apply on 2 specific lines of ML, so ML_ is OK. */
-	    Block<MatrixXd> ML(ML_,0,0,nr,rs);
-	    sotDEBUG(15) << "ML0 = " << (MATLAB)ML << std::endl;
-	    ML.applyOnTheLeft( Irn(col),Irn(i),G1.transpose());
-	    sotDEBUG(15) << "ML = " << (MATLAB)ML << std::endl;
+	    SubMatrix<MatrixXd,RowPermutation> ML( ML_,Irn );
+	    //sotDEBUG(15) << "ML0 = " << (MATLAB)ML << std::endl;
+	    G1.transpose() >> ML;
+	    //sotDEBUG(15) << "ML = " << (MATLAB)ML << std::endl;
 	  }
       }
 
@@ -562,8 +559,8 @@ namespace soth
     /* Add a line to ML. */
     RowML JupY = ML_.row(wcolup);
     JupY = sign*J.row(cst.first); Y.applyThisOnTheLeft(JupY);
-    double norm2=0; int rankJ=sizeM;
-    for( Index i=nc-1;i>=sizeM;--i )
+    double norm2=0; unsigned int rankJ=sizeM;
+    for( Index i=nc-1;i>=int(sizeM);--i )
       {
 	norm2+=JupY(i)*JupY(i);
 	if( norm2>EPSILON*EPSILON )
@@ -574,7 +571,7 @@ namespace soth
 
     if( rankJ>sizeM+sizeL )
       { /* Rank increase: remove the tail of JuY. */
-	for( Index i=rankJ-1;i>sizeM+sizeL;--i )
+	for( Index i=rankJ-1;i>int(sizeM+sizeL);--i )
 	  {
 	    sotDEBUG(45) << "% Right-resorb " << i << endl;
 	    Givens G1(JupY,i-1,i,true);
@@ -987,7 +984,7 @@ namespace soth
       { ConstraintRef cst; return checkBound(u,du,cst,*tauptr); }
     else if( (tauptr==NULL)&&(cstptr!=NULL) )
       { double tau=1; return checkBound(u,du,*cstptr,tau); }
-    else if( (tauptr!=NULL)&&(cstptr!=NULL) )
+    else /* ie when ( (tauptr!=NULL)&&(cstptr!=NULL) ). */
       { return checkBound(u,du,*cstptr,*tauptr); }
 
 
@@ -1003,7 +1000,6 @@ namespace soth
       {
 	const unsigned int cstref = activeSet.mapInv(i);
 	Bound::bound_t btype = activeSet.whichBound(cstref);
-	assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
 
 	if( activeSet.isFreezed(cstref) ) continue;
 	switch( btype ) // TODO: the code is the same for +/-, factorize or change the sign of J.
@@ -1035,6 +1031,10 @@ namespace soth
 		    row=i;
 		  }
 	      }
+	    break;
+	  case Bound::BOUND_NONE:
+	  case Bound::BOUND_DOUBLE:
+	    assert( (btype!=Bound::BOUND_NONE)&&(btype!=Bound::BOUND_DOUBLE) );
 	    break;
 	  }
       }
@@ -1254,6 +1254,8 @@ namespace soth
   void Stage::
   showActiveSet( std::ostream& os ) const
   {
+    os << "DEBUG indirect = " << W.getRowIndices() << endl;
+    os << "DEBUG mapinv = " << activeSet.ActiveSet::mapInv( 0 ) << endl;
     os << activeSet << std::endl;
   }
 

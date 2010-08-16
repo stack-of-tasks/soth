@@ -31,9 +31,6 @@ namespace soth
   const double& Bound::
   getBound( bound_t inType ) const
   {
-    assert( inType != BOUND_NONE );
-    assert( inType != BOUND_DOUBLE );
-
     switch( inType )
       {
       case BOUND_INF:
@@ -45,7 +42,12 @@ namespace soth
       case BOUND_TWIN:
 	assert(type==BOUND_TWIN);
 	return valTwin;
+      case BOUND_DOUBLE:
+      case BOUND_NONE:
+	;
       }
+    assert( false&& "Cannot get a bound for 0 or double." );
+    return valTwin;
   }
 
   /* Return the bound that is violated, NONE if bound are OK.
@@ -53,7 +55,6 @@ namespace soth
   Bound::bound_t Bound::
   check( const double & val,const double & EPSILON ) const
   {
-    assert( type!=BOUND_NONE );
     switch( type )
       {
       case BOUND_INF:
@@ -67,6 +68,8 @@ namespace soth
       case BOUND_DOUBLE:
 	if( val<valInf-EPSILON ) return BOUND_INF;
 	if( valSup+EPSILON<val ) return BOUND_SUP;
+      case BOUND_NONE:
+	assert( false&& "Cannot check a bound for 0 constraint." );
       }
     return BOUND_NONE;
   }
@@ -76,7 +79,6 @@ namespace soth
   Bound::bound_t Bound::
   checkSaturation( const double & val,const double & EPSILON ) const
   {
-    assert( type!=BOUND_NONE );
     switch( type )
       {
       case BOUND_INF:
@@ -91,14 +93,15 @@ namespace soth
 	if( std::abs(val-valInf)<EPSILON ) return BOUND_INF;
 	if( std::abs(val-valSup)<EPSILON ) return BOUND_SUP;
 	break;
+      case BOUND_NONE:
+	assert( type!=BOUND_NONE );
       }
     return BOUND_NONE;
   }
 
   double Bound::distance( const double & val ) const
   {
-    assert( type!=BOUND_NONE );
-    double res;
+    double res=-1;
     switch( type )
       {
       case BOUND_INF:
@@ -116,7 +119,10 @@ namespace soth
 	  else res=val-valSup;
 	else res=valInf-val;
 	break;
-      }
+      case BOUND_NONE:
+	assert( type!=BOUND_NONE );
+	break;
+     }
     assert(res>=0);
     return res;
   }

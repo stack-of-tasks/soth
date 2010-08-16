@@ -88,7 +88,8 @@ namespace soth
    */
   template< typename AS,typename Indirect >
   class SubActiveSet
-    : protected AS
+    : public AS
+  //DEBUG    : protected AS
   {
   public:
     SubActiveSet( unsigned int nr );
@@ -216,7 +217,7 @@ namespace soth
   mapInv( unsigned int row ) const
   {
     assert( row<nba );
-    AS::mapInv( indirect(row) );
+    return AS::mapInv( indirect(row) );
   }
 
   template< typename AS,typename Indirect >
@@ -226,7 +227,9 @@ namespace soth
     const int row_ = AS::map(cst);
     for( unsigned int row=0;row<nba;++row )
       { if( indirect(row)==row_ )  return row; }
-   }
+    assert( false && "This could not happen." );
+    return -1;
+  }
 
   template< typename AS,typename Indirect >
   void SubActiveSet<AS,Indirect>::

@@ -117,8 +117,8 @@ namespace soth
 
   private: public: //DEBUG
     NestedType G,Gt;
-    int i;
-    int j;
+    unsigned int i;
+    unsigned int j;
 
   public: // Transpose
 
@@ -281,10 +281,10 @@ namespace soth
   void Givens::
   applyThisOnTheLeftPartiel(MatrixBase<Derived> & M) const
   {
-    if( (i<M.cols())&&(j<M.cols()) )
+    if( (int(i)<M.cols())&&(int(j)<M.cols()) )
       M.applyOnTheRight(i, j, G);
-    else if(i<M.cols()) { assert( M.col(i).norm()<1e-6 ); }
-    else if(j<M.cols()) { assert( M.col(j).norm()<1e-6 ); }
+    else if(int(i)<M.cols()) { assert( M.col(i).norm()<1e-6 ); }
+    else if(int(j)<M.cols()) { assert( M.col(j).norm()<1e-6 ); }
   }
 
   // M := M*G'.

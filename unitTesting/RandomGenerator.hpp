@@ -16,19 +16,19 @@ namespace soth
    */
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 				 std::vector<soth::bound_vector_t> &b,
-				 const int NB_STAGE,
-				 const std::vector<int> & RANKFREE,
-				 const std::vector<int> & RANKLINKED,
-				 const std::vector<int> & NR,
-				 const int NC );
+				 const unsigned int NB_STAGE,
+				 const std::vector<unsigned int> & RANKFREE,
+				 const std::vector<unsigned int> & RANKLINKED,
+				 const std::vector<unsigned int> & NR,
+				 const unsigned int NC );
 
   /* Generated randomly a profile of problem, ie sizes and ranks. The ouput
    * of this functions are to be sent to the previous function. */
-  void generateRandomProfile(int & nbStage,
-			     std::vector<int>& rankfree,
-			     std::vector<int>& ranklinked,
-			     std::vector<int>& nr,
-			     int & nc );
+  void generateRandomProfile(unsigned int & nbStage,
+			     std::vector<unsigned int>& rankfree,
+			     std::vector<unsigned int>& ranklinked,
+			     std::vector<unsigned int>& nr,
+			     unsigned int & nc );
 
   void randomProblem( std::vector<Eigen::MatrixXd> &J,
 		      std::vector<soth::bound_vector_t> &b );
@@ -38,9 +38,9 @@ namespace soth
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
 			    std::vector<soth::bound_vector_t> &b,
-			    int& NB_STAGE,
-			    std::vector<int> & NR,
-			    int& NC );
+			    unsigned int& NB_STAGE,
+			    std::vector<unsigned int> & NR,
+			    unsigned int& NC );
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
 			    std::vector<soth::bound_vector_t> &b );
@@ -48,9 +48,9 @@ namespace soth
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
 			   const std::vector<soth::bound_vector_t> &b,
-			   const int& NB_STAGE,
-			   const std::vector<int> & NR,
-			   const int& NC );
+			   const unsigned int& NB_STAGE,
+			   const std::vector<unsigned int> & NR,
+			   const unsigned int& NC );
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,

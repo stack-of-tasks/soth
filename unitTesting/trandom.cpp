@@ -83,7 +83,7 @@ namespace DummyActiveSet
 
 	VectorXd e = J*usot;
 	errors[i]=0;
-	for( unsigned int r = 0;r<J.rows();++r )
+	for( unsigned int r = 0;int(r)<J.rows();++r )
 	  {
 	    double x = b[r].distance(e(r));
 	    errors[i] += x*x;
@@ -175,9 +175,11 @@ namespace DummyActiveSet
 	    for( unsigned int r=0;r<active[i].size();++r )
 	      {
 		const int ref = active[i][r];
-		if( bref[i][ref].getType() ==  Bound::BOUND_DOUBLE )
-		  if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
-		  else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
+		if( (bref[i][ref].getType()) ==  Bound::BOUND_DOUBLE )
+		  {
+		    if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
+		    else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
+		  }
 		std::cout <<active[i][r] << " ";
 	      }
 	    std::cout << " ]";
@@ -195,7 +197,7 @@ namespace DummyActiveSet
 
   }
 
-  void intToVbool( const int nbConstraint, const unsigned long int ref,
+  void intToVbool( const unsigned int nbConstraint, const unsigned long int ref,
 		   std::vector<bool>& res )
   {
     res.resize(nbConstraint);
@@ -258,7 +260,6 @@ namespace DummyActiveSet
     int nbDoubleConstraint = 0;
     for( unsigned int i=0;i<bref.size();++i )
       {
-	const soth::bound_vector_t& b = bref[i];
 	for( unsigned int r = 0;r<aset[i].size();++r )
 	  {
 	    if( bref[i][aset[i][r]].getType() == Bound::BOUND_DOUBLE ) nbDoubleConstraint++;
@@ -295,7 +296,7 @@ namespace DummyActiveSet
 
     bool res=true;
     std::cout << "Nb posibilities = " << (1<<(nbConstraint)) << endl;
-    for( unsigned long int refc =0;refc< (1<<(nbConstraint)); ++refc )
+    for( long int refc =0;refc< (1<<(nbConstraint)); ++refc )
       {
 	if( !( refc%1000) ) std::cout << refc << " ... " << endl;
 	std::vector<bool> abool; std::vector<std::vector<int> > aset;
@@ -303,7 +304,7 @@ namespace DummyActiveSet
 
 	int nbDoubleConstraint = computeNbDouble(bref,aset);
 	sotDEBUG(15) << "Nb double = " << nbDoubleConstraint << endl;
-	for( unsigned long int refb =0;refb< (1<<(nbDoubleConstraint)); ++refb )
+	for( long int refb =0;refb< (1<<(nbDoubleConstraint)); ++refb )
 	  {
 	    std::vector<bool> bbool; std::vector< std::vector<Bound::bound_t> > bset;
 
@@ -349,11 +350,11 @@ namespace DummyActiveSet
 int main (int argc, char** argv)
 {
 # ifndef NDEBUG
-  sotDebugTrace::openFile();
 #endif
+  sotDebugTrace::openFile();
 
-  int NB_STAGE,NC;
-  std::vector<int> NR,RANKLINKED,RANKFREE;
+  unsigned int NB_STAGE,NC;
+  std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
   std::vector<Eigen::MatrixXd> J;
   std::vector<soth::bound_vector_t> b;
 
@@ -408,7 +409,6 @@ int main (int argc, char** argv)
   VectorXd ea,eaprec;
   MatrixXd Pa = MatrixXd::Identity(NC,NC);
   VectorXd usvd = VectorXd::Zero(NC);
-  const double EPSILON = 10*Stage::EPSILON;
 
   /* Checks and recheck ...
    * These checks are not valid: first, checking if the bound is
@@ -416,6 +416,7 @@ int main (int argc, char** argv)
    * Second, when a slack is freezed, it is not possible to check its value any
    * more with the initial reference value. .. TODO again
 
+     const double EPSILON = 10*Stage::EPSILON;
      for( unsigned int i=0;i<hcod.nbStages();++i )
     {
       Stage & st = hcod[i];

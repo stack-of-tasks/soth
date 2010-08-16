@@ -99,6 +99,8 @@ namespace soth
       {
 	if( freerow[row] ) return row;
       }
+    assert( false&&"Could never happen." );
+    return -1;
   }
   void ActiveSet::
   freeARow( unsigned int row )
@@ -200,7 +202,7 @@ namespace soth
 	    os << std::endl;
 	  }
 	for( unsigned int i=0;i<freerow.size();++ i )
-	  { os << (freerow[i])?"0":"1"; }
+	  { os << (freerow[i]?"0":"1"); }
 	os<<std::endl;
       }
   }

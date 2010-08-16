@@ -13,18 +13,17 @@ namespace soth
   /* -------------------------------------------------------------------------- */
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 				 std::vector<soth::bound_vector_t> &b,
-				 const int NB_STAGE,
-				 const std::vector<int> & RANKFREE,
-				 const std::vector<int> & RANKLINKED,
-				 const std::vector<int> & NR,
-				 const int NC )
+				 const unsigned int NB_STAGE,
+				 const std::vector<unsigned int> & RANKFREE,
+				 const std::vector<unsigned int> & RANKLINKED,
+				 const std::vector<unsigned int> & NR,
+				 const unsigned int NC )
   {
     /* Initialize J and b. */
     J.resize(NB_STAGE);
     b.resize(NB_STAGE);
 
-    unsigned int s = 0;
-    for( int s=0;s<NB_STAGE;++s )
+    for( unsigned int s=0;s<NB_STAGE;++s )
       {
 	b[ s].resize(NR[ s]);
 
@@ -43,7 +42,7 @@ namespace soth
 	  {
 	    Eigen::MatrixXd Xhilinked( NR[s],RANKLINKED[s] );
 	    soth::MatrixRnd::randomize( Xhilinked );
-	    for( int sb=0;sb<s;++sb )
+	    for( unsigned int sb=0;sb<s;++sb )
 	      {
 		Eigen::MatrixXd Alinked( RANKLINKED[s],NR[sb] );
 		soth::MatrixRnd::randomize( Alinked );
@@ -77,11 +76,11 @@ namespace soth
       }
   }
 
-  void generateRandomProfile(int & nbStage,
-			     std::vector<int>& rankfree,
-			     std::vector<int>& ranklinked,
-			     std::vector<int>& nr,
-			     int & nc )
+  void generateRandomProfile(unsigned int & nbStage,
+			     std::vector<unsigned int>& rankfree,
+			     std::vector<unsigned int>& ranklinked,
+			     std::vector<unsigned int>& nr,
+			     unsigned int & nc )
   {
     nc = Random::rand<int>() % 30 +4 ; //%  50 + 6;
     nbStage = randu(1,1+nc/4);
@@ -97,7 +96,7 @@ namespace soth
     rankfree.resize( nbStage );
     ranklinked.resize( nbStage );
     nr.resize( nbStage );
-    for( int i=0;i<nbStage;++i )
+    for( unsigned int i=0;i<nbStage;++i )
       {
 	if( Random::rand<double>()<0.7 )
 	  {
@@ -122,9 +121,9 @@ namespace soth
 	  }
 	rankfree[i]=std::min(nr[i],rankfree[i]);
 	ranklinked[i]=std::min(nr[i],ranklinked[i]);
-	if( i==0 ) { ranklinked[i] = 0; rankfree[i]=std::max(1,rankfree[i] ); }
+	if( i==0 ) { ranklinked[i] = 0; rankfree[i]=std::max(1,(int)rankfree[i] ); }
 	else ranklinked[i]=std::min( ranklinked[i],nr[i-1] );
-	if( rankfree[i]==0 ) ranklinked[i]=std::max(1,ranklinked[i]);
+	if( rankfree[i]==0 ) ranklinked[i]=std::max(1,(int)ranklinked[i]);
 	sotDEBUG(1) << "rf"<<i<<" = " << rankfree[i] <<";   rl"<<i<<" = " << ranklinked[i]
 		    << ";  nr"<<i<<" = " << nr[i] << endl;
 
@@ -141,8 +140,8 @@ namespace soth
 		      std::vector<soth::bound_vector_t> &b,
 		      bool verbose )
   {
-    int NB_STAGE,NC;
-    std::vector<int> NR,RANKLINKED,RANKFREE;
+    unsigned int NB_STAGE,NC;
+    std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
     generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
 
     /* Initialize J and b. */
@@ -171,9 +170,9 @@ namespace soth
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
 			    std::vector<soth::bound_vector_t> &b,
-			    int& NB_STAGE,
-			    std::vector<int> & NR,
-			    int& NC )
+			    unsigned int& NB_STAGE,
+			    std::vector<unsigned int> & NR,
+			    unsigned int& NC )
   {
     std::ifstream fin(name.c_str());
     std::string syntax1,syntax2;
@@ -181,7 +180,7 @@ namespace soth
 
     fin >> syntax1 >> syntax2 >> NC;
     assert( (syntax1 == "variable")&&(syntax2 == "size") );
-    NB_STAGE=0;  int & s= NB_STAGE;
+    NB_STAGE=0;  unsigned int & s= NB_STAGE;
     fin >> syntax1;
     do
       {
@@ -250,18 +249,18 @@ namespace soth
 			    std::vector<Eigen::MatrixXd> &J,
 			    std::vector<soth::bound_vector_t> &b )
   {
-    int NB_STAGE;
-    std::vector<int> NR;
-    int NC;
+    unsigned int NB_STAGE;
+    std::vector<unsigned int> NR;
+    unsigned int NC;
     readProblemFromFile( name,J,b,NB_STAGE,NR,NC);
   }
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
 			   const std::vector<soth::bound_vector_t> &b,
-			   const int& NB_STAGE,
-			   const std::vector<int> & NR,
-			   const int& NC )
+			   const unsigned int& NB_STAGE,
+			   const std::vector<unsigned int> & NR,
+			   const unsigned int& NC )
 
   {
     std::ofstream fout(name.c_str());
@@ -301,6 +300,8 @@ namespace soth
 	      case Bound::BOUND_DOUBLE:
 		fout << J[s].row(r) << "   " <<  b[s][r].getBound( Bound::BOUND_INF ) << " " << b[s][r].getBound( Bound::BOUND_SUP ) << endl;
 		break;
+	      case Bound::BOUND_NONE:
+		assert( b[s][r].getType()!= Bound::BOUND_NONE );
 	      }
 	  }
 	fout << endl;
@@ -313,9 +314,9 @@ namespace soth
 			   const std::vector<Eigen::MatrixXd> &J,
 			   const std::vector<soth::bound_vector_t> &b )
   {
-    int NB_STAGE;
-    std::vector<int> NR;
-    int NC;
+    unsigned int NB_STAGE;
+    std::vector<unsigned int> NR;
+    unsigned int NC;
     writeProblemToFile( name,J,b,NB_STAGE,NR,NC);
   }
 

@@ -245,8 +245,9 @@ namespace soth
     // solution.setZero(); // DEBUG
 
     /* Initial solve. */
-    Ytdu = -Ytu; /* DEBUG.setZero(); /* Ytdu.head(nullspace) only could be set to 0.
-		     *  Does it make any diff? */
+    /* TODO: Ytdu.head(nullspace) only could be set to 0.
+     *  Does it make any diff? */
+    Ytdu = -Ytu; // DEBUG.setZero();
     for( unsigned int i=0;i<stages.size();++i )
       {
 	stages[i]->computeSolution(Ytu,Ytdu,!isSolutionCpt);
@@ -404,7 +405,7 @@ namespace soth
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
 
     int iter = 0;
-    int stageMinimal = 0;
+    unsigned int stageMinimal = 0;
     do
       {
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;

@@ -216,8 +216,8 @@ namespace soth
     unsigned int rowSize( const Index r );
 
     /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
-    int nbConstraints( void ) const { return nr; }
-    int sizeA( void ) const { return activeSet.nbActive(); }
+    unsigned int nbConstraints( void ) const { return nr; }
+    unsigned int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
     int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
 

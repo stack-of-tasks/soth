@@ -29,11 +29,11 @@ namespace Eigen
     typedef typename ei_unref<MatrixTypeNested>::type _MatrixTypeNested;
     typedef typename MatrixType::StorageKind StorageKind;
     enum {
-      RowsAtCompileTime = (PermutationType==ColPermutation) ? MatrixType::RowsAtCompileTime : Dynamic,
-      ColsAtCompileTime = (PermutationType==RowPermutation) ? MatrixType::ColsAtCompileTime : Dynamic,
+      RowsAtCompileTime = (PermutationType==ColPermutation) ? (MatrixType::RowsAtCompileTime) : Dynamic,
+      ColsAtCompileTime = (PermutationType==RowPermutation) ? (MatrixType::ColsAtCompileTime) : Dynamic,
       MaxRowsAtCompileTime = (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic),
       MaxColsAtCompileTime = (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic),
-      Flags = _MatrixTypeNested::Flags & HereditaryBits | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
+      Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
       CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
     };
   };
@@ -465,7 +465,7 @@ namespace Eigen
       , RowBase(matrix, defaultPermutation)
       , ColBase(matrix, defaultPermutation)
     {
-      assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX;
+      assert(assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX);
     }
 
     inline SubMatrix(MatrixType& matrix, bool defaultPermutationRows, bool defaultPermutationCols )
@@ -481,7 +481,7 @@ namespace Eigen
       , RowBase(matrix, indices)
       , ColBase(matrix, indices)
     {
-      assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX;
+      assert(assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX);
     }
     inline SubMatrix(MatrixType& matrix, bool defaultPermutationRows, const Indices indicesCols)
       : MemoryBase(matrix)
@@ -509,7 +509,7 @@ namespace Eigen
       , RowBase(matrix, indices)
       , ColBase(matrix, indices)
     {
-      assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX;
+      assert(assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX);
     }
     inline SubMatrix(MatrixType& matrix, bool defaultPermutationRows, const Indices* indicesCols)
       : MemoryBase(matrix)

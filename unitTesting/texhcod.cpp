@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <iomanip>
 
+using namespace soth;
 
 void generateDataSet( std::vector<Eigen::MatrixXd> &J,
 		      std::vector<soth::bound_vector_t> &b,

@@ -90,7 +90,7 @@ int main (int argc, char** argv)
     }
   hcod.setNameByOrder("stage_");
 
-  VectorXd solution;
+  Eigen::VectorXd solution;
   hcod.activeSearch( solution );
   hcod.show(std::cout);
 }

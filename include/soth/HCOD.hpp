@@ -76,7 +76,7 @@ namespace soth
     bool testRecomposition( std::ostream* os );
     bool testLagrangeMultipliers( unsigned int stageRef,std::ostream* os ) const;
     bool testLagrangeMultipliers( unsigned int stageRef,std::ostream& os ) const
-    { testLagrangeMultipliers(stageRef,&os); }
+    { return testLagrangeMultipliers(stageRef,&os); }
 
     void setNameByOrder( const std::string root = ""  );
 
