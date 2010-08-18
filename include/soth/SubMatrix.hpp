@@ -414,15 +414,19 @@ namespace Eigen
   template<>
   struct ei_choose_assert_selection<RowPermutation>
   {
-    static const int COL_PERMUTATION_IS_NOT_AVAILABLE;
-    static const int YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX;
+    enum {
+      COL_PERMUTATION_IS_NOT_AVAILABLE
+      ,YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX
+    };
   };
 
   template<>
   struct ei_choose_assert_selection<ColPermutation>
   {
-    static const int ROW_PERMUTATION_IS_NOT_AVAILABLE;
-    static const int YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX;
+    enum {
+      ROW_PERMUTATION_IS_NOT_AVAILABLE
+      ,YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX
+    };
   };
 
   template<>

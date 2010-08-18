@@ -55,8 +55,11 @@ namespace soth
     {
       if( m1.rows()==0 ) initMatrixRowNull( m1.cols() );
       else if( m1.cols()==0 ) initMatrixColNull( m1.rows() );
-      else if( m1.cols()==1 ) initVector( m1.col(0) );
-      else if( m1.rows()==1 ) initVector( m1.row(0) );
+      else if( m1.IsVectorAtCompileTime)
+	{
+	  if( m1.cols()==1 ) initVector( m1.col(0) );
+	  else if( m1.rows()==1 ) initVector( m1.row(0) );
+	}
       else initMatrix(m1);
     }
 

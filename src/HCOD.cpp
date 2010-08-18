@@ -15,6 +15,7 @@ namespace soth
     ,stages(0),initialActiveSets(0)
     ,solution(sizeProblem)
     ,du(sizeProblem),Ytu(sizeProblem),Ytdu(sizeProblem),rho(sizeProblem)
+    ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false)
   {
     stages.reserve(nbStage);
@@ -141,7 +142,7 @@ namespace soth
     isReset=false; isInit=true;
   }
   void HCOD::
-  update( const unsigned int & stageUp,const Stage::ConstraintRef & cst )
+  update( const unsigned int & stageUp,const ConstraintRef & cst )
   {
     assert(isInit);
     GivensSequence Yup;
@@ -153,7 +154,7 @@ namespace soth
     updateY(Yup);
   }
   void HCOD::
-  update( stage_iter_t stageIter,const Stage::ConstraintRef & cst )
+  update( stage_iter_t stageIter,const ConstraintRef & cst )
   {
     assert(isInit);
     sotDEBUG(5) << "Update " << (*stageIter)->name <<", "
@@ -232,7 +233,6 @@ namespace soth
       {
 	iter--;
 	(*iter)->computeLagrangeMultipliers(rho);
-	sotDEBUG(5) << "lag = " << (MATLAB)(*iter)->getLagrangeMultipliers() << std::endl;
       }
   }
 
@@ -270,7 +270,7 @@ namespace soth
   {
     assert(isSolutionCpt);
 
-    double tau = 1.0; Stage::ConstraintRef cst;
+    double tau = 1.0; ConstraintRef cst;
     stage_iter_t stageUp;
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
@@ -289,7 +289,7 @@ namespace soth
   {
     assert(isSolutionCpt);
 
-    double tau = 1.0; Stage::ConstraintRef cst;
+    double tau = 1.0; ConstraintRef cst;
     stage_iter_t stageUp;
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
@@ -411,8 +411,9 @@ namespace soth
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
 
 	//solution.setZero(); Ytu.setZero();//DEBUG
-	if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	computeSolution();
+	assert( testSolution(&std::cerr) );
 
 	double tau = computeStepAndUpdate();
 	if( tau<1 )
@@ -420,7 +421,6 @@ namespace soth
 	    assert( testRecomposition(&std::cerr) );
 	    sotDEBUG(5) << "Update done, make step <1." << std::endl;
 	    makeStep(tau);
-	    stageMinimal = 0; // TODO: is that necessary?
 	  }
 	else
 	  {
@@ -430,25 +430,24 @@ namespace soth
 	    for( ;stageMinimal<=stages.size();++stageMinimal )
 	      {
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
-
 		computeLagrangeMultipliers(stageMinimal);
-		//TODO: assert( testLagrangeMultipliers(std::cerr) );
-		if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
+		if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
+		assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
+
 		if( searchAndDowndate(stageMinimal) )
 		  {
 		    sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
-		    if( sotDEBUGFLOW.outputbuffer.good() ) show( sotDEBUGFLOW.outputbuffer );
 		    assert( testRecomposition(&std::cerr) );
 		    break;
 		  }
 
 		for( unsigned int i=0;i<stageMinimal;++i )
 		  stages[i]->freezeSlacks(false);
-		if( stageMinimal<stages.size() )
+		if( stageMinimal<nbStages() )
 		  stages[stageMinimal]->freezeSlacks(true);
 	      }
 	  }
-      } while(stageMinimal<=stages.size());
+      } while(stageMinimal<=nbStages());
     sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
 
     u=solution;
@@ -475,17 +474,38 @@ namespace soth
   }
 
   bool HCOD::
+  testSolution( std::ostream* os )
+  {
+    sotDEBUGPRIOR(+20);
+    bool res = true;
+    for( unsigned int i=0;i<stages.size();++i )
+      {
+	bool sres=stages[i]->testSolution( solution+du );
+	if( os&&(!sres) ) *os << "Stage " <<i<<" has not been properly inverted."<<std::endl;
+	res&=sres;
+      }
+    return res;
+
+
+
+  }
+
+  /* Compute sum(i=1:sr) Ji' li, with Jsr = I and lsr = u, and check
+   * that the result is null. */
+  bool HCOD::
   testLagrangeMultipliers( int unsigned stageRef,std::ostream* os ) const
   {
     assert( stageRef<=stages.size() );
     VectorXd verifL(sizeProblem);
 
+    /* verifL = Jsr' lsr, with Jsr = I and lsr = u. */
     if( stageRef==stages.size() )
       { verifL = solution; stageRef -- ; }
     else
       verifL.setZero();
 
-    for( unsigned int i=0;i<stageRef;++i )
+    /* verif += sum Ji' li. */
+    for( unsigned int i=0;i<=stageRef;++i )
       {
 	const Stage s = *stages[i];
 	MatrixXd J_(s.nbConstraints(),sizeProblem);
@@ -493,9 +513,11 @@ namespace soth
       }
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
-    const double n = verifL.norm();
-    const bool res = n<1e-6;
-    if(os&&(!res)) (*os) << "TestLagrangian failed: norm is " << n << "."<<std::endl;
+    const double sumNorm = verifL.norm();
+    const bool res = sumNorm<1e-6;
+    if(os&&(!res))
+      (*os) << "TestLagrangian failed: norm is " << sumNorm << "."<<std::endl;
+
     return res;
   }
 

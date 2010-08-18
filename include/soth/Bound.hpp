@@ -51,6 +51,9 @@ namespace soth
   typedef std::vector< Bound > bound_vector_t;
   std::ostream& operator<< (std::ostream& os, const bound_vector_t& );
 
+  typedef std::pair<int,Bound::bound_t> ConstraintRef;
+  std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
+
 }; // namespace soth
 
 #endif // #ifndef __SOTH_BOUND__

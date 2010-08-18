@@ -37,14 +37,14 @@ namespace soth
     //sizes
     int sizeA() const;
     int rank() const;
-    int nbStages() const { return stages.size(); }
+    unsigned int nbStages() const { return stages.size(); }
 
     /* --- Decomposition --- */
   public:
     void reset( void );
     void initialize( void );
-    void update( const unsigned int & stageUp,const Stage::ConstraintRef & cst );
-    void update( stage_iter_t stageIter,const Stage::ConstraintRef & cst );
+    void update( const unsigned int & stageUp,const ConstraintRef & cst );
+    void update( stage_iter_t stageIter,const ConstraintRef & cst );
     void downdate( const unsigned int & stageDown, const unsigned int & row );
     void downdate( stage_iter_t stageIter,const unsigned int & row );
   protected:
@@ -73,8 +73,9 @@ namespace soth
   public:
     void show( std::ostream& os, bool check=false );
     void showActiveSet( std::ostream& os ) const;
-    bool testRecomposition( std::ostream* os );
-    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream* os ) const;
+    bool testRecomposition( std::ostream* os=NULL );
+    bool testSolution( std::ostream* os=NULL );
+    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream* os=NULL ) const;
     bool testLagrangeMultipliers( unsigned int stageRef,std::ostream& os ) const
     { return testLagrangeMultipliers(stageRef,&os); }
 
@@ -91,6 +92,7 @@ namespace soth
     VectorXd solution;
 
     VectorXd du,Ytu,Ytdu,rho;
+    int freezedStages;
     bool isReset,isInit,isSolutionCpt;
   };
 

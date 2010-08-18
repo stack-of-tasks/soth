@@ -36,7 +36,6 @@ namespace soth
     typedef VectorBlock<MatrixXd::RowXpr> RowL;
     typedef MatrixXd::RowXpr RowML;
 
-    typedef std::pair<Index,Bound::bound_t> ConstraintRef; // TODO: mv this type in Bound.h
     typedef PlanarRotation<double> Givensd; // TODO: remove this type
 
   protected:
@@ -56,20 +55,22 @@ namespace soth
     VectorXd lambda_;
 
     SubMatrixXd M,L;
-    SubVectorXd e,lambda;
 
     bool isWIdenty;
     SubMatrixXd W;
 
-    //SubMatrixXd L0sq;
-    //TriSubMatrixXd L0; // L0 = tri(L0sq)
     //TriMatrixXd Ldamp;
 
     /* fullRankRows = Ir. defRankRows = In.
      * Ir = L.indirect1() -- Irn = M.indirect1(). */
-    const Indirect& Ir, &Irn;
+    Indirect& Ir, &Irn, &Iw, &Im, &Il;
     /* sizeL = card(Ir). sizeM = previousRank. */
     unsigned int sizeM,sizeL;
+
+
+    SubMatrixXd Wr,Mr;
+    SubVectorXd e,lambda;
+
 
     SubActiveSet<ActiveSet,Indirect> activeSet;
 
@@ -137,12 +138,20 @@ namespace soth
     /* --- MULTIPLICATORS --------------------------------------------------- */
   public:
     /* The const functions simultaneously set up the lambda member. */
-    void computeError(const VectorXd& Ytu, VectorXd& err ) const;
+    template <typename D>
+    void computeError(const VectorXd& Ytu, MatrixBase<D>& err ) const;
     void computeError(const VectorXd& Ytu );
     /* computeRho(.,.,false) is const. What trick can we use to explicit that? TODO. */
     void computeRho(const VectorXd& Ytu, VectorXd& Ytrho, bool inLambda = false );
-    void computeLagrangeMultipliers( VectorXd& rho, VectorXd& l ) const;
+    template <typename D>
+    void computeLagrangeMultipliers( VectorXd& rho, MatrixBase<D>& l ) const;
     void computeLagrangeMultipliers( VectorXd& rho );
+
+  protected:
+    void computeErrorFromJu(const VectorXd& MLYtu);
+    template <typename D>
+    void computeErrorFromJu(const VectorXd& Ytu, MatrixBase<D>& err) const;
+    void computeMLYtu( const VectorXd& Ytu,VectorXd& MLYtu ) const;
 
     /* --- ACTIVE SEARCH ---------------------------------------------------- */
   public:
@@ -158,13 +167,6 @@ namespace soth
     void freezeSlacks(const bool & slacks = true);
 
 
-  protected:
-    void computeErrorFromJu(const VectorXd& MLYtu);
-    void computeErrorFromJu(const VectorXd& Ytu, VectorXd& err) const;
-    void computeMLYtu( const VectorXd& Ytu,VectorXd& MLYtu ) const;
-    void transfertInSubVector( const VectorXd& tmp, VectorXd& rec_, const Indirect & idx );
-#define TRANSFERT_IN_SUBVECTOR( tmp,rec ) transfertInSubVector( tmp,rec##_,rec.getRowIndices() );
-
 
     /* --- CHECK ------------------------------------------------------------ */
   public:
@@ -177,12 +179,15 @@ namespace soth
      * same order as given by W. J_ is a matrix where th full
      * J is stored (workspace). */
     SubMatrix<MatrixXd,RowPermutation>   Jactive( MatrixXd& J_ ) const ;
+    MatrixXd  Jactive() const ;
     /* Return a sub vector containing the active rows of e, in the
      * same order as given by W. */
     SubMatrix<VectorXd,RowPermutation>  eactive( VectorXd& e_ ) const;
+    VectorXd  eactive() const ;
 
-    /* Return true iff Jactive=recompose and eactive=e. */
     bool testRecomposition( void ) const;
+    bool testSolution( const VectorXd & solution ) const;
+
     /* For debug purpose, give the line of an active constraint (assert the activity). */
     Index where( unsigned int cst ) const;
     ConstraintRef which( unsigned int row ) const;
@@ -233,10 +238,6 @@ namespace soth
     std::string name;
 
   };
-
-
-  std::ostream& operator<<( std::ostream&os,const Stage::ConstraintRef& cst );
-
 
 }; // namespace soth
 

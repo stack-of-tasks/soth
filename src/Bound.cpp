@@ -68,6 +68,7 @@ namespace soth
       case BOUND_DOUBLE:
 	if( val<valInf-EPSILON ) return BOUND_INF;
 	if( valSup+EPSILON<val ) return BOUND_SUP;
+	break;
       case BOUND_NONE:
 	assert( false&& "Cannot check a bound for 0 constraint." );
       }
@@ -183,6 +184,18 @@ namespace soth
     return os;
   }
 
+  std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst )
+  {
+    switch( cst.second )
+      {
+      case Bound::BOUND_INF: os << "-"; break;
+      case Bound::BOUND_SUP: os << "+"; break;
+      case Bound::BOUND_DOUBLE: os << "+/-"; break;
+      case Bound::BOUND_TWIN: os << "="; break;
+      case Bound::BOUND_NONE: os << "(o)"; break;
+      }
+    return os << cst.first;
+  }
 
 
 }; // namespace soth

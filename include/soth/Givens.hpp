@@ -317,7 +317,7 @@ namespace soth
   void Givens::
   applyThisOnTheLeft(SubMatrix<MatrixType,PermutationType,IsSub> & M) const
   {
-    assert( 0<=i && i<M.cols() && 0<=j && j<M.cols() );
+    assert( 0<=i && int(i)<M.cols() && 0<=j && int(j)<M.cols() );
     typedef typename MatrixType::Index Index;
     for(Index r=0; r<M.rows(); ++r)
       {
@@ -350,7 +350,7 @@ namespace soth
   void Givens::
   applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub>& M) const
   {
-    assert( 0<=i && i<M.rows() && 0<=j && j<M.rows() );
+    assert( 0<=i && int(i)<M.rows() && 0<=j && int(j)<M.rows() );
     typedef typename MatrixType::Index Index;
     for(Index c=0; c<M.cols(); ++c)
       {
@@ -394,7 +394,7 @@ namespace soth
   applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub>& M,
 			   const int nbCols) const
   {
-    assert( 0<=i && i<M.rows() && 0<=j && j<M.rows() );
+    assert( 0<=i && int(i)<M.rows() && 0<=j && int(j)<M.rows() );
     assert( 0<= nbCols && nbCols<=M.cols() );
     typedef typename MatrixType::Index Index;
     for(Index c=0; c<nbCols; ++c)

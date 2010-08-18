@@ -218,7 +218,7 @@ namespace soth
   /*     DPC */permuteRows( const VectorXi & P )
     /*   DPC */{
     /*   DPC */  assert( false&&"DEPRECATED" );
-    /*   DPC */  assert(P.size()==nba);
+    /*   DPC */  assert(P.size()==int(nba));
     /*   DPC */  VectorXi Pt(P.size());
     /*   DPC */  for( unsigned int i=0;i<nba;++i ) Pt(P(i))=i;
     /*   DPC */  for( unsigned int i=0;i<size();++i )

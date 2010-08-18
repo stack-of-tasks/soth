@@ -47,7 +47,7 @@
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 #ifdef NDEBUG
-//#   undef SOTH_DEBUG
+#   undef SOTH_DEBUG
 #endif
 
 
@@ -73,6 +73,7 @@ class sotDebugTrace
 
     std::stringstream tmpbuffer;
     std::ostream& outputbuffer;
+    std::ofstream voidbuffer;
     char charbuffer[SIZE+1];
     int traceLevel;
     int traceLevelTemplate;
@@ -102,6 +103,7 @@ class sotDebugTrace
     static void openFile( const char * filename = DEBUG_FILENAME_DEFAULT );
     static void closeFile( const char * filename = DEBUG_FILENAME_DEFAULT );
 
+    operator std:: ostream& ()    {  return outputbuffer; }
 };
 
 

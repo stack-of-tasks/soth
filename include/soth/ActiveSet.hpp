@@ -172,7 +172,7 @@ namespace soth
   unsigned int SubActiveSet<AS,Indirect>::
   activeRow( unsigned int ref, Bound::bound_t type )
   {
-    assert( (isEmpty&&(nba==0)) || (nba == indirect.size()) );
+    assert( (isEmpty&&(nba==0)) || (int(nba) == indirect.size()) );
     unsigned int rowup = AS::activeRow(ref,type);
     return pushIndirectBack(rowup);
   }
@@ -198,7 +198,7 @@ namespace soth
   void SubActiveSet<AS,Indirect>::
   unactiveRow( unsigned int rowrm )
   {
-    assert( nba == indirect.size() );
+    assert( int(nba) == indirect.size() );
     assert( rowrm<nba ); // nba>0
 
     const int internalRowrm = indirect(rowrm);
@@ -268,7 +268,7 @@ namespace soth
 	    else if( whichBound(cst) == Bound::BOUND_SUP ) os << "+";
 	    os <<cst << " ";
 	  }
-	os << " ]";
+	os << " ];";
       }
     else
       {

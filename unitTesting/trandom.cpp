@@ -350,8 +350,8 @@ namespace DummyActiveSet
 int main (int argc, char** argv)
 {
 # ifndef NDEBUG
-#endif
   sotDebugTrace::openFile();
+#endif
 
   unsigned int NB_STAGE,NC;
   std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
