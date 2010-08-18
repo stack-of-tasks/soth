@@ -9,6 +9,7 @@ SET(LIBRARY_NAME ${PROJECT_NAME})
 
 SET(${PROJECT_NAME}_SRC
     ActiveSet.cpp
+    Allocator.cpp
     Algebra.cpp
     Bound.cpp
     BaseY.cpp

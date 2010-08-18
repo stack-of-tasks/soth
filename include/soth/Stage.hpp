@@ -11,6 +11,7 @@
 #include "soth/Bound.hpp"
 #include "soth/ActiveSet.hpp"
 #include "soth/Givens.hpp"
+#include "soth/Allocator.hpp"
 
 namespace soth
 {
@@ -46,8 +47,7 @@ namespace soth
 
     unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
 
-    //ActiveSet activeSet;
-    std::vector<bool> freeML_;
+    AllocatorML freeML;
 
     MatrixXd W_;
     MatrixXd ML_;

@@ -21,7 +21,7 @@ namespace soth
     ,Y(inY)
     ,nr(J.rows()),nc(J.cols())
 
-    ,freeML_(nr)
+    ,freeML(nr)
     ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
 
     ,Ir(),Irn(),Iw(),Im(),Il()
@@ -38,7 +38,6 @@ namespace soth
     ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
   {
     assert( int(bounds.size()) == J.rows() );
-    std::fill( freeML_.begin(),freeML_.end(),true );
   }
 
 
@@ -53,7 +52,6 @@ namespace soth
     assert( !isReset );
     // TODO: disable the checks on release.
     activeSet.reset();
-    std::fill( freeML_.begin(),freeML_.end(),true );
     isReset=true; isInit = false; isOptimumCpt = false; isLagrangeCpt = false;
     sotDEBUG(45) << "# Out }" << name << endl;
   }
@@ -69,6 +67,7 @@ namespace soth
     if( initialIr.nbActive()==0 )
       {
 	sotDEBUG(5) << "Initial IR empty." << std::endl;
+	freeML.reset();
 	ML_.setZero(); return;
       }
 
@@ -82,8 +81,7 @@ namespace soth
     sotDEBUG(15) << "Ja = " << (MATLAB)ML << std::endl;
     Y.applyThisOnTheLeft( ML );
 
-    for( unsigned int r=0;r<activeSet.nbActive();++r )
-      {	freeML_[r]=false; }
+    freeML.resetTop(sizeA());
 
     for( unsigned int cst=0;cst<nr;++cst )
       {
@@ -257,7 +255,7 @@ namespace soth
     unsigned int wcoldown = W.getColIndices()(col);
     W.removeCol(col);
     if( decreaseL ) { L.removeRow(col-sizeN()); sizeL--; }
-    freeML_[wcoldown]=true;
+    freeML.put(wcoldown);
 
     sotDEBUG(45) << "W = " << (MATLAB)W << std::endl;
     sotDEBUG(45) << "M = " << (MATLAB)M << std::endl;
@@ -549,10 +547,8 @@ namespace soth
     sotDEBUG(5) << "cst=" << cst << "  (" << sign << ")." << endl;
 
     /* Choose the first available row in ML. */
-    Index wcolup = -1;
-    for( unsigned int i=0;i<nr;++i )
-      if( freeML_[i] ) { freeML_[i]= false; wcolup = i; break; }
-    assert( (wcolup >= 0)&&(wcolup<int(nr)) );
+    const unsigned int wcolup = freeML.get();
+    assert( (wcolup >= 0)&&(wcolup<nr) );
     sotDEBUG(5) << " wc=" << wcolup << endl;
 
     /* Add a line to ML. */
