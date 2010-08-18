@@ -54,23 +54,20 @@ namespace soth
     VectorXd e_;
     VectorXd lambda_;
 
-    SubMatrixXd M,L;
-
-    bool isWIdenty;
-    SubMatrixXd W;
-
-    //TriMatrixXd Ldamp;
-
     /* fullRankRows = Ir. defRankRows = In.
      * Ir = L.indirect1() -- Irn = M.indirect1(). */
-    Indirect& Ir, &Irn, &Iw, &Im, &Il;
-    /* sizeL = card(Ir). sizeM = previousRank. */
-    unsigned int sizeM,sizeL;
+    Indirect Ir, Irn, Iw, Im, Il;
 
-
+    SubMatrixXd M,L;
+    SubMatrixXd W;
     SubMatrixXd Wr,Mr;
     SubVectorXd e,lambda;
 
+    bool isWIdenty;
+    //TriMatrixXd Ldamp;
+
+    /* sizeL = card(Ir). sizeM = previousRank. */
+    unsigned int sizeM,sizeL;
 
     SubActiveSet<ActiveSet,Indirect> activeSet;
 

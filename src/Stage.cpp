@@ -24,16 +24,15 @@ namespace soth
     ,freeML_(nr)
     ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
 
-    ,M(ML_,false,false),L(ML_,false,false)
-    ,W(W_,false,false)
+    ,Ir(),Irn(),Iw(),Im(),Il()
 
-    ,Ir(L.getRowIndices()),Irn(M.getRowIndices() ),Iw(W.getRowIndices())
-    ,Im(M.getColIndices()), Il(L.getColIndices() )
-
-    ,sizeM(0),sizeL(0)
+    ,M(ML_,&Irn,&Im),L(ML_,&Ir,&Il)
+    ,W(W_,&Iw,&Irn)
 
     ,Wr(W_,&Iw,&Ir),Mr(ML_,&Ir,&Im)
     ,e(e_,&Iw),lambda(lambda_,&Iw)
+
+    ,sizeM(0),sizeL(0)
 
     ,activeSet(nr,Iw)
     ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
@@ -157,7 +156,6 @@ namespace soth
       L.setRowIndices(VectorXi());
       L.setColIndices(VectorXi());
       sizeL=0;
-      W.setColRange(0,sizeA());
       return previousRank;
     }
 
@@ -173,7 +171,7 @@ namespace soth
 
     /* L=triu(mQR'); */
     const VectorXi & P = mQR.colsPermutation().indices();
-    L.setRowIndices(P);    M.setRowIndices(P); W.setColIndices(P);
+    L.setRowIndices(P);    M.setRowIndices(P);
     sotDEBUG(7) << "L0 = " << (MATLAB)L << std::endl;
     sotDEBUG(7) << "M0 = " << (MATLAB)M << std::endl;
 
@@ -258,7 +256,6 @@ namespace soth
 
     unsigned int wcoldown = W.getColIndices()(col);
     W.removeCol(col);
-    M.removeRow(col);
     if( decreaseL ) { L.removeRow(col-sizeN()); sizeL--; }
     freeML_[wcoldown]=true;
 
@@ -276,7 +273,6 @@ namespace soth
   {
     L.removeRow(row);
     M.pushRowFront(M.removeRow(row+sizeN()));
-    W.pushColFront(W.removeCol(row+sizeN()));
     sizeL--;
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
   }
@@ -426,7 +422,6 @@ namespace soth
 
 	    /* Commute the lines in L. */
 	    M.permuteRows(i,sizeN()-1);
-	    W.permuteCols(i,sizeN()-1);
 	    L.pushRowFront(Irn(sizeN()-1)); sizeL++;
 
 	    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
@@ -682,7 +677,6 @@ namespace soth
 
     /* Increase M, L and W. */
     M.pushRowBack( wcolup );
-    W.pushColBack( wcolup );
     if(!deficient)
       {
 	L.pushRowBack( wcolup );	sizeL++;
@@ -1036,7 +1030,8 @@ namespace soth
     sotDEBUGIN(5);
     if( sizeA()==0 )
       {
-	assert( (sizeL==0)&&(M.rows()==0)&&(L.rows()==0)&&(L.cols()==0)&&(W.rows()==0)&&(W.rows()==0) );
+	assert( (sizeL==0)&&(M.rows()==0)&&(L.rows()==0)
+		&&(L.cols()==0)&&(W.rows()==0)&&(W.rows()==0) );
 	WMLY.resize(0,nc);
 	return;
       }
@@ -1138,11 +1133,11 @@ namespace soth
 	if( activeSet.isActive(cst) )
 	  {
 	    const unsigned int row = activeSet.map(cst);
-	    J_.row( W.getRowIndices(row) ) = activeSet.sign(cst)*J.row(cst);
+	    J_.row( Iw(row) ) = activeSet.sign(cst)*J.row(cst);
 	  }
       }
 
-    return SubMatrix<MatrixXd,RowPermutation> (J_,W.getRowIndices());
+    return SubMatrix<MatrixXd,RowPermutation> (J_,Iw);
   }
   MatrixXd Stage::Jactive() const {  MatrixXd J_; return Jactive(J_);  }
 
@@ -1163,7 +1158,7 @@ namespace soth
 	  }
       }
 
-    return  SubVectorXd(e_,W.getRowIndices());
+    return  SubVectorXd(e_,Iw);
   }
   VectorXd Stage::eactive() const  { VectorXd e_; return eactive(e_);  }
 
@@ -1178,10 +1173,8 @@ namespace soth
     os << "sn{"<<stageRef<<"} = " << (MATLAB)sizeN() << endl;
     os << "sm{"<<stageRef<<"} = " << (MATLAB)sizeM << endl;
 
-    sotDEBUG(45) << "Iw1{"<<stageRef<<"} = " << (MATLAB)W.getRowIndices() << std::endl;
-    sotDEBUG(45) << "Iw2{"<<stageRef<<"} = " << (MATLAB)W.getColIndices() << std::endl;
-    sotDEBUG(55) << "Ie{"<<stageRef<<"} = " << (MATLAB)e.getRowIndices() << std::endl;
-    sotDEBUG(55) << "Il{"<<stageRef<<"} = " << (MATLAB)L.getRowIndices() << std::endl;
+    sotDEBUG(45) << "Iw{"<<stageRef<<"} = " << (MATLAB)Iw << std::endl;
+    sotDEBUG(45) << "Irn{"<<stageRef<<"} = " << (MATLAB)Irn << std::endl;
     sotDEBUG(25) << "ML_{"<<stageRef<<"} = " << (MATLAB)ML_ << std::endl;
     sotDEBUG(5) << "erec{"<<stageRef<<"} = " << (MATLAB)eactive() << std::endl;
 
