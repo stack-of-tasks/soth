@@ -105,6 +105,25 @@ namespace soth
       }
   }
 
+
+  void HCOD::setDamping( const double & d )
+  {
+    for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
+      {	(*iter)->damping(d);      }
+  }
+  double HCOD::getMaxDamping()
+  {
+    double maxD=-1;
+    for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
+      {
+	double d = (*iter)->damping();
+	assert( d>=0 );
+	if( d>maxD ) maxD=d;
+      }
+    return maxD;
+  }
+
+
   /* --- DECOMPOSITION ------------------------------------------------------- */
   /* --- DECOMPOSITION ------------------------------------------------------- */
   /* --- DECOMPOSITION ------------------------------------------------------- */
@@ -129,16 +148,13 @@ namespace soth
     assert( isReset&&(!isInit) );
 
     /* Compute the initial COD for each stage. */
-    unsigned int previousRank = 0;
     for( unsigned int i=0;i<stages.size();++i )
       {
 	assert( stages[i]!=0 );
 	sotDEBUG(5) <<" --- STAGE " <<i
 		    << " ---------------------------------" << std::endl;
-	previousRank
-	  = stages[i]->computeInitialCOD(previousRank,soth::Stage::allRows(),Y);
+	stages[i]->computeInitialCOD(soth::Stage::allRows(),Y);
       }
-    //Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
     isReset=false; isInit=true;
   }
   void HCOD::
@@ -241,20 +257,15 @@ namespace soth
   {
     assert(isInit);
 
-    // Ytu.setZero(); // DEBUG
-    // solution.setZero(); // DEBUG
-
     /* Initial solve. */
-    /* TODO: Ytdu.head(nullspace) only could be set to 0.
+    /* TODO: Ytdu.head(nullspace) only could be set to 0/Ytu.
      *  Does it make any diff? */
-    Ytdu = -Ytu; // DEBUG.setZero();
+    if( isSolutionCpt ) Ytdu = -Ytu; else Ytdu.setZero();
     for( unsigned int i=0;i<stages.size();++i )
       {
 	stages[i]->computeSolution(Ytu,Ytdu,!isSolutionCpt);
       }
 
-    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
-    sotDEBUG(5) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
     if( compute_u )
       {
 	Y.multiply(Ytdu,du);
@@ -262,6 +273,8 @@ namespace soth
 	sotDEBUG(5) << "du = " << (MATLAB)du << std::endl;
       }
 
+    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
+    sotDEBUG(5) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
     isSolutionCpt=true;
   }
 
@@ -305,6 +318,7 @@ namespace soth
   {
     Ytu += tau*Ytdu;
     if( compute_u ) { solution += tau*du; }
+    //makeStep(compute_u);
   }
   void HCOD::
   makeStep( bool compute_u )
@@ -410,15 +424,14 @@ namespace soth
       {
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
 
-	//solution.setZero(); Ytu.setZero();//DEBUG
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
+	assert( testRecomposition(&std::cerr) );
 	computeSolution();
 	assert( testSolution(&std::cerr) );
 
 	double tau = computeStepAndUpdate();
 	if( tau<1 )
 	  {
-	    assert( testRecomposition(&std::cerr) );
 	    sotDEBUG(5) << "Update done, make step <1." << std::endl;
 	    makeStep(tau);
 	  }
@@ -432,12 +445,11 @@ namespace soth
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 		computeLagrangeMultipliers(stageMinimal);
 		if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
-		assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
+		//assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
 
 		if( searchAndDowndate(stageMinimal) )
 		  {
 		    sotDEBUG(5) << "Lagrange<0, downdate done." << std::endl;
-		    assert( testRecomposition(&std::cerr) );
 		    break;
 		  }
 

@@ -54,22 +54,10 @@ namespace soth
     VectorXd e_;
     VectorXd lambda_;
 
+
     /* fullRankRows = Ir. defRankRows = In.
      * Ir = L.indirect1() -- Irn = M.indirect1(). */
     Indirect Ir, Irn, Iw, Im, Il;
-
-    SubMatrixXd M,L;
-    SubMatrixXd W;
-    SubMatrixXd Wr,Mr;
-    SubVectorXd e,lambda;
-
-    bool isWIdenty;
-    //TriMatrixXd Ldamp;
-
-    /* sizeL = card(Ir). sizeM = previousRank. */
-    unsigned int sizeM,sizeL;
-
-    SubActiveSet<ActiveSet,Indirect> activeSet;
 
     /* W = W_( :,[In Ir] ).
      * M = ML_( [In Ir],0:sizeM-1 ).
@@ -78,6 +66,26 @@ namespace soth
      *
      * W_*ML_ = W*[M [ zeros(In.size(),rank); L ] ]
      */
+    SubMatrixXd M,L;
+    SubMatrixXd W;
+    SubMatrixXd Wr,Mr;
+    SubVectorXd e,lambda;
+
+    bool isWIdenty;
+
+    /* sizeL = card(Ir). sizeM = previousRank. */
+    unsigned int sizeM,sizeL;
+
+    SubActiveSet<ActiveSet,Indirect> activeSet;
+
+
+    /* Damping */
+    MatrixXd Ld_,Ldwork_;
+    VectorXd edwork_;
+    SubMatrixXd Ld,Ldwork;
+    SubVectorXd edwork;
+    double dampingFactor;
+    const static double DAMPING_FACTOR;
 
     /* Check if the stage has been reset, initialized, if the optimum
      * has been computed, and if the lagrange multipliers have been
@@ -93,15 +101,14 @@ namespace soth
     /* Return the rank of the current COD = previousRank+size(L).
      * Give a non-const ref on Y so that it is possible to modify it.
      */
-    unsigned int computeInitialCOD( const unsigned int previousRank,
-				    const ActiveSet & initialIr,
-				    BaseY & Yinit );
+    void computeInitialCOD( const ActiveSet & initialIr,
+			    BaseY & Yinit );
 
   protected:
     void nullifyLineDeficient( const Index row, const Index in_r );
     void computeInitialJY( const ActiveSet & initialIr );
     void computeInitialJY_allRows(void);
-
+    void conditionalWinit( bool id );
     /* --- DOWN ------------------------------------------------------------- */
   public:
     /* Return true if the rank re-increase operated at the current stage. */
@@ -129,8 +136,11 @@ namespace soth
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init );
-    //void damp( const double & damping );
+    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init, bool damp=true );
+    template< typename D >
+    void damp( MatrixBase<D> & x,const double & damping=-1 );
+    void damping( const double & factor ) { dampingFactor = factor; }
+    double damping( void ) { return dampingFactor; }
 
     /* --- MULTIPLICATORS --------------------------------------------------- */
   public:

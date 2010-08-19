@@ -242,14 +242,95 @@ void testCol()
 
 }
 
+namespace Eigen
+{
+}
+
+void testStack()
+{
+  MatrixXi m1(4,5);
+  Map<MatrixXi> map1(m1.data(), m1.size(), 1);
+  map1 = VectorXi::LinSpaced(m1.size(), 0, m1.size()-1);
+  std::cout << "m1 = " << m1 << std::endl;
+
+  MatrixXi m2(2,5);
+  Map<MatrixXi> map2(m2.data(), m2.size(), 1);
+  map2 = VectorXi::LinSpaced(m2.size(), 0, m2.size()-1);
+  std::cout << "m2 = " << m2 << std::endl;
+
+  StackMatrix<MatrixXi,MatrixXi> m12(m1,m2);
+  std::cout << "m12 = " << m12 << std::endl;
+
+  assert( m1(2,3)==m12(2,3) ); assert( (m12.topRows(4)-m1).sum() == 0 );
+  assert( m2(0,3)==m12(4,3) ); assert( (m12.bottomRows(2)-m2).sum() == 0 );
+
+  m12(0,2) = -2; assert( m1(0,2) == -2 );
+  m12(5,2) = -12; assert( m2(1,2) == -12 );
+  assert( (m12.topRows(4)-m1).sum() == 0 );
+  assert( (m12.bottomRows(2)-m2).sum() == 0 );
+
+
+  /* --- */
+  typedef SubMatrix<MatrixXi,RowPermutation> SubMatrixXi;
+
+  VectorXi row1(3); row1 << 2,3,0;
+  SubMatrixXi m1i( m1,row1 );
+  std::cout << "m1i = " << m1i << std::endl;
+  VectorXi row2(1); row2 << 0;
+  SubMatrixXi m2i( m2,row2 );
+  std::cout << "m2i = " << m2i << std::endl;
+
+  StackMatrix<SubMatrixXi,SubMatrixXi> m1i2i(m1i,m2i);
+  std::cout << "m1i2i = " << m1i2i << std::endl;
+
+  StackMatrix<MatrixXi,SubMatrixXi> m12i(m1,m2i);
+  std::cout << "m12i = " << m12i << std::endl;
+
+
+  /* --- */
+  typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
+
+  VectorXd v1(4);
+  Map<VectorXd> mapv1(v1.data(), v1.size(), 1);
+  mapv1 = VectorXd::LinSpaced(v1.size(), 0, v1.size()-1);
+  std::cout << "v1 = " << v1 << std::endl;
+
+  VectorXd v2(2);
+  Map<VectorXd> mapv2(v2.data(), v2.size(), 1);
+  mapv2 = VectorXd::LinSpaced(v2.size(), 0, v2.size()-1);
+  std::cout << "v2 = " << v2 << std::endl;
+
+  SubVectorXd v1i( v1,row1 );
+  std::cout << "v1i = " << v1i << std::endl;
+  SubVectorXd v2i( v2,row2 );
+  std::cout << "v2i = " << v2i << std::endl;
+
+  StackMatrix<VectorXd,VectorXd> v12(v1,v2);
+  std::cout << "v12 = " << v12 << std::endl;
+  StackMatrix<SubVectorXd,SubVectorXd> v1i2i(v1i,v2i);
+  std::cout << "v1i2i = " << v1i2i << std::endl;
+  StackMatrix<VectorXd,SubVectorXd> v12i(v1,v2i);
+  std::cout << "v12i = " << v12i << std::endl;
+
+
+  MatrixBase<VectorXd> & v1ref =v1;
+  StackMatrix< VectorXd ,SubVectorXd> v1r2i(v1ref,v2i);
+  std::cout << "v1r2i = " << v1r2i << std::endl;
+  v1r2i(4,0) = -6;
+  std::cout << "v12i = " << v12i << std::endl;
+  assert( (v1r2i-v12i).sum() == 0 );
+
+}
+
 
 int main(int argc, char**argv)
 {
   //testPermutedBasic();
   //testSubVector();
   //testDoublePerm();
-  testCol();
-  if( (argc>1)&&(std::string(argv[1]) == "-speed") ) speedTest();
+  //testCol();
+  //if( (argc>1)&&(std::string(argv[1]) == "-speed") ) speedTest();
+  testStack();
 
   std::cout << "\n\n ... Everything is working fine.\n\n\n" << std::endl;
 }

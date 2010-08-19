@@ -40,6 +40,7 @@ namespace soth
 
     void updateRank(Index r)      {      rank = r;    }
     void increaseRank(Index r)    {      rank += r;    }
+    inline Index getRank(void) const { return rank; }
 
     HouseholderSequenceType getHouseholderSequence() const
     {

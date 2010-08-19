@@ -34,6 +34,9 @@ namespace soth
     void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
     const VectorXi& getInitialActiveSet( unsigned int i );
 
+    void setDamping( const double & d );
+    double getMaxDamping();
+
     //sizes
     int sizeA() const;
     int rank() const;

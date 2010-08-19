@@ -93,16 +93,20 @@ namespace DummyActiveSet
     return errors;
   }
 
-  /* Alphalexical order */
-  //template<>
-  bool isLess ( const std::vector< double > & m1, const std::vector<double> & m2 )
+  /* Alphalexical strict order
+   * In case of equality, return false. The test is done with EPS approximation
+   * (distance of each lexem should be more than EPS).
+   */
+  bool isLess ( const std::vector< double > & m1, const std::vector<double> & m2,
+		const double & EPS )
   {
     assert( m1.size()==m2.size() );
     for( unsigned int i=0;i<m1.size();++i )
       {
-	if( m1[i]>m2[i] ) return false;
+	if( std::abs(m1[i]-m2[i])<=EPS ) continue;
+	if( m1[i]<m2[i] ) return true; else return false;
       }
-    return true;
+    return false;
   }
 
   std::vector< double >
@@ -158,12 +162,11 @@ namespace DummyActiveSet
     /* Find the optimum. */
     VectorXd usot = SOT_Solver( Jsot,esot );
     sotDEBUG(45) << "usot" <<" = " << (MATLAB)usot << endl;
-    //if( (!verbose)&&(usot.norm()+Stage::EPSILON >= urefnorm) ) return false;
 
     /* Check the bounds. */
     std::vector<double> esotnorm = stageErrors(Jref,bref,usot);
     if( verbose
-	||(isLess( esotnorm+Stage::EPSILON,erefnorm ) ) )
+	||(isLess( esotnorm,erefnorm,Stage::EPSILON ) ) )
 	  //	   &&( usot.norm()+Stage::EPSILON < urefnorm) ) ) //DEBUG
       {
 	std::cout << endl << endl << " * * * * * * * * * * * * * " << endl
@@ -175,7 +178,7 @@ namespace DummyActiveSet
 	    for( unsigned int r=0;r<active[i].size();++r )
 	      {
 		const int ref = active[i][r];
-		if( (bref[i][ref].getType()) ==  Bound::BOUND_DOUBLE )
+		//if( (bref[i][ref].getType()) !=  Bound::BOUND_DOUBLE )
 		  {
 		    if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
 		    else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
@@ -188,9 +191,11 @@ namespace DummyActiveSet
 	std::cout << "norm solution = " << usot.norm() << " ~?~ " << urefnorm << " = norm ref." << endl;
 	std::cout << "e = [" ;
 	for( unsigned int s=0;s<esotnorm.size();++s )
-	  { std::cout << (esotnorm+Stage::EPSILON)[s] << "    (" << erefnorm[s] << ")   "; }
+	  { std::cout << (esotnorm+Stage::EPSILON)[s] << "  (" << erefnorm[s] << ")     "; }
 	std::cout << " ];" << endl;
 
+	if (isLess( esotnorm,erefnorm,Stage::EPSILON ) )
+	  { cout << "The solution is better." << endl; }
 	return true;
       }
     else return false;
@@ -396,9 +401,11 @@ int main (int argc, char** argv)
     }
   hcod.setNameByOrder("stage_");
 
+  hcod.setDamping(0.1);
   VectorXd solution;
   hcod.activeSearch( solution );
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+  cout << "Optimal solution = " << (MATLAB)solution << endl;
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
 
   //exit(0); // DEBUG
@@ -516,11 +523,11 @@ int main (int argc, char** argv)
       } */
 
 
-
+#ifdef NDEBUG
   if(! DummyActiveSet::explore(J,b,solution) )
     {      exit(-1);    }
+#else
+  DummyActiveSet::detailActiveSet( J,b,solution,3045,3);
+#endif
 
-  // DummyActiveSet::detailActiveSet( J,b,solution,2720,0 );
-  // DummyActiveSet::detailActiveSet( J,b,solution,2721,1 );
-  // DummyActiveSet::detailActiveSet( J,b,solution,2736,0 );
 }

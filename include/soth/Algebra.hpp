@@ -51,17 +51,12 @@ namespace soth
 
     MATLAB( const double& x );
     template< typename Derived >
-    MATLAB( const MatrixBase<Derived> & m1 )
-    {
-      if( m1.rows()==0 ) initMatrixRowNull( m1.cols() );
-      else if( m1.cols()==0 ) initMatrixColNull( m1.rows() );
-      else if( m1.IsVectorAtCompileTime)
-	{
-	  if( m1.cols()==1 ) initVector( m1.col(0) );
-	  else if( m1.rows()==1 ) initVector( m1.row(0) );
-	}
-      else initMatrix(m1);
-    }
+    MATLAB( const MatrixBase<Derived> & m1 ) { genericInit(m1); }
+    template< typename Derived >
+    MATLAB( const MatrixBase<Derived> & m1, bool id );
+
+    template< typename Derived >
+    void genericInit( const MatrixBase<Derived> & m1 );
 
     template< typename Derived >
     void initMatrix( const MatrixBase<Derived> & m1 );
@@ -84,6 +79,21 @@ namespace soth
 // --- HEAVY CODE ---
 namespace soth
 {
+
+  template< typename Derived >
+  void MATLAB::genericInit( const MatrixBase<Derived> & m1 )
+  {
+    if( m1.rows()==0 ) initMatrixRowNull( m1.cols() );
+    else if( m1.cols()==0 ) initMatrixColNull( m1.rows() );
+    else if( m1.IsVectorAtCompileTime)
+      {
+	if( m1.cols()==1 ) initVector( m1.col(0) );
+	else if( m1.rows()==1 ) initVector( m1.row(0) );
+      }
+    else initMatrix(m1);
+  }
+
+
   template< typename VectorGen >
     void MATLAB::initVector( const VectorGen & m1 )
     {
@@ -107,6 +117,18 @@ namespace soth
       str = os.str();
     }
 
+  template< typename Derived >
+  MATLAB::MATLAB( const MatrixBase<Derived> & m1, bool id )
+  {
+    if( id )
+      {
+	std::ostringstream os;
+	os << "eye(" << m1.rows() << "," << m1.cols() << ");";
+	str = os.str();
+      }
+    else
+      {	genericInit(m1);      }
+  }
 
   void MATLAB::initMatrixNull( void ) { str = "[];"; }
   void MATLAB::initMatrixColNull( unsigned int size )

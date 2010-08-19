@@ -598,6 +598,85 @@ namespace Eigen
 
 
 
+
+  /* ------------------------------------------------------------------------ */
+  template<typename MatrixType1,typename MatrixType2>
+  class StackMatrix;
+
+  template<typename MatrixType1,typename MatrixType2>
+  struct ei_traits< StackMatrix<MatrixType1,MatrixType2> >
+    : ei_traits<MatrixType1>
+  {
+    typedef typename ei_nested<MatrixType1>::type MatrixTypeNested;
+    typedef typename ei_unref<MatrixTypeNested>::type _MatrixTypeNested;
+    typedef typename MatrixType1::StorageKind StorageKind;
+    enum {
+      RowsAtCompileTime = MatrixType1::RowsAtCompileTime,
+      ColsAtCompileTime = MatrixType1::ColsAtCompileTime,
+      MaxRowsAtCompileTime = MatrixType1::MaxRowsAtCompileTime,
+      MaxColsAtCompileTime = MatrixType1::MaxColsAtCompileTime,
+      Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
+      CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+    };
+  };
+
+
+
+  template<typename MatrixType1,typename MatrixType2>
+  class StackMatrix
+    : public MatrixBase< StackMatrix<MatrixType1,MatrixType2> >
+  {
+  public:
+
+    typedef MatrixBase< StackMatrix<MatrixType1,MatrixType2> > Base;
+
+    EIGEN_DENSE_PUBLIC_INTERFACE(StackMatrix)
+
+    typedef MatrixBase< MatrixType1 > Base1;
+    typedef MatrixBase< MatrixType2 > Base2;
+
+    inline StackMatrix(Base1& m1, Base2& m2 )
+      : m1(m1),m2(m2)
+    {
+      assert( m1.cols() == m2.cols() );
+    }
+
+    /* --- Matrix base interface --- */
+    EIGEN_INHERIT_ASSIGNMENT_OPERATORS(StackMatrix)
+
+    inline Index cols() const { assert( m1.cols() == m2.cols() ); return m1.cols(); }
+    inline Index rows() const { return m1.rows() + m2.rows(); }
+
+    inline Scalar& coeffRef(Index row, Index col)
+    {
+      const Index r1 = m1.rows();
+      if( row<r1 ) return m1(row,col); else return m2(row-r1,col);
+    }
+
+    inline Scalar& coeffRef(Index index)
+    {
+      const Index r1 = m1.rows();
+      if( index<r1 ) return m1(index); else return m2(index-r1);
+    }
+    inline const CoeffReturnType coeff(Index row, Index col) const
+    {
+      const Index r1 = m1.rows();
+      if( row<r1 ) return m1(row,col); else return m2(row-r1,col);
+    }
+    inline const CoeffReturnType coeff(Index index) const
+    {
+      const Index r1 = m1.rows();
+      if( index<r1 ) return m1(index); else return m2(index-r1);
+    }
+
+  protected:
+    Base1& m1;
+    Base2& m2;
+
+  };
+
+
+
 } // namespace soth
 
 #endif // __SOTH_SUB_MATRIX_H__
