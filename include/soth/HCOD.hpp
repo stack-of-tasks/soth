@@ -55,6 +55,7 @@ namespace soth
 
     /* --- Computations --- */
   public:
+    void damp( void );
     void computeSolution( bool compute_u = true );
     void computeLagrangeMultipliers( const unsigned int & stageRef );
     double computeStepAndUpdate( void );

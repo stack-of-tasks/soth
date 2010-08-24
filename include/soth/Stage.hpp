@@ -27,36 +27,21 @@ namespace soth
     typedef MatrixXd::Index Index;
     typedef SubMatrix<MatrixXd>::RowIndices Indirect;
 
-    typedef SubMatrix<MatrixXd> SubMatrixXd; // TODO: Mv this in SubMatrix
-    typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd; // TODO: Mv this in SubMatrix
-    typedef SubMatrixXd const_SubMatrixXd; // TODO: Mv this in SubMatrix
-    typedef SubVectorXd const_SubVectorXd; // TODO: this too
-    typedef TriangularView<SubMatrixXd,Lower> TriSubMatrixXd; // TODO: usefull
-    typedef TriangularView<const_SubMatrixXd,Lower> const_TriSubMatrixXd;
-
-    typedef VectorBlock<MatrixXd::RowXpr> RowL;
-    typedef MatrixXd::RowXpr RowML;
-
-    typedef PlanarRotation<double> Givensd; // TODO: remove this type
-
   protected:
 
     const MatrixXd & J;
     const bound_vector_t & bounds;
     const BaseY & Y;
+    const unsigned int nr,nc; /* nr=nbCols(J), nc=nbRows(J). */
 
-    unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
-
-    AllocatorML freeML;
-
+    /* Work range matrices. */
     MatrixXd W_;
     MatrixXd ML_;
     VectorXd e_;
     VectorXd lambda_;
 
-
     /* fullRankRows = Ir. defRankRows = In.
-     * Ir = L.indirect1() -- Irn = M.indirect1(). */
+     * Ir = L.indirectRows() -- Irn = M.indirectRows(). In =D= Irn/Ir. */
     Indirect Ir, Irn, Iw, Im, Il;
 
     /* W = W_( :,[In Ir] ).
@@ -72,31 +57,31 @@ namespace soth
     SubVectorXd e,lambda;
 
     bool isWIdenty;
-
     /* sizeL = card(Ir). sizeM = previousRank. */
     unsigned int sizeM,sizeL;
 
+    /* Memory allocators. */
     SubActiveSet<ActiveSet,Indirect> activeSet;
-
+    AllocatorML freeML;
 
     /* Damping */
     MatrixXd Ld_,Ldwork_;
-    VectorXd edwork_;
+    mutable VectorXd edwork_;
     SubMatrixXd Ld,Ldwork;
-    SubVectorXd edwork;
+    mutable SubVectorXd edwork;
+    GivensSequence Wd;
     double dampingFactor;
     const static double DAMPING_FACTOR;
 
     /* Check if the stage has been reset, initialized, if the optimum
      * has been computed, and if the lagrange multipliers have been
      * computed. */
-    bool isReset,isInit,isOptimumCpt,isLagrangeCpt;
-  public:
+    bool isReset,isInit,isOptimumCpt,isLagrangeCpt,isDampCpt;
 
+  public:
     Stage( const MatrixXd & J, const bound_vector_t & bounds, BaseY& Y  );
 
     /* --- INIT ------------------------------------------------------------- */
-
     void reset();
     /* Return the rank of the current COD = previousRank+size(L).
      * Give a non-const ref on Y so that it is possible to modify it.
@@ -136,9 +121,16 @@ namespace soth
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init, bool damp=true );
-    template< typename D >
-    void damp( MatrixBase<D> & x,const double & damping=-1 );
+    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init ) const;
+
+    void damp( void );
+    template< typename VectorDerived >
+    void applyDamping( MatrixBase<VectorDerived>& x  ) const;
+    template< typename VD1,typename VD2 >
+    void applyDampingTranspose( MatrixBase<VD1>& x,const MatrixBase<VD2>& y  ) const;
+    template< typename VectorDerived >
+    void applyDampingTranspose( MatrixBase<VectorDerived>& x  ) const;
+
     void damping( const double & factor ) { dampingFactor = factor; }
     double damping( void ) { return dampingFactor; }
 
@@ -189,8 +181,8 @@ namespace soth
     MatrixXd  Jactive() const ;
     /* Return a sub vector containing the active rows of e, in the
      * same order as given by W. */
-    SubMatrix<VectorXd,RowPermutation>  eactive( VectorXd& e_ ) const;
-    VectorXd  eactive() const ;
+    SubVectorXd eactive( VectorXd& e_ ) const;
+    VectorXd eactive() const ;
 
     bool testRecomposition( void ) const;
     bool testSolution( const VectorXd & solution ) const;
@@ -202,6 +194,10 @@ namespace soth
 
   public:
     /* --- ACCESSORS --- */
+    typedef TriangularView<SubMatrixXd,Lower> TriSubMatrixXd;
+    typedef TriangularView<const_SubMatrixXd,Lower> const_TriSubMatrixXd;
+    typedef VectorBlock<MatrixXd::RowXpr> RowL;
+    typedef MatrixXd::RowXpr RowML;
 
     SubMatrixXd getM() { return M; }
     const_SubMatrixXd getM() const { return M; }
@@ -213,14 +209,6 @@ namespace soth
     const_SubVectorXd gete() const { return e; }
     SubVectorXd getLagrangeMultipliers() { return lambda; }
     const_SubVectorXd getLagrangeMultipliers() const { return lambda; }
-    template< typename D>
-    void setLagrangeMultipliers(const MatrixBase<D>& l) // DEBUG
-    {
-      const Indirect & Ie = e.getRowIndices();
-      lambda.setRowIndices( Ie );
-      TRANSFERT_IN_SUBVECTOR(l,lambda);
-      isLagrangeCpt =true;
-    } // DEBUG
 
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );
@@ -228,22 +216,22 @@ namespace soth
     unsigned int rowSize( const Index r );
 
     /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
-    unsigned int nbConstraints( void ) const { return nr; }
-    unsigned int sizeA( void ) const { return activeSet.nbActive(); }
+    inline unsigned int nbConstraints( void ) const { return nr; }
+    inline unsigned int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
-    int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
-
-    Index rank() const {return sizeL;}
+    inline int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
+    inline Index rank() const {return sizeL;}
 
   public:
     static ActiveSet& allRows() { return _allRows; }
     static double EPSILON;
+
   protected:
     static ActiveSet _allRows;
     bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }
+
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;
-
   };
 
 }; // namespace soth

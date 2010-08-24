@@ -100,8 +100,7 @@ void testSubVector()
   std::cout << v.transpose() << std::endl << std::endl;
 
   VectorXi row(4); row << 2,3,5,0;
-  SubMatrix<VectorXi, RowPermutation> pv(v);
-  pv.setRowIndices(row);
+  SubMatrix<VectorXi, RowPermutation> pv(v,row);
   std::cout << "subVector:" << std::endl;
   std::cout << pv.transpose() << std::endl << std::endl;
   assert(pv[0]==2);  assert(pv[3]==0);

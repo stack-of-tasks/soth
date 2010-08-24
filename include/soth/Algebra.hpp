@@ -54,6 +54,8 @@ namespace soth
     MATLAB( const MatrixBase<Derived> & m1 ) { genericInit(m1); }
     template< typename Derived >
     MATLAB( const MatrixBase<Derived> & m1, bool id );
+    template< typename Rotation >
+    MATLAB( unsigned int size,const Rotation & m1 );
 
     template< typename Derived >
     void genericInit( const MatrixBase<Derived> & m1 );

@@ -3,6 +3,7 @@
 #include "soth/debug.hpp"
 #include "soth/COD.hpp"  // DEBUG
 #include "soth/HCOD.hpp"
+#include <boost/foreach.hpp>
 
 namespace soth
 {
@@ -277,6 +278,13 @@ namespace soth
     sotDEBUG(5) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
     isSolutionCpt=true;
   }
+  void HCOD::
+  damp( void )
+  {
+    assert(isInit);
+    BOOST_FOREACH( stage_ptr_t sptr,stages )
+      {	sptr->damp();      }
+  }
 
   double HCOD::
   computeStepAndUpdate( void )
@@ -426,6 +434,7 @@ namespace soth
 
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	assert( testRecomposition(&std::cerr) );
+	//damp();
 	computeSolution();
 	assert( testSolution(&std::cerr) );
 
@@ -445,7 +454,7 @@ namespace soth
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 		computeLagrangeMultipliers(stageMinimal);
 		if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
-		//assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
+		assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
 
 		if( searchAndDowndate(stageMinimal) )
 		  {
@@ -459,7 +468,7 @@ namespace soth
 		  stages[stageMinimal]->freezeSlacks(true);
 	      }
 	  }
-      } while(stageMinimal<=nbStages());
+    } while(stageMinimal<=nbStages());
     sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
 
     u=solution;

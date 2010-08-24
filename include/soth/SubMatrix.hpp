@@ -1,6 +1,9 @@
 #ifndef __SOTH_SUB_MATRIX_H__
 #define __SOTH_SUB_MATRIX_H__
 
+
+/*DEBUG*/#include <iostream>
+
 /* The Eigen::MatrixBase derivations have to be done in the
  * Eigen namespace. */
 namespace Eigen
@@ -138,7 +141,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic), 1> RowIndices;
+    typedef VectorXi RowIndices;
 
   protected:
     NoRowSelectionImpl(const MatrixType& m, bool defaultPermutation ) : m_contain(m) {}
@@ -156,12 +159,13 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic), 1> RowIndices;
+    typedef VectorXi RowIndices;
 
     RowSelectionImpl(const MatrixType& m, bool defaultPermutation = false)
       : m_contain(m),owned_rowIndices(),rowIndices( owned_rowIndices )
     {
       if( defaultPermutation ) setRowRange(0,m.rows());
+      else owned_rowIndices.resize(0);
     }
 
     /* No copy of the indices, but a storage of the reference. */
@@ -173,7 +177,11 @@ namespace Eigen
       : m_contain(m),owned_rowIndices(),rowIndices( *indices )
     { }
 
-    /* --- Kernel implementation --- */
+     RowSelectionImpl(const RowSelectionImpl& clone )
+      : m_contain(clone.m_contain),owned_rowIndices(clone.owned_rowIndices)
+      , rowIndices( clone.rowIndicesOwned()?owned_rowIndices:clone.rowIndices )
+    {}
+   /* --- Kernel implementation --- */
     Index rowIndex(Index i) const
     {
       ei_assert( inIdxRange(i) );
@@ -185,7 +193,7 @@ namespace Eigen
     RowIndices& getRowIndices() { return rowIndices; }
     const Index& getRowIndices(Index i) const { return rowIndices[i]; }
     Index& getRowIndices(Index i) { return rowIndices[i]; }
-    bool rowIndicesOwned() { return &rowIndices==owned_rowIndices; }
+    bool rowIndicesOwned() const { return &rowIndices==&owned_rowIndices; }
 
     /* --- Basic setters --- */
     void setRowIndices(const RowIndices& indices)
@@ -275,12 +283,12 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic), 1> ColIndices;
+    typedef VectorXi ColIndices;
 
   protected:
-    NoColSelectionImpl(const MatrixType& m, bool defaultPermutation) : m_contain(m) {}
-    NoColSelectionImpl(const MatrixType& m, const ColIndices indices) : m_contain(m) {}
-    NoColSelectionImpl(const MatrixType& m, ColIndices* indices) : m_contain(m) {}
+    NoColSelectionImpl(const MatrixType& m, bool defaultPermutation) : m_contain(m){}
+    NoColSelectionImpl(const MatrixType& m, const ColIndices & indices) : m_contain(m){}
+    NoColSelectionImpl(const MatrixType& m, ColIndices* indices) : m_contain(m){}
     MatrixContainer<MatrixType> m_contain;
 
   public:
@@ -293,7 +301,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef Matrix<Index, Dynamic, 1, 0, (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic), 1> ColIndices;
+    typedef VectorXi ColIndices;
 
     ColSelectionImpl(const MatrixType& m, bool defaultPermutation)
       : m_contain(m),owned_colIndices(),colIndices( owned_colIndices )
@@ -301,13 +309,18 @@ namespace Eigen
       if( defaultPermutation ) setColRange(0,m.cols());
     }
 
-    ColSelectionImpl(const MatrixType& m,const ColIndices indices)
+    ColSelectionImpl(const MatrixType& m,const ColIndices & indices)
       : m_contain(m),owned_colIndices(indices),colIndices( owned_colIndices )
     {}
 
     /* No copy of the indices, but a storage of the reference. */
     ColSelectionImpl(const MatrixType& m,ColIndices* indices)
       : m_contain(m),owned_colIndices(),colIndices( *indices )
+    {}
+
+    ColSelectionImpl(const ColSelectionImpl& clone )
+      : m_contain(clone.m_contain),owned_colIndices(clone.owned_colIndices)
+      , colIndices( clone.colIndicesOwned()?owned_colIndices:clone.colIndices )
     {}
 
     /* --- Kernel implementation --- */
@@ -322,7 +335,7 @@ namespace Eigen
     const Index& getColIndices(Index i) const { return colIndices[i]; }
     ColIndices& getColIndices() { return colIndices; }
     Index& getColIndices(Index i) { return colIndices[i]; }
-    bool colIndicesOwned() { return &colIndices==owned_colIndices; }
+    bool colIndicesOwned() const { return &colIndices==&owned_colIndices; }
 
     /* --- Basic setters --- */
     void setColIndices(const ColIndices& indices)
@@ -454,7 +467,7 @@ namespace Eigen
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
 
-    typedef Matrix<Index, Dynamic, 1> Indices;
+    typedef VectorXi Indices;
     typedef ei_choose_assert_selection<PermutationType> assert_index;
 
     inline SubMatrix(MatrixType& matrix )
@@ -480,27 +493,27 @@ namespace Eigen
     }
 
     /* --- By value --- */
-    inline SubMatrix(MatrixType& matrix, const Indices indices )
+    inline SubMatrix(MatrixType& matrix, const Indices & indices )
       : MemoryBase(matrix)
       , RowBase(matrix, indices)
       , ColBase(matrix, indices)
     {
       assert(assert_index::YOU_SHOULD_HAVE_ONLY_ONE_SUBINDEX);
     }
-    inline SubMatrix(MatrixType& matrix, bool defaultPermutationRows, const Indices indicesCols)
+    inline SubMatrix(MatrixType& matrix, bool defaultPermutationRows, const ColIndices & indicesCols)
       : MemoryBase(matrix)
       , RowBase(matrix,defaultPermutationRows)
       , ColBase(matrix,indicesCols)
     {
     }
-    inline SubMatrix(MatrixType& matrix, const Indices indicesRows, bool defaultPermutationCols)
+    inline SubMatrix(MatrixType& matrix, const Indices & indicesRows, bool defaultPermutationCols)
       : MemoryBase(matrix)
       , RowBase(matrix,indicesRows)
       , ColBase(matrix,defaultPermutationCols)
     {
     }
 
-    inline SubMatrix(MatrixType& matrix, const Indices indicesRows, const Indices indicesCols)
+    inline SubMatrix(MatrixType& matrix, const Indices & indicesRows, const Indices & indicesCols)
       : MemoryBase(matrix)
       , RowBase(matrix,indicesRows)
       , ColBase(matrix,indicesCols)
@@ -597,9 +610,15 @@ namespace Eigen
   };
 
 
+  typedef SubMatrix<MatrixXd> SubMatrixXd;
+  typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
+  typedef SubMatrixXd const_SubMatrixXd;
+  typedef SubVectorXd const_SubVectorXd;
 
 
-  /* ------------------------------------------------------------------------ */
+  /* --- STACK -------------------------------------------------------------- */
+  /* --- STACK -------------------------------------------------------------- */
+  /* --- STACK -------------------------------------------------------------- */
   template<typename MatrixType1,typename MatrixType2>
   class StackMatrix;
 

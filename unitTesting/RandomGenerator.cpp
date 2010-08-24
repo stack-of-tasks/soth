@@ -76,6 +76,25 @@ namespace soth
       }
   }
 
+  void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
+				 std::vector<soth::bound_vector_t> &b,
+				 const unsigned int NB_STAGE,
+				 const int RANKFREE[],
+				 const int RANKLINKED[],
+				 const int NR[],
+				 const unsigned int NC )
+  {
+    std::vector<unsigned int> RF(NB_STAGE),RL(NB_STAGE),NRV(NB_STAGE);
+    for( unsigned int i=0;i<NB_STAGE;++i )
+      {
+	RF[i]=RANKFREE[i];
+	RL[i]=RANKLINKED[i];
+	NRV[i]=NR[i];
+      }
+    generateDeficientDataSet(J,b,NB_STAGE,RF,RL,NRV,NC);
+  }
+
+
   void generateRandomProfile(unsigned int & nbStage,
 			     std::vector<unsigned int>& rankfree,
 			     std::vector<unsigned int>& ranklinked,

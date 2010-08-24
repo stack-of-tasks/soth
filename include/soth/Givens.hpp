@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/Jacobi>
 #include <soth/SubMatrix.hpp>
+#include <soth/Algebra.hpp>
 #include <vector>
 
 
@@ -127,7 +128,7 @@ namespace soth
       explicit Transpose( const Givens * g ) : nested(g) {}
       const Givens* nested;
     };
-    Transpose transpose() { return Transpose(this); }
+    Transpose transpose() const { return Transpose(this); }
   };
 
   template<typename D>
@@ -167,6 +168,8 @@ namespace soth
   {
   public:
     GivensSequence& push(const Givens& g);
+    void clear() { G.clear(); }
+    void reserve( unsigned int ncsquare ) { G.reserve(ncsquare); }
 
     // M := M*G.
     template<typename Derived>
@@ -195,7 +198,7 @@ namespace soth
       explicit Transpose( const GivensSequence * g ) : nested(g) {}
       const GivensSequence* nested;
     };
-    Transpose transpose() { return Transpose(this); }
+    Transpose transpose() const { return Transpose(this); }
   };
 
 
@@ -455,6 +458,14 @@ namespace soth
   }
 
 
+  /* --- Multiplication display -------------------------------------------- */
+  template<>
+  inline MATLAB::
+  MATLAB( unsigned int size,const GivensSequence & m1 )
+  {
+    MatrixXd Yex(size,size); Yex.setIdentity(); m1.applyThisOnTheLeft(Yex);
+    initMatrix(Yex);
+  }
 
 
 } // namespace soth

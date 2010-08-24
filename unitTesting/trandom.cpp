@@ -527,7 +527,7 @@ int main (int argc, char** argv)
   if(! DummyActiveSet::explore(J,b,solution) )
     {      exit(-1);    }
 #else
-  DummyActiveSet::detailActiveSet( J,b,solution,3045,3);
+  //  DummyActiveSet::detailActiveSet( J,b,solution,3045,3);
 #endif
 
 }

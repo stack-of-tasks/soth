@@ -22,6 +22,14 @@ namespace soth
 				 const std::vector<unsigned int> & NR,
 				 const unsigned int NC );
 
+  void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
+				 std::vector<soth::bound_vector_t> &b,
+				 const unsigned int NB_STAGE,
+				 const int RANKFREE[],
+				 const int RANKLINKED[],
+				 const int NR[],
+				 const unsigned int NC );
+
   /* Generated randomly a profile of problem, ie sizes and ranks. The ouput
    * of this functions are to be sent to the previous function. */
   void generateRandomProfile(unsigned int & nbStage,

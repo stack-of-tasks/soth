@@ -21,7 +21,6 @@ namespace soth
     ,Y(inY)
     ,nr(J.rows()),nc(J.cols())
 
-    ,freeML(nr)
     ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
 
     ,Ir(),Irn(),Iw(),Im(),Il()
@@ -35,14 +34,17 @@ namespace soth
     ,sizeM(0),sizeL(0)
 
     ,activeSet(nr,Iw)
+    ,freeML(nr)
 
     ,Ld_(nr,nr),Ldwork_(nr,nr),edwork_(nr)
     ,Ld(Ld_,false,false),Ldwork(Ldwork_,&Ld.getRowIndices(),&Ld.getColIndices())
     ,edwork(edwork_,&Ld.getRowIndices())
+    ,Wd()
     ,dampingFactor( DAMPING_FACTOR )
 
-    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
+    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false)
   {
+    Wd.reserve( int(nr*(nr+1)/2) );
     assert( int(bounds.size()) == J.rows() );
   }
 
@@ -59,7 +61,13 @@ namespace soth
     assert( !isReset );
     // TODO: disable the checks on release.
     activeSet.reset();
-    isReset=true; isInit = false; isOptimumCpt = false; isLagrangeCpt = false;
+    isReset=true; isInit = false; isOptimumCpt = false;
+    isLagrangeCpt = false; isDampCpt =false;
+
+#ifndef NDEBUG
+    ML_ = MatrixXd::Ones(nr,nc);
+#endif
+
     sotDEBUG(45) << "# Out }" << name << endl;
   }
   //    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
@@ -144,7 +152,7 @@ namespace soth
     assert( Yinit.getRank() >= 0 && Yinit.getRank()<(int)nc );
     const unsigned int previousRank = Y.getRank();
 
-    W_.setIdentity(); // TODO: usefull here? could be done before 2. ?
+    isWIdenty = true;
 
     /* Set the size of M and L. L is supposed full rank yet. */
     /* M=submatrix(ML,1:previousRank); L=submatrix(ML,previousRank+1:end); */
@@ -159,8 +167,7 @@ namespace soth
     if( (L.cols() == 0)||(L.rows()==0) )
     {
       sotDEBUG(5) << "col size of L is null, skip the end of initialization" << endl;
-      L.setRowIndices(VectorXi());
-      L.setColIndices(VectorXi());
+      L.setRowIndices(VectorXi());      L.setColIndices(VectorXi());
       sizeL=0;
       return;
     }
@@ -185,7 +192,6 @@ namespace soth
 
     /* Artificial permutation to ensure that W == I at this point. */
     W.setRowIndices(P);
-    sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
     sotDEBUG(5) << "e0 = " << (MATLAB)e << std::endl;
 
     /* 2. Left-side rotation to nullify the rank-def lines of L0: L0 == W.[0;L]. */
@@ -197,7 +203,7 @@ namespace soth
     assert( mQR.rank()>=0 && mQR.rank()<=int(sizeL) );
     const unsigned int rank = mQR.rank();
 
-    //conditionalWinit( sizeL==rank );
+    conditionalWinit( sizeL==rank );
     while( sizeL>rank )
       {
 	/* Nullify the last line of L, which is of size rank. */
@@ -233,6 +239,7 @@ namespace soth
   void Stage::
   nullifyLineDeficient( const Index row, const Index in_r )
   {
+    assert(! isWIdenty );
     /*
      * Jd = L.row(r);
      * foreach i in rank:-1:1
@@ -247,18 +254,15 @@ namespace soth
     for( Index i=r-1;i>=0;--i )               // PSEUDOZEROS
       {
 	Givens G1(L.col(i),i,row);
-	//SubMatrixXd Mr(ML_,L.getRowIndices(),M.getColIndices());
-	//SubMatrixXd Wr(W_,W.getRowIndices(),L.getRowIndices());
 
 	G1.applyTransposeOnTheRight(Mr);
 	G1.applyTransposeOnTheRight(L,r);
 	G1.applyThisOnTheLeft(Wr);
-
-	sotDEBUG(15) << "W = " << (MATLAB)W << std::endl;
-	sotDEBUG(15) << "L = " << (MATLAB)L << std::endl;
       }
-
     removeARowFromL( row );
+
+    sotDEBUG(15) << "W = " << MATLAB(W,isWIdenty) << std::endl;
+    sotDEBUG(15) << "L = " << (MATLAB)L << std::endl;
   }
 
 
@@ -266,6 +270,7 @@ namespace soth
   void Stage::
   removeARowFromL( unsigned int row )
   {
+    assert(! isWIdenty );
     L.removeRow(row);
     M.pushRowFront(M.removeRow(row+sizeN()));
     sizeL--;
@@ -337,7 +342,7 @@ namespace soth
      *   Unused << r;
      *   return res;
      */
-    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
+    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
     sotDEBUG(5) << " --- DOWNDATE ----------------------------" << std::endl;
     unsigned int colToRemove = nullifyACrossFromW( position );
     bool rankDef = int(colToRemove) >= sizeN();
@@ -350,16 +355,14 @@ namespace soth
 	regularizeHessenberg(Ydown);
 	L.removeCol(sizeL);
 
-	sotDEBUG(5) << "W2 = " << (MATLAB)W << std::endl;
+	sotDEBUG(5) << "W2 = " << MATLAB(W,isWIdenty) << std::endl;
 	sotDEBUG(5) << "M2 = " << (MATLAB)M << std::endl;
 	sotDEBUG(5) << "L2 = " << (MATLAB)L << std::endl;
-
 	return false;
       }
     else
       {
 	sotDEBUG(5) << "Nothing to do." << std::endl;
-
 	return true;
       }
   }
@@ -368,7 +371,7 @@ namespace soth
   bool Stage::propagateDowndate( GivensSequence & Ydown,
 				 bool decreasePreviousRank )
   {
-    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
+    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
     /*
      * M=M*Ydown;
      * if(! decreasePreviousRank ) return true;
@@ -391,7 +394,7 @@ namespace soth
       }
     if( decreasePreviousRank ) return true;
 
-    sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
+    sotDEBUG(5) << "W0 = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
     L.pushColFront( M.popColBack() );
@@ -421,7 +424,7 @@ namespace soth
 
 	    sotDEBUG(5) << "M = " << (MATLAB)M << std::endl;
 	    sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
-	    sotDEBUG(5) << "W = " << (MATLAB)W << std::endl;
+	    sotDEBUG(5) << "W = " << MATLAB(W,isWIdenty) << std::endl;
 	    sotDEBUG(5) << "sizeL = " << sizeL << std::endl;
 	    return true;
 	  }
@@ -443,9 +446,12 @@ namespace soth
   unsigned int Stage::
   nullifyACrossFromW( const  unsigned int row )
   {
-    sotDEBUG(5) << "W0 = " << (MATLAB)W << std::endl;
+    sotDEBUG(5) << "W0 = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
+
+    if( isWIdenty ) /* Nothing to do: there is already a 1 in W(row,row). */
+      { return row; }
 
     /* Search for the first non-zero of W(row,:). */
     int col = 0;
@@ -472,7 +478,7 @@ namespace soth
 	  }
       }
 
-    sotDEBUG(15) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(15) << "W = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(25) << "M = " << (MATLAB)M << std::endl;
     sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(5) << "colToRemove = " << col << endl;
@@ -484,7 +490,7 @@ namespace soth
   void Stage::
   removeACrossFromW( const unsigned int & row, const unsigned int & col  )
   {
-    sotDEBUG(45) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(45) << "W = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(45) << "Wcidx = " << (MATLAB)W.getColIndices() << std::endl;
     sotDEBUG(45) << "Wridx = " << (MATLAB)W.getRowIndices() << std::endl;
 
@@ -496,7 +502,7 @@ namespace soth
     if( rowRankInL>=0 ) { L.removeRow(rowRankInL); sizeL--; }
     freeML.put(wcoldown);
 
-    sotDEBUG(25) << "W = " << (MATLAB)W << std::endl;
+    sotDEBUG(25) << "W = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(25) << "M = " << (MATLAB)M << std::endl;
     sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
     sotDEBUG(50) << "Irn = " << (MATLAB)Irn << std::endl;
@@ -535,7 +541,7 @@ namespace soth
   update( const ConstraintRef & cst,GivensSequence & Yup )
   {
     sotDEBUG(5) << " --- UPDATE ----------------------------" << std::endl;
-    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
+    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -592,7 +598,6 @@ namespace soth
       { /* Rank increase: remove the tail of JuY. */
 	for( Index i=rankJ-1;i>int(sizeM+sizeL);--i )
 	  {
-	    sotDEBUG(45) << "% Right-resorb " << i << endl;
 	    Givens G1(JupY,i-1,i,true);
 	    Yup.push(G1);
 	  }
@@ -601,6 +606,7 @@ namespace soth
       }
     else
       { /* No rank increase: regularize. */
+	conditionalWinit(false);
 	if( rankJ>sizeM )
 	  {
 	    addARow(wcolup);
@@ -612,7 +618,7 @@ namespace soth
 	  }
       }
 
-    sotDEBUG(5) << "W = " << (MATLAB)W << endl;
+    sotDEBUG(5) << "W = " << MATLAB(W,isWIdenty) << endl;
     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
     return rankJ;
@@ -623,7 +629,7 @@ namespace soth
   propagateUpdate( GivensSequence & Ydown,
 		   unsigned int decreasePreviousRank )
   {
-    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false;
+    assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
     /*
      * M=M*Ydown;
      * if(! decreasePreviousRank ) return true;
@@ -670,6 +676,7 @@ namespace soth
       }
     else if(! defDone )
       { /* Rank decrease ongoing... */
+	conditionalWinit(false);
 	const int rdef = decreasePreviousRank-sizeM;
 	assert(rdef>=0 && rdef<int(sizeL) );
 	nullifyLineDeficient( rdef,rdef );
@@ -685,13 +692,20 @@ namespace soth
   void Stage::
   addARow( const Index & wcolup,bool deficient )
   {
-    sotDEBUG(5) << "W0 = " << (MATLAB)W << endl;
-    const Index & wrowup = W.getRowIndices()(sizeA()-1);
+    sotDEBUG(5) << "W0 = " << MATLAB(W,isWIdenty) << endl;
 
-    /* clean W. */
-    W_.row( wrowup ) .setZero();
-    W_.col( wcolup ) .setZero();
-    W_(wrowup,wcolup ) = 1.0;
+    if(! isWIdenty )
+      {
+	/* clean W. */
+	// const Index last = W.cols()-1;
+	// W.row(last).setZero();
+	// W.col(last).setZero();
+	// W(last,last) = 1.0;
+	const Index & wrowup = W.getRowIndices(sizeA()-1);
+	W_.row( wrowup ) .setZero();
+	W_.col( wcolup ) .setZero();
+	W_(wrowup,wcolup ) = 1.0;
+      }
 
     /* Increase M, L and W. */
     M.pushRowBack( wcolup );
@@ -700,9 +714,9 @@ namespace soth
 	L.pushRowBack( wcolup );	sizeL++;
       }
 
-     sotDEBUG(5) << "W = " << (MATLAB)W << endl;
-     sotDEBUG(5) << "M = " << (MATLAB)M << endl;
-     sotDEBUG(5) << "L = " << (MATLAB)L << endl;
+    sotDEBUG(5) << "W = " << MATLAB(W,isWIdenty) << endl;
+    sotDEBUG(5) << "M = " << (MATLAB)M << endl;
+    sotDEBUG(5) << "L = " << (MATLAB)L << endl;
   }
 
   /* --- SOLVER ------------------------------------------------------------- */
@@ -712,8 +726,7 @@ namespace soth
   /* --- DIRECT ------------------------------------------------------------- */
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::
-  computeSolution( const VectorXd& Ytu, VectorXd& Ytdu,
-		   bool initialization, bool useDamp )
+  computeSolution( const VectorXd& Ytu, VectorXd& Ytdu,bool initialization ) const
   {
     assert( isInit );
     if (sizeL==0)
@@ -728,10 +741,12 @@ namespace soth
 
     sotDEBUG(25) << "Ytu = " << (MATLAB)Ytu << std::endl;
     sotDEBUG(25) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
-    sotDEBUG(45) << "Wr = " << (MATLAB)Wr << std::endl;
+    if(! isWIdenty ) { sotDEBUG(45) << "Wr = " << (MATLAB)Wr << endl; }
+    else             { sotDEBUG(45) << "W = " << MATLAB(W,isWIdenty) << endl; }
 
     /* TODO: when L0 is full rank, a permuation of e should be enough (W=Id). */
-    We = Wr.transpose()*e;
+    if( isWIdenty ) We = e;
+    else            We = Wr.transpose()*e;
     sotDEBUG(25) << "Wre = " << (MATLAB)We << std::endl;
     if(! initialization )
       {
@@ -745,9 +760,17 @@ namespace soth
      * stage now. */
     sotDEBUG(5) << "Wre_Lu_Mru_Mrdu = " << (MATLAB)We << std::endl;
 
-    if( useDamp )
+    if( isDampCpt )
       {
-	damp( We );
+	if(! initialization )
+	  {
+	    const VectorBlock<VectorXd> ulprec = Ytu.segment( sizeM,sizeL );
+	    applyDampingTranspose( We,ulprec );
+	  }
+	else
+	  {
+	    applyDampingTranspose( We );
+	  }
 	soth::solveInPlaceWithLowerTriangular(Ld,We);
       }
     else
@@ -759,36 +782,30 @@ namespace soth
   }
 
 
-  /* Compute the damped triangle Ld so that [L;damp.I] = Q[L0;0],
-   * and apply the same transformation to the input vector x:
-   *  x := Q'x.
+  /* Compute the damped triangle Ld so that [L;damp.I] = Wd[L0;0],
+   * and store the transformation.
    */
-  template< typename VectorDerived >
   void Stage::
-  damp( MatrixBase<VectorDerived>& x,const double & dampArg  )
+  damp( void  )
   {
-    typedef MatrixBase<VectorDerived> VectorBase;
-    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
-    assert( x.size() == L.cols() && x.size() == L.rows() );
+    assert(! isDampCpt );
     if (sizeL==0)
       {
 	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
-	return;
+	isDampCpt=true; return;
       }
 
-    const double damp = (dampArg<0)?dampingFactor:dampArg;
+    const double damp = dampingFactor;
     Ld.setColRange(0,sizeL);
     Ld.setRowRange(0,sizeL);
+    Wd.clear();
 
     Ld = L;
     Ldwork = MatrixXd::Identity(sizeL,sizeL)*damp;
-    edwork.setZero();
 
     StackMatrix<SubMatrixXd,SubMatrixXd> Lw(Ld,Ldwork);
-    StackMatrix<VectorDerived,SubVectorXd> ew(x,edwork);
 
     sotDEBUG(45) << "Ld0 = " << (MATLAB)Lw << endl;
-    sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
 
     for( unsigned int r=0;r<sizeL;++r )
       {
@@ -796,18 +813,97 @@ namespace soth
     	  {
     	    Givens G1( Lw.col(c),c,sizeL+r );
     	    G1.transpose() >> Lw;
-    	    G1.transpose() >> ew;
+	    Wd.push(G1);
     	  }
       }
 
     sotDEBUG(55) << "Ld1 = " << (MATLAB)Lw << endl;
-    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
-
     sotDEBUG(5) << "Ld = " << (MATLAB)Ld << endl;
+    sotDEBUG(5) << "Wd = " << MATLAB(sizeL*2,Wd) << endl;
+    isDampCpt=true;
+    return;
+  }
+
+  /* Compute x := Wd x, with Wd the rotation so that
+   * [L;I] = Wd [L0;0].
+   */
+  template< typename VectorDerived >
+  void Stage::
+  applyDamping( MatrixBase<VectorDerived>& x  ) const
+  {
+    typedef MatrixBase<VectorDerived> VectorBase;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
+    assert( isDampCpt );
+    assert( x.size() == L.cols() && x.size() == L.rows() );
+    if (sizeL==0)
+      {
+	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
+	return;
+      }
+
+    edwork.setZero();
+    StackMatrix<VectorDerived,SubVectorXd> ew(x,edwork);
+    sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    Wd >> ew;
+
+    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
     sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
     return;
   }
 
+  /* Compute x := Wd'x, with Wd the rotation so that
+   * [L;I] = Wd [L0;0].
+   */
+  template< typename VectorDerived >
+  void Stage::
+  applyDampingTranspose( MatrixBase<VectorDerived>& x  ) const
+  {
+    typedef MatrixBase<VectorDerived> VectorBase;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
+    assert( isDampCpt );
+    assert( x.size() == L.cols() && x.size() == L.rows() );
+    if (sizeL==0)
+      {
+	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
+	return;
+      }
+
+    edwork.setZero();
+    StackMatrix<VectorDerived,SubVectorXd> ew(x,edwork);
+    sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    Wd.transpose() >> ew;
+
+    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
+    sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
+    return;
+  }
+
+  template< typename VD1,typename VD2 >
+  void Stage::
+  applyDampingTranspose( MatrixBase<VD1>& x,const MatrixBase<VD2>& y  ) const
+  {
+    typedef MatrixBase<VD1> VectorBase1;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase1);
+    typedef MatrixBase<VD1> VectorBase2;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase2);
+    assert( isDampCpt );
+    assert( x.size() == L.cols() && x.size() == L.rows() );
+    assert( y.size() == L.cols() && y.size() == L.rows() );
+    if (sizeL==0)
+      {
+	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
+	return;
+      }
+
+    edwork=y*dampingFactor;
+    StackMatrix<VD1,SubVectorXd> ew(x,edwork);
+    sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    Wd.transpose() >> ew;
+
+    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
+    sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
+    return;
+  }
 
   /* --- INDIRECT ----------------------------------------------------------- */
 
@@ -821,7 +917,8 @@ namespace soth
     assert( MLYtu.size() == int(sizeA()) );
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<D>);
 
-    err.noalias() =  W*MLYtu-e; // DEBUG  e-W*MLYtu
+    if( isWIdenty ) err.noalias() = MLYtu-e;
+    else            err.noalias() =  W*MLYtu-e;
   }
 
   /* Compute W'Ju = MLYtu = M*Ytu.head + L*Ytu.tail.
@@ -834,11 +931,7 @@ namespace soth
     MLYtu.tail(sizeL).noalias()
       += getLtri()*Ytu.segment(sizeM, sizeL);
 
-    sotDEBUG(45) << "Ytu = " << (MATLAB)Ytu << endl;
-    sotDEBUG(45) << "M = " << (MATLAB)M << endl;
-    sotDEBUG(45) << "L = " << (MATLAB)(MatrixXd)getLtri() << endl;
     sotDEBUG(45) << "MLYtu = " << (MATLAB)MLYtu << endl;
-
   }
 
   /* err = Ju-e = W [M L 0] Y^u - e
@@ -876,7 +969,9 @@ namespace soth
 
 
   /* Compute J' (Ju-e) in Y base:
-   * Ytrho = -Y'J'(Ju-e) = [ M L ]' ( W'e - [M L] Ytu ). */
+   * Ytrho = -Y'J'(Ju-e) = [ M L ]' ( W'e - [M L] Ytu ).
+   * If damped, J~[J;damp*I] => Ytrho = Ytrho - damp^2*Ytu.
+   */
   void Stage::
   computeRho(const VectorXd& Ytu, VectorXd& Ytrho, bool inLambda )
   {
@@ -893,7 +988,9 @@ namespace soth
     sotDEBUG(5) << "WtJu = " << (MATLAB)MLYtu << endl;
 
     /* MLYtu := W'e - [ML] Yt u . */
-    MLYtu *= -1; MLYtu.noalias() += W.transpose()*e;
+    MLYtu *= -1;
+    if( isWIdenty ) MLYtu.noalias() += e;
+    else            MLYtu.noalias() += W.transpose()*e;
     sotDEBUG(5) << "Wte_Ju = " << (MATLAB)MLYtu << endl;
 
     /* TODO: W'(e-Ju) is null on the Ir part.
@@ -905,6 +1002,14 @@ namespace soth
       = getLtri().transpose()*MLYtu.tail(sizeL);
     Ytrho.tail(nc-sizeM-sizeL).setZero();
     /* TODO: nobody ever will access the tail, could be neglected. */
+    sotDEBUG(5) << "rho_nodamp = " << (MATLAB)Ytrho << endl;
+
+    if( isDampCpt )
+      {
+	Ytrho.segment(sizeM,sizeL).noalias()
+	  -= (dampingFactor*dampingFactor)*Ytu.segment(sizeM, sizeL);
+      }
+
   }
 
 
@@ -928,10 +1033,18 @@ namespace soth
     VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
 
-    solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+    if( isDampCpt )
+      {
+	solveInPlaceWithUpperTriangular(Ld.transpose(), rho_i);
+	applyDamping( rho_i );
+      }
+    else
+      { solveInPlaceWithUpperTriangular(L.transpose(), rho_i); }
     sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
 
-    l.noalias() = W.rightCols(sizeL) * rho_i;
+
+    if( isWIdenty ) l.noalias() = rho_i;
+    else            l.noalias() = W.rightCols(sizeL) * rho_i; // TODO: Wr
     if( sizeM>0 )
       {
 	VectorBlock<VectorXd> rho_under = rho.head(sizeM);
@@ -993,10 +1106,13 @@ namespace soth
 	      }
 	    else
 	      {
-		sotDEBUG(5) << "Violation Ju and Ju+du at " <<name <<" "
-			    << ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-		taumax=0; cstmax = std::make_pair(i,bdtype);
-		return false;
+		if(taumax==1)
+		  {
+		    sotDEBUG(5) << "Violation Ju and Ju+du at " <<name <<" "
+				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+		    taumax=1-EPSILON; cstmax = std::make_pair(i,bdtype);
+		    res=false;
+		  }
 	      }
 	  }
       }
@@ -1113,11 +1229,13 @@ namespace soth
 	return;
       }
     WMLY.resize(sizeA(),nc); WMLY.setZero();
-    WMLY.block(0,0,sizeA(),sizeM) = W*M;
+    if( isWIdenty ) WMLY.block(0,0,sizeA(),sizeM) = M;
+    else            WMLY.block(0,0,sizeA(),sizeM) = W*M;
 
     sotDEBUG(25) << "UL = " << (MATLAB)WMLY.block(0,sizeM,sizeA(),sizeL) << std::endl;
-    sotDEBUG(25) << "W = " << (MATLAB)W << std::endl;
-    sotDEBUG(25) << "U = " << (MATLAB)W.block(0,sizeN(),sizeA(),sizeL) << std::endl;
+    sotDEBUG(25) << "W = " << MATLAB(W,isWIdenty) << std::endl;
+    if(! isWIdenty )
+      { sotDEBUG(25) << "U = " << (MATLAB)Wr << endl; }
     sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
 
     sotDEBUG(25) << "n = " << sizeN() <<" a = "<< sizeA()
@@ -1127,8 +1245,10 @@ namespace soth
 
     if (sizeL != 0)
     {
+      // TODO: Wblock is Wr.
       sotDEBUG(25) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
-      WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
+      if( isWIdenty ) WMLY.block(0,sizeM,sizeA(),sizeL) = L;
+      else WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
     }
 
     sotDEBUG(25) << "WML = " << (MATLAB)WMLY << std::endl;
@@ -1157,9 +1277,9 @@ namespace soth
     // if( sizeA() ) vres = (e-eactive(ea_)).norm()<=EPSILON;
     // else vres = (e.size()==eactive(ea_).size() );
 
-    sotDEBUG(15) << "e="<<(MATLAB)e << endl;
-    sotDEBUG(15) << "ea="<<(MATLAB)eactive(ea_) << endl;
-    sotDEBUG(5) <<"% e: Recomposition  " << ((vres)?"OK.":"wrong.") << std::endl;
+    // sotDEBUG(15) << "e="<<(MATLAB)e << endl;
+    // sotDEBUG(15) << "ea="<<(MATLAB)eactive(ea_) << endl;
+    // sotDEBUG(5) <<"% e: Recomposition  " << ((vres)?"OK.":"wrong.") << std::endl;
 
     return res&&vres;
   }
@@ -1220,9 +1340,11 @@ namespace soth
 
   /* Return a sub vector containing the active rows of e, in the
    * same order as given by W. */
-  SubMatrix<VectorXd,RowPermutation> Stage::
+  SubVectorXd Stage::
   eactive( VectorXd& e_ ) const
   {
+    //    assert( false && "WORK IN PROGRESS" );
+
     e_.resize(nr); e_.setConstant(-1.11111);
 
     for( unsigned int cst=0;cst<nr;++cst )
@@ -1235,9 +1357,13 @@ namespace soth
 	  }
       }
 
-    return  SubVectorXd(e_,Iw);
+     return SubVectorXd(e_,Iw);
   }
-  VectorXd Stage::eactive() const  { VectorXd e_; return eactive(e_);  }
+  VectorXd Stage::eactive() const
+  {
+    VectorXd e_;
+    return eactive(e_);
+  }
 
   void Stage::
   show( std::ostream& os, unsigned int stageRef, bool check ) const
@@ -1258,7 +1384,7 @@ namespace soth
     os << "a{"<<stageRef<<"} = " << activeSet << std::endl;
     os << "J{"<<stageRef<<"} = " << (MATLAB)Jactive() << std::endl;
     os << "e{"<<stageRef<<"} = " << (MATLAB)e << std::endl;
-    os << "W{"<<stageRef<<"} = " << (MATLAB)W << std::endl;
+    os << "W{"<<stageRef<<"} = " << MATLAB(W,isWIdenty) << std::endl;
     os << "M{"<<stageRef<<"} = " << (MATLAB)M << std::endl;
     os << "L{"<<stageRef<<"} = " << (MATLAB)L << std::endl;
 
@@ -1271,9 +1397,9 @@ namespace soth
         if((Jrec-Jactive()).norm()>1e-6)
 	  os << "Jrec{"<<stageRef<<"} = " << (MATLAB)Jrec << std::endl;
         else os <<"% Recomposition OK. " << std::endl;
-        if((e-eactive()).norm()<=1e-6)
+	if((e-eactive()).norm()<=1e-6)
 	  sotDEBUG(5) <<"% Recomposition e OK. " << std::endl;
-        else os << "% Recomposition e not OK. " << std::endl;
+	else os << "% Recomposition e not OK. " << std::endl;
       }
       else
       {
