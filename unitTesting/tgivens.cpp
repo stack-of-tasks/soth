@@ -107,8 +107,6 @@ void testSequenceSub()
   MatrixXd Msav = M;
   GivensSequence U,V;
 
-  const double n0 = M.col(0).norm();
-
   Givens G1(M.col(0), 2, 3);
   G1.applyTransposeOnTheRight(M);
   U.push(G1);
@@ -120,7 +118,6 @@ void testSequenceSub()
   Givens G3(M(0,0), M(1,0), 0, 1);
   G3.applyTransposeOnTheRight(M);
   U.push(G3);
-
 
   Givens Gr;
   for (int i=M.cols()-1; i>1; --i)

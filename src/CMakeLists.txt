@@ -17,6 +17,7 @@ SET(${PROJECT_NAME}_SRC
     Givens.cpp
     debug.cpp
     Stage.cpp
+    BasicStage.cpp
 )
 
 

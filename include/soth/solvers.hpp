@@ -1,3 +1,6 @@
+#ifndef __SOTH_SOLVERS__
+#define __SOTH_SOLVERS__
+
 #include <Eigen/Core>
 
 namespace soth
@@ -53,3 +56,7 @@ namespace soth
     rhs[0] /= lhs(0,0);
   }
 }
+
+
+#endif // #ifndef __SOTH_SOLVERS__
+
