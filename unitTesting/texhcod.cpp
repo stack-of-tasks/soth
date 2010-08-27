@@ -166,7 +166,7 @@ int main (int argc, char** argv)
     hcod.initialize();
 
     for( int i=2;i<NR[2];++i )
-      { hcod.update( 2,std::make_pair(i,soth::Bound::BOUND_INF) ); }
+      { hcod.update( 2,ConstraintRef(i,soth::Bound::BOUND_INF) ); }
 
     exitOk&=hcod.testRecomposition(&std::cout);
     //    if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
@@ -263,7 +263,7 @@ int main (int argc, char** argv)
     int rank=hcod.rank();
     for( int i=0;i<NB_STAGE;++i )
       {
-	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==++rank );
      }
@@ -298,7 +298,7 @@ int main (int argc, char** argv)
     for( int i=0;i<NB_STAGE;++i )
       {
 	const int rankStage = hcod[i].rank();
-	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==rank );
   	assert( rankStage == hcod[i].rank() );
@@ -349,7 +349,7 @@ int main (int argc, char** argv)
     for( int i=0;i<NB_STAGE-1;++i )
       {
 	const int rankStage = hcod[i].rank();
-	hcod.update( i,std::make_pair(2,soth::Bound::BOUND_INF) );
+	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==rank );
 	assert( rankStage+1 == hcod[i].rank() );
@@ -387,7 +387,7 @@ int main (int argc, char** argv)
     const int rank=hcod.rank();
     const int rankStage = hcod[LS].rank();
     assert(rank==NC);
-    hcod.update( LS,std::make_pair(LR,soth::Bound::BOUND_INF) );
+    hcod.update( LS,ConstraintRef(LR,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==rank );
     assert( rankStage == hcod[LS].rank() );
@@ -423,7 +423,7 @@ int main (int argc, char** argv)
     const int rank=hcod.rank();
     const int rankStage = hcod[LS].rank();
     assert(rank==NC);
-    hcod.update( LS,std::make_pair(LR,soth::Bound::BOUND_INF) );
+    hcod.update( LS,ConstraintRef(LR,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==rank );
     assert( rankStage == hcod[LS].rank() );
@@ -469,27 +469,27 @@ int main (int argc, char** argv)
     assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==2 );
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
-    /*2.a*/hcod.update( 0,std::make_pair(2,soth::Bound::BOUND_INF) );
+    /*2.a*/hcod.update( 0,ConstraintRef(2,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==6 );       assert( hcod[0].rank()==3 );
     assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==1 );
 
-    /*2.b*/hcod.update( 0,std::make_pair(3,soth::Bound::BOUND_INF) );
+    /*2.b*/hcod.update( 0,ConstraintRef(3,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==6 );       assert( hcod[0].rank()==4 );
     assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==0 );
 
-    /*2.c*/hcod.update( 0,std::make_pair(4,soth::Bound::BOUND_INF) );
+    /*2.c*/hcod.update( 0,ConstraintRef(4,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==6 );       assert( hcod[0].rank()==5 );
     assert( hcod[1].rank()==1 );    assert( hcod[2].rank()==0 );
 
-    /*2.d*/hcod.update( 0,std::make_pair(5,soth::Bound::BOUND_INF) );
+    /*2.d*/hcod.update( 0,ConstraintRef(5,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==6 );       assert( hcod[0].rank()==6 );
     assert( hcod[1].rank()==0 );    assert( hcod[2].rank()==0 );
 
-    /*2.e*/hcod.update( 0,std::make_pair(6,soth::Bound::BOUND_INF) );
+    /*2.e*/hcod.update( 0,ConstraintRef(6,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==7 );       assert( hcod[0].rank()==7 );
     assert( hcod[1].rank()==0 );    assert( hcod[2].rank()==0 );
@@ -525,7 +525,7 @@ int main (int argc, char** argv)
     assert( hcod.rank()==3 ); assert(hcod[0].rank()==3); assert(hcod[1].rank()==0);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
-    hcod.update( 1,std::make_pair(0,soth::Bound::BOUND_INF) );
+    hcod.update( 1,ConstraintRef(0,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==4 ); assert(hcod[0].rank()==3); assert(hcod[1].rank()==1);
 
@@ -533,7 +533,7 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==3 ); assert(hcod[0].rank()==3); assert(hcod[1].rank()==0);
 
-    hcod.update( 1,std::make_pair(0,soth::Bound::BOUND_INF) );
+    hcod.update( 1,ConstraintRef(0,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==4 ); assert(hcod[0].rank()==3); assert(hcod[1].rank()==1);
 
@@ -564,7 +564,7 @@ int main (int argc, char** argv)
       {
 	assert(hcod.rank()==10);          assert( hcod[0].rank()==i );
 	assert( hcod[1].rank()==5 );    assert( hcod[2].rank()==5-i );
-	hcod.update( 0,std::make_pair(i,soth::Bound::BOUND_INF) );
+	hcod.update( 0,ConstraintRef(i,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert(exitOk);
       }
@@ -961,7 +961,7 @@ int main (int argc, char** argv)
 
     for( int s=0;s<NB_STAGE;++s )
       for( int i=0;i<NR[s];++i )
-	hcod.update( s,std::make_pair(i,soth::Bound::BOUND_INF) );
+	hcod.update( s,ConstraintRef(i,soth::Bound::BOUND_INF) );
 
     assert( hcod.rank() ); assert( hcod[0].rank()==2 );
     assert( hcod[1].rank()==2 ); assert( hcod[2].rank()==3 );

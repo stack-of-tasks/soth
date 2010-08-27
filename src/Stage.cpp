@@ -535,6 +535,7 @@ namespace soth
   {
     sotDEBUG(5) << " --- UPDATE ----------------------------" << std::endl;
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
+    assert( (cst.type==Bound::BOUND_SUP)||(cst.type==Bound::BOUND_INF) );
     /*
      * Inew = Unused.pop();
      * Row JupY = row(Inew);
@@ -557,14 +558,13 @@ namespace soth
      *   nullifyLineDeficient(Inew);
      *   return true;
      */
-    const Index wrowup = activeSet.activeRow( cst.first,cst.second );
+    const Index wrowup = activeSet.activeRow( cst );
     sotDEBUG(45) << "Wcidx = " << (MATLAB)W.getColIndices() << endl;
     sotDEBUG(45) << "Wridx = " << (MATLAB)W.getRowIndices() << endl;
 
     /* Add a coefficient to e. */
-    assert( (cst.second==Bound::BOUND_SUP)||(cst.second==Bound::BOUND_INF) );
-    double sign = (cst.second==Bound::BOUND_SUP)?+1:-1;
-    e[wrowup] = sign*bounds[cst.first].getBound(cst.second);
+    double sign = cst.sign();
+    e[wrowup] = sign*bounds[cst.row].getBound(cst.type);
     sotDEBUG(5) << "cst=" << cst << "  (" << sign << ")." << endl;
 
     /* Choose the first available row in ML. */
@@ -574,7 +574,7 @@ namespace soth
 
     /* Add a line to ML. */
     RowML JupY = ML_.row(wcolup);
-    JupY = sign*J.row(cst.first); Y.applyThisOnTheLeft(JupY);
+    JupY = sign*J.row(cst.row); Y.applyThisOnTheLeft(JupY);
     sotDEBUG(5) << "JupY = " << (MATLAB)JupY << endl;
 
     /* Determine the rank on the new line. */
@@ -1093,7 +1093,7 @@ namespace soth
 		    sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
 				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 		    res=false;
-		    taumax=btau; cstmax = std::make_pair(i,bdtype);
+		    taumax=btau; cstmax = ConstraintRef(i,bdtype);
 		  }
 	      }
 	    else
@@ -1102,7 +1102,7 @@ namespace soth
 		  {
 		    sotDEBUG(5) << "Violation Ju and Ju+du at " <<name <<" "
 				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-		    taumax=1-EPSILON; cstmax = std::make_pair(i,bdtype);
+		    taumax=1-EPSILON; cstmax = ConstraintRef(i,bdtype);
 		    res=false;
 		  }
 	      }
@@ -1286,8 +1286,8 @@ namespace soth
   {
     assert( row<sizeA() );
     ConstraintRef res;
-    res.first = activeSet.mapInv(row);
-    res.second = activeSet.whichBound( res.first );
+    res.row = activeSet.mapInv(row);
+    res.type = activeSet.whichBound( res.row );
     return res;
   }
   bool Stage::

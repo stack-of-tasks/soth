@@ -33,6 +33,7 @@ namespace soth
     /* Active the given constraint at any free row of ML, and return the
      * position of the selected free row. */
     unsigned int          activeRow( unsigned int ref, Bound::bound_t type );
+    inline unsigned int   activeRow( const ConstraintRef& cst ) { return activeRow( cst.row,cst.type ); }
     /* Unactive the constraint at line <row> of ML and frees the corresponding line. */
     void                  unactiveRow( unsigned int row );
     /* Pass the constraint to a twin mode. */
@@ -66,8 +67,6 @@ namespace soth
     /* DEPRECATED*/void   permuteRows( const VectorXi & P );
 
   protected: /* TODO: change that for using the ConstraintRef def in Bound.hpp. */
-    typedef std::pair<Bound::bound_t,int> cstref_t;
-    typedef std::vector<cstref_t> cstref_vector_t;
     typedef std::vector<unsigned int> mapinv_vector_t;
   protected:
     cstref_vector_t cstMap;
@@ -103,6 +102,7 @@ namespace soth
   public:
     void                  reset( void );
     unsigned int          activeRow( unsigned int ref, Bound::bound_t type );
+    inline unsigned int   activeRow( const ConstraintRef& cst ) { return activeRow( cst.row,cst.type ); }
     void                  unactiveRow( unsigned int row );
     unsigned int          mapInv( unsigned int row ) const;
     unsigned int          map( unsigned int ref ) const;
@@ -124,7 +124,7 @@ namespace soth
     using AS::            freeze;
     using AS::            sign;
 
-  protected: /* Protected for clarity. */
+  protected: /* Forbidden to avoid ambiguities on which 'row' the arg refers to. */
     void                  active( unsigned int ref, Bound::bound_t type, unsigned int row );
     unsigned int          pushIndirectBack( unsigned int rowup );
 

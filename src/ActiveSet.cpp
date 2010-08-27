@@ -17,7 +17,7 @@ namespace soth
   void ActiveSet::
   reset( void )
   {
-    std::fill( cstMap.begin(),cstMap.end(),cstref_t(Bound::BOUND_NONE,-1) );
+    std::fill( cstMap.begin(),cstMap.end(),CONSTRAINT_VOID );
     std::fill( cstMapInv.begin(),cstMapInv.end(),size() );
     std::fill( freerow.begin(),freerow.end(),true );
     std::fill( freezed.begin(),freezed.end(),false );
@@ -34,13 +34,14 @@ namespace soth
   active( unsigned int ref, Bound::bound_t type, unsigned int row )
   {
     assert( ref<size() );
-    assert( (cstMap[ref].first == Bound::BOUND_NONE)&&"Constraint has not been properly unactivated." );
+    assert( (cstMap[ref].type == Bound::BOUND_NONE)
+	    &&"Constraint has not been properly unactivated." );
     assert( row<size() );
     assert( freerow[row] );
     assert( cstMapInv[row]==size() );
     assert( type!=Bound::BOUND_NONE );
 
-    cstMap[ref]=cstref_t(type,row);
+    cstMap[ref]=ConstraintRef(row,type);
     cstMapInv[row]=ref;
     freerow[row]=false; nba++;
   }
@@ -64,9 +65,9 @@ namespace soth
 
     const unsigned int & cst = cstMapInv[row];
     assert( cst<size() );
-    assert( cstMap[cst].first != Bound::BOUND_NONE );
+    assert( cstMap[cst].type != Bound::BOUND_NONE );
 
-    cstMap[cst] = cstref_t(Bound::BOUND_NONE,-1);
+    cstMap[cst] = CONSTRAINT_VOID;
     freeARow(row);
     cstMapInv[row] = size();
     nba--;
@@ -77,8 +78,8 @@ namespace soth
   freeze( unsigned int ref )
   {
     assert( ref<size() );
-    assert( cstMap[ref].first != Bound::BOUND_NONE );
-    assert( cstMap[ref].first != Bound::BOUND_TWIN );
+    assert( cstMap[ref].type != Bound::BOUND_NONE );
+    assert( cstMap[ref].type != Bound::BOUND_TWIN );
     assert(! freezed[ref] );
 
     freezed[ref]=true;
@@ -121,20 +122,20 @@ namespace soth
   mapInv( unsigned int row ) const
   {
     assert( row<size() );
-    assert( (cstMapInv[row]<size())&&"THE_REQUESTED_ROW_IS_NOT_ACTIVE" );
+    assert( (cstMapInv[row]<size())&&"The requested row is not active" );
     return cstMapInv[row];
   }
   unsigned int ActiveSet::
   map( unsigned int ref ) const
   {
     assert( isActive(ref) );
-    return cstMap[ref].second;
+    return cstMap[ref].row;
   }
   Bound::bound_t ActiveSet::
   whichBound( unsigned int ref,bool checkActive ) const
   {
     assert( isActive(ref) );
-    const Bound::bound_t & res = cstMap[ref].first;
+    const Bound::bound_t & res = cstMap[ref].type;
     if( checkActive ) { assert( (res!=Bound::BOUND_NONE)&&(res!=Bound::BOUND_DOUBLE) ); }
     return res;
   }
@@ -142,20 +143,20 @@ namespace soth
   isActive( unsigned int ref ) const
   {
     assert( ref<size() );
-    return( cstMap[ref].first != Bound::BOUND_NONE );
+    return( cstMap[ref].type != Bound::BOUND_NONE );
   }
   double ActiveSet::
   sign( unsigned int ref ) const
   {
     assert( isActive(ref) );
-    assert( cstMap[ref].first != Bound::BOUND_DOUBLE );
-    return (cstMap[ref].first==Bound::BOUND_INF)?-1:+1;
+    assert( cstMap[ref].type != Bound::BOUND_DOUBLE );
+    return (cstMap[ref].type==Bound::BOUND_INF)?-1:+1;
   }
   bool ActiveSet::
   isFreezed( unsigned int ref ) const
   {
     assert( isActive(ref) );
-    return ( cstMap[ref].first == Bound::BOUND_TWIN )||(freezed[ref]);
+    return ( cstMap[ref].type == Bound::BOUND_TWIN )||(freezed[ref]);
   }
   /*: Return a compact of the active line, ordered by row values. */
   VectorXi ActiveSet::
@@ -198,7 +199,7 @@ namespace soth
 	for( unsigned int i=0;i<size();++ i )
 	  {
 	    os << i << ": ";
-	    if(isActive(i)) os<< cstMap[i].second; else os <<"Unactive";
+	    if(isActive(i)) os<< cstMap[i].type; else os <<"Unactive";
 	    os << std::endl;
 	  }
 	for( unsigned int i=0;i<freerow.size();++ i )
@@ -222,7 +223,7 @@ namespace soth
     /*   DPC */  VectorXi Pt(P.size());
     /*   DPC */  for( unsigned int i=0;i<nba;++i ) Pt(P(i))=i;
     /*   DPC */  for( unsigned int i=0;i<size();++i )
-      /* DPC */    if( isActive(i) ) cstMap[i].second = Pt(cstMap[i].second);
+      /* DPC */    if( isActive(i) ) cstMap[i].row = Pt(cstMap[i].row);
     /*   DPC */}
 
  

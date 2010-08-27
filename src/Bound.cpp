@@ -186,7 +186,7 @@ namespace soth
 
   std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst )
   {
-    switch( cst.second )
+    switch( cst.type )
       {
       case Bound::BOUND_INF: os << "-"; break;
       case Bound::BOUND_SUP: os << "+"; break;
@@ -194,8 +194,10 @@ namespace soth
       case Bound::BOUND_TWIN: os << "="; break;
       case Bound::BOUND_NONE: os << "(o)"; break;
       }
-    return os << cst.first;
+    return os << cst.row;
   }
+
+  const ConstraintRef CONSTRAINT_VOID;//(-1,Bound::BOUND_NONE);
 
 
 }; // namespace soth

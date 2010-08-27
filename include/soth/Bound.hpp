@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 #include <iostream>
+#include <vector>
 
 namespace soth
 {
@@ -48,9 +49,19 @@ namespace soth
   }; // Class Bound
 
   typedef Eigen::Matrix<Bound, Eigen::Dynamic,1> VectorBound;
-  std::ostream& operator<< (std::ostream& os, const VectorBound& t);
+  // typedef std::pair<int,Bound::bound_t> ConstraintRef;
+  struct ConstraintRef
+  {
+    int row;
+    Bound::bound_t type;
+    ConstraintRef( int r, Bound::bound_t t ) :row(r),type(t) {}
+    ConstraintRef( void ): row(-1),type(Bound::BOUND_NONE) {}
+    double sign() const { return (type==Bound::BOUND_SUP)?+1:-1; }
+  };
+  extern const ConstraintRef  CONSTRAINT_VOID;
+  typedef std::vector<ConstraintRef> cstref_vector_t;
 
-  typedef std::pair<int,Bound::bound_t> ConstraintRef;
+  std::ostream& operator<< (std::ostream& os, const VectorBound& t);
   std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
 
 }; // namespace soth
