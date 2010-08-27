@@ -4,10 +4,11 @@
 #include <Eigen/Core>
 #include <list>
 #include <string>
+
+#include "soth/BasicStage.hpp"
 #include "soth/SubMatrix.hpp"
 #include "soth/solvers.hpp"
 #include "soth/Algebra.hpp"
-#include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
 #include "soth/ActiveSet.hpp"
 #include "soth/Givens.hpp"
@@ -16,12 +17,14 @@
 namespace soth
 {
 
+  class BaseY;
 
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
 
   class Stage
+    :public BasicStage
   {
   public:
     typedef MatrixXd::Index Index;
@@ -29,10 +32,11 @@ namespace soth
 
   protected:
 
-    const MatrixXd & J;
-    const bound_vector_t & bounds;
-    const BaseY & Y;
-    const unsigned int nr,nc; /* nr=nbCols(J), nc=nbRows(J). */
+    using BasicStage::J;
+    using BasicStage::bounds;
+    using BasicStage::nc;
+    using BasicStage::nr;
+    using BasicStage::Y;
 
     /* Work range matrices. */
     MatrixXd W_;
@@ -79,7 +83,7 @@ namespace soth
     bool isReset,isInit,isOptimumCpt,isLagrangeCpt,isDampCpt;
 
   public:
-    Stage( const MatrixXd & J, const bound_vector_t & bounds, BaseY& Y  );
+    Stage( const MatrixXd & J, const VectorBound & bounds, BaseY& Y  );
 
     /* --- INIT ------------------------------------------------------------- */
     void reset();

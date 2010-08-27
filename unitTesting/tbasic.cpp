@@ -5,6 +5,7 @@
 //#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/BasicStage.hpp"
+#include "soth/BaseY.hpp"
 
 using namespace soth;
 using std::endl;
@@ -28,7 +29,7 @@ void testBasicStage()
   st.set( m1.data(),b1.data() );
 
   std::cout << "J=" << st.getJ() << endl;
-  std::cout << "b=" << st.getBound() << endl;
+  std::cout << "b=" << st.getBounds() << endl;
 }
 
 int main (int argc, char** argv)

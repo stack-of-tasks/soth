@@ -1,7 +1,7 @@
 #ifndef __SOTH_BOUND__
 #define __SOTH_BOUND__
 
-#include <vector>
+#include <Eigen/Core>
 #include <iostream>
 
 namespace soth
@@ -47,9 +47,8 @@ namespace soth
 
   }; // Class Bound
 
-
-  typedef std::vector< Bound > bound_vector_t;
-  std::ostream& operator<< (std::ostream& os, const bound_vector_t& );
+  typedef Eigen::Matrix<Bound, Eigen::Dynamic,1> VectorBound;
+  std::ostream& operator<< (std::ostream& os, const VectorBound& t);
 
   typedef std::pair<int,Bound::bound_t> ConstraintRef;
   std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );

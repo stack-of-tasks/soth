@@ -14,7 +14,7 @@
 using namespace soth;
 
 void generateDataSet( std::vector<Eigen::MatrixXd> &J,
-		      std::vector<soth::bound_vector_t> &b,
+		      std::vector<soth::VectorBound> &b,
 		      const int NB_STAGE,
 		      const int RANK[],
 		      const int NR[],
@@ -24,7 +24,6 @@ void generateDataSet( std::vector<Eigen::MatrixXd> &J,
   J.resize(NB_STAGE);
   b.resize(NB_STAGE);
 
-  unsigned int s = 0;
   for( int s=0;s<NB_STAGE;++s )
     {
       Eigen::MatrixXd Xhi( NR[ s],RANK[ s] );
@@ -35,12 +34,12 @@ void generateDataSet( std::vector<Eigen::MatrixXd> &J,
       soth::MatrixRnd::randomize( Jfr );
       J[s] = Xhi*Jfr;
 
-      for( unsigned int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
+      for( int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
     }
 }
 
 void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-			       std::vector<soth::bound_vector_t> &b,
+			       std::vector<soth::VectorBound> &b,
 			       const int NB_STAGE,
 			       const int RANKFREE[],
 			       const int RANKLINKED[],
@@ -51,7 +50,6 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
   J.resize(NB_STAGE);
   b.resize(NB_STAGE);
 
-  unsigned int s = 0;
   for( int s=0;s<NB_STAGE;++s )
     {
       b[ s].resize(NR[ s]);
@@ -79,7 +77,7 @@ void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
 	  }
 	}
 
-      for( unsigned int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
+      for( int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
     }
 }
 
@@ -87,7 +85,7 @@ bool
 clearIteralively( soth::HCOD& hcod )
 {
   bool exitOk = true;
-  for( int s=0;s<hcod.nbStages();++s )
+  for( unsigned int s=0;s<hcod.nbStages();++s )
     {
       while( hcod[s].sizeA()>0 )
 	{
@@ -135,7 +133,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b, NB_STAGE,RANK,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -158,7 +156,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     for( int i=2;i<NR[2];++i ) b[2][i] = std::make_pair(-i-1,i+1);
 
@@ -189,7 +187,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
     b[4][0] = std::make_pair(-1,+1);
 
@@ -250,7 +248,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     for( int s=0;s<NB_STAGE;++s ) b[s][2] = std::make_pair(-3,3);
 
@@ -284,7 +282,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     for( int s=0;s<NB_STAGE;++s ) b[s][2] = std::make_pair(-3,3);
 
@@ -321,7 +319,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     for( int s=0;s<NB_STAGE-1;++s )
       {
@@ -372,7 +370,7 @@ int main (int argc, char** argv)
     const int NC = 15;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
 
     const int LS = NB_STAGE-1, LR=NR[LS]-1;
@@ -408,7 +406,7 @@ int main (int argc, char** argv)
     const int NC = 15;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
 
     const int LS = NB_STAGE-3, LR=NR[LS]-1;
@@ -453,9 +451,9 @@ int main (int argc, char** argv)
     const int NC = 12;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
-    for( unsigned int i=2;i<NR[0];++i )
+    for( int i=2;i<NR[0];++i )
       b[0][i] = std::make_pair(-i-1,i+1);
     { // Stage 1 and 2 depends on the N-1 first lines of J[0], last line is free.
       MatrixXd Jl(1,NC); soth::MatrixRnd::randomize(Jl);
@@ -514,7 +512,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     b[1][0] = std::make_pair(-1,1);
 
@@ -552,7 +550,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
     for( int i=0;i<NR[0];++i ) b[0][i] = std::make_pair(-i-1,i+1);
 
@@ -590,7 +588,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -626,7 +624,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -662,7 +660,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDataSet( J,b,NB_STAGE,RANK,NR,NC );
     { // Link last line of 0 to first 2 lines of 1.
       const int s=0,LAST = NR[s]-1;
@@ -715,7 +713,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -754,7 +752,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
     { // Stage 2 last line is free.
       MatrixXd Xhi(3,3); soth::MatrixRnd::randomize(Xhi);
@@ -799,7 +797,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
     { // Stage 1 last line is free.
       MatrixXd Jl(1,NC); soth::MatrixRnd::randomize(Jl);
@@ -841,7 +839,7 @@ int main (int argc, char** argv)
     const int NC = 13;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -876,7 +874,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -908,7 +906,7 @@ int main (int argc, char** argv)
     const int NC = 10;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -947,10 +945,10 @@ int main (int argc, char** argv)
     const int NC = 12;
 
     std::vector<Eigen::MatrixXd> J(NB_STAGE);
-    std::vector<soth::bound_vector_t> b(NB_STAGE);
+    std::vector<soth::VectorBound> b(NB_STAGE);
     generateDeficientDataSet( J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC );
-    for( unsigned int s=0;s<NB_STAGE;++s )
-      for( unsigned int i=0;i<NR[s];++i )
+    for( int s=0;s<NB_STAGE;++s )
+      for( int i=0;i<NR[s];++i )
 	b[s][i] = std::make_pair(-i-1,i+1);
 
     soth::HCOD hcod(NC,NB_STAGE);
@@ -961,8 +959,8 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
-    for( unsigned int s=0;s<NB_STAGE;++s )
-      for( unsigned int i=0;i<NR[s];++i )
+    for( int s=0;s<NB_STAGE;++s )
+      for( int i=0;i<NR[s];++i )
 	hcod.update( s,std::make_pair(i,soth::Bound::BOUND_INF) );
 
     assert( hcod.rank() ); assert( hcod[0].rank()==2 );

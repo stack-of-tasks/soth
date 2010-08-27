@@ -5,6 +5,7 @@
 //#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
+#include "soth/BaseY.hpp"
 #include "soth/BasicStage.hpp"
 #include "MatrixRnd.hpp"
 #include <sys/time.h>
@@ -38,27 +39,6 @@ namespace soth
 
 
 
-/* -------------------------------------------------------------------------- */
-
-void testBasicStage()
-{
-  MatrixXd m1(5,4);
-  Map<MatrixXd> map1(m1.data(), m1.size(), 1);
-  map1 = VectorXd::LinSpaced(m1.size(), 0, m1.size()-1);
-  std::cout << "m1 = " << m1 << endl;
-
-  VectorBound b1(5);
-  b1[0] = 1.6;
-  b1[1] = std::make_pair(-0.1,0.2);
-  std::cout << "b1 = " <<b1 << endl;
-
-  soth::BaseY Y(5);
-  soth::BasicStage st( 5,4,m1.data(),b1.data(),Y );
-  st.set( m1.data(),b1.data() );
-
-  std::cout << "J=" << st.getJ() << endl;
-  std::cout << "b=" << st.getBound() << endl;
-}
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -72,7 +52,7 @@ int main (int argc, char** argv)
   unsigned int NB_STAGE,NC;
   std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
   std::vector<Eigen::MatrixXd> J;
-  std::vector<soth::bound_vector_t> b;
+  std::vector<soth::VectorBound> b;
 
   if( (argc==3)&& std::string(argv[1])=="-file")
     {
@@ -115,5 +95,4 @@ int main (int argc, char** argv)
 
 
 
-  testBasicStage();
 }

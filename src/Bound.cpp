@@ -172,17 +172,17 @@ namespace soth
       }
     return os;
   }
-  std::ostream& operator<< (std::ostream& os, const bound_vector_t& t)
-  {
-    os << "[ ";
-    for( bound_vector_t::const_iterator iter=t.begin();
-	 iter!=t.end();++iter )
-      {
-	os << *iter;
-	if( iter+1 != t.end() ) os <<"; "; else os<<" ]";
-      }
-    return os;
-  }
+  // std::ostream& operator<< (std::ostream& os, const bound_vector_t& t)
+  // {
+  //   os << "[ ";
+  //   for( bound_vector_t::const_iterator iter=t.begin();
+  // 	 iter!=t.end();++iter )
+  //     {
+  // 	os << *iter;
+  // 	if( iter+1 != t.end() ) os <<"; "; else os<<" ]";
+  //     }
+  //   return os;
+  // }
 
   std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst )
   {

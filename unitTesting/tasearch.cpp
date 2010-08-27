@@ -19,7 +19,7 @@ int main (int argc, char** argv)
 
   /* Initialize J and b. */
   std::vector<Eigen::MatrixXd> J(NB_STAGE);
-  std::vector<soth::bound_vector_t> b(NB_STAGE);
+  std::vector<soth::VectorBound> b(NB_STAGE);
   soth::generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
 
   b[0][2] = std::make_pair(-0.3,.3);

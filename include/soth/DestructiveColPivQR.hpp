@@ -1,6 +1,10 @@
 #ifndef EIGEN_DESTRUCTIVE_COLPIV_QR_H
 #define EIGEN_DESTRUCTIVE_COLPIV_QR_H
 
+
+namespace Eigen
+{
+
 /** This class is a modification of Eigen's ColPivHouseholdeQR to perform a rank-revealing QR with column pivoting
   * MP = QR with R*P' directly stored in the input matrix M and the householder vectors essential parts stored in the
   * column of a different matrix given by the user.
@@ -399,5 +403,6 @@ typename DestructiveColPivQR<MatrixType, HouseholderStrorageType>::HouseholderSe
   return HouseholderSequenceType(m_q, m_hCoeffs.conjugate(), false, m_nonzero_pivots, 0);
 }
 
+} //namespace Eigen
 
 #endif // EIGEN_DESTRUCTIVE_COLPIV_QR_H

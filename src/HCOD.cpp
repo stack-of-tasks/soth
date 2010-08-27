@@ -28,7 +28,7 @@ namespace soth
   /* --- SETTERS/GETTERS ---------------------------------------------------- */
 
   void HCOD::
-  pushBackStage( const MatrixXd & J, const bound_vector_t & bounds )
+  pushBackStage( const MatrixXd & J, const VectorBound & bounds )
   {
     unsigned int s = stages.size();
     stages.resize( s+1 );
@@ -39,14 +39,14 @@ namespace soth
     isInit=false;
   }
   void HCOD::
-  pushBackStage( const MatrixXd & J, const bound_vector_t & bounds,const VectorXi& Ir0 )
+  pushBackStage( const MatrixXd & J, const VectorBound & bounds,const VectorXi& Ir0 )
   {
     pushBackStage(J,bounds);
     setInitialActiveSet(Ir0,stages.size()-1);
   }
   void HCOD::
   pushBackStages( const std::vector<MatrixXd> & J,
-		  const std::vector<bound_vector_t> & bounds )
+		  const std::vector<VectorBound> & bounds )
   {
     assert( J.size() == bounds.size() );
     for( unsigned int i=0;i<J.size();++i )

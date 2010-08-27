@@ -9,11 +9,7 @@
 #include <sys/time.h>
 #include <Eigen/SVD>
 #include "RandomGenerator.hpp"
-
-namespace Eigen
-{
-  #include "soth/DestructiveColPivQR.hpp"
-}
+#include "soth/DestructiveColPivQR.hpp"
 
 using namespace soth;
 using std::endl;
@@ -80,7 +76,7 @@ int main (int argc, char** argv)
   unsigned int NB_STAGE,NC;
   std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
   std::vector<Eigen::MatrixXd> J;
-  std::vector<soth::bound_vector_t> b;
+  std::vector<soth::VectorBound> b;
 
   if( (argc==3)&& std::string(argv[1])=="-file")
     {

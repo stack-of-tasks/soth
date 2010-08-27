@@ -3,12 +3,8 @@
 
 #include "soth/debug.hpp"
 #include "soth/Stage.hpp"
-#include <Eigen/QR>
-
-namespace Eigen
-{
-  #include "soth/DestructiveColPivQR.hpp"
-}
+#include "soth/DestructiveColPivQR.hpp"
+#include "soth/BaseY.hpp"
 
 namespace soth
 {
@@ -16,10 +12,8 @@ namespace soth
   using std::endl;
 
   Stage::
-  Stage( const MatrixXd & inJ, const bound_vector_t & inbounds,BaseY & inY )
-    : J(inJ), bounds(inbounds)
-    ,Y(inY)
-    ,nr(J.rows()),nc(J.cols())
+  Stage( const MatrixXd & J, const VectorBound & bounds,BaseY & Y )
+    :BasicStage(J,bounds,Y)
 
     ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
 
@@ -45,7 +39,6 @@ namespace soth
     ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false)
   {
     Wd.reserve( int(nr*(nr+1)/2) );
-    assert( int(bounds.size()) == J.rows() );
   }
 
   const double Stage::DAMPING_FACTOR = 1e-2;
@@ -744,7 +737,6 @@ namespace soth
     if(! isWIdenty ) { sotDEBUG(45) << "Wr = " << (MATLAB)Wr << endl; }
     else             { sotDEBUG(45) << "W = " << MATLAB(W,isWIdenty) << endl; }
 
-    /* TODO: when L0 is full rank, a permuation of e should be enough (W=Id). */
     if( isWIdenty ) We = e;
     else            We = Wr.transpose()*e;
     sotDEBUG(25) << "Wre = " << (MATLAB)We << std::endl;
@@ -1044,7 +1036,7 @@ namespace soth
 
 
     if( isWIdenty ) l.noalias() = rho_i;
-    else            l.noalias() = W.rightCols(sizeL) * rho_i; // TODO: Wr
+    else            l.noalias() = Wr * rho_i;
     if( sizeM>0 )
       {
 	VectorBlock<VectorXd> rho_under = rho.head(sizeM);
@@ -1152,8 +1144,8 @@ namespace soth
 	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
 	    if( -lambda[i]>lmax )
 	      {
-		double Ju = J.row(cstref)*u;
-		if( Ju<=bounds[cstref].getBound( Bound::BOUND_SUP )+EPSILON )
+		// double Ju = J.row(cstref)*u;
+		// if( Ju<=bounds[cstref].getBound( Bound::BOUND_SUP )+EPSILON )
 		  {
 		    res=true;
 		    lmax=-lambda[i];
@@ -1165,8 +1157,8 @@ namespace soth
 	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
 	    if( -lambda[i]>lmax ) // TODO: change the sign of the bound-inf cst.
 	      {
-		double Ju = J.row(cstref)*u;
-		if( bounds[cstref].getBound( Bound::BOUND_INF )-EPSILON<=Ju )
+		// double Ju = J.row(cstref)*u;
+		// if( bounds[cstref].getBound( Bound::BOUND_INF )-EPSILON<=Ju )
 		  {
 		    res=true;
 		    lmax=-lambda[i];
@@ -1220,7 +1212,6 @@ namespace soth
   recompose( MatrixXd& WMLY ) const
   {
     sotDEBUGPRIOR(+40);
-    sotDEBUGIN(5);
     if( sizeA()==0 )
       {
 	assert( (sizeL==0)&&(M.rows()==0)&&(L.rows()==0)
@@ -1232,30 +1223,18 @@ namespace soth
     if( isWIdenty ) WMLY.block(0,0,sizeA(),sizeM) = M;
     else            WMLY.block(0,0,sizeA(),sizeM) = W*M;
 
-    sotDEBUG(25) << "UL = " << (MATLAB)WMLY.block(0,sizeM,sizeA(),sizeL) << std::endl;
-    sotDEBUG(25) << "W = " << MATLAB(W,isWIdenty) << std::endl;
     if(! isWIdenty )
-      { sotDEBUG(25) << "U = " << (MATLAB)Wr << endl; }
+      { sotDEBUG(25) << "Wr = " << (MATLAB)Wr << endl; }
     sotDEBUG(25) << "L = " << (MATLAB)L << std::endl;
-
-    sotDEBUG(25) << "n = " << sizeN() <<" a = "<< sizeA()
-		<< " r = "<< sizeL << endl;
-    sotDEBUG(25) << "w="<< W.rows()<<"x" << W.cols()
-		<< " -- l=" << L.rows() << "x" << L.cols() << endl;
-
     if (sizeL != 0)
     {
-      // TODO: Wblock is Wr.
-      sotDEBUG(25) << "U_L = " << (MATLAB)(MatrixXd)(W.block(0,sizeN(),sizeA(),sizeL)*L) << std::endl;
       if( isWIdenty ) WMLY.block(0,sizeM,sizeA(),sizeL) = L;
-      else WMLY.block(0,sizeM,sizeA(),sizeL) = W.block(0,sizeN(),sizeA(),sizeL)*L;
+      else            WMLY.block(0,sizeM,sizeA(),sizeL) = Wr*L;
     }
-
     sotDEBUG(25) << "WML = " << (MATLAB)WMLY << std::endl;
 
     Y.applyTransposeOnTheLeft(WMLY);
     sotDEBUG(25) << "WMLY = " << (MATLAB)WMLY << std::endl;
-    sotDEBUGOUT(5);
  }
 
   /* Return true iff Jactive=recompose and eactive=e. */

@@ -21,10 +21,10 @@ namespace soth
   public:
     HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
 
-    void pushBackStage( const MatrixXd & J, const bound_vector_t & bounds );
-    void pushBackStage( const MatrixXd & J, const bound_vector_t & bounds,const VectorXi& Ir0 );
+    void pushBackStage( const MatrixXd & J, const VectorBound & bounds );
+    void pushBackStage( const MatrixXd & J, const VectorBound & bounds,const VectorXi& Ir0 );
     void pushBackStages( const std::vector<MatrixXd> & J,
-			 const std::vector<bound_vector_t> & bounds );
+			 const std::vector<VectorBound> & bounds );
 
     Stage& stage( unsigned int i );
     const Stage& stage( unsigned int i ) const;

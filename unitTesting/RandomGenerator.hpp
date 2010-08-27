@@ -15,7 +15,7 @@ namespace soth
    * a random problems with good conditionning numbers (ie =0 XOR >>0).
    */
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-				 std::vector<soth::bound_vector_t> &b,
+				 std::vector<soth::VectorBound> &b,
 				 const unsigned int NB_STAGE,
 				 const std::vector<unsigned int> & RANKFREE,
 				 const std::vector<unsigned int> & RANKLINKED,
@@ -23,7 +23,7 @@ namespace soth
 				 const unsigned int NC );
 
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-				 std::vector<soth::bound_vector_t> &b,
+				 std::vector<soth::VectorBound> &b,
 				 const unsigned int NB_STAGE,
 				 const int RANKFREE[],
 				 const int RANKLINKED[],
@@ -39,30 +39,30 @@ namespace soth
 			     unsigned int & nc );
 
   void randomProblem( std::vector<Eigen::MatrixXd> &J,
-		      std::vector<soth::bound_vector_t> &b );
+		      std::vector<soth::VectorBound> &b );
 
 
   /* --- IN/OUT PROBLEMS --- */
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
-			    std::vector<soth::bound_vector_t> &b,
+			    std::vector<soth::VectorBound> &b,
 			    unsigned int& NB_STAGE,
 			    std::vector<unsigned int> & NR,
 			    unsigned int& NC );
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
-			    std::vector<soth::bound_vector_t> &b );
+			    std::vector<soth::VectorBound> &b );
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
-			   const std::vector<soth::bound_vector_t> &b,
+			   const std::vector<soth::VectorBound> &b,
 			   const unsigned int& NB_STAGE,
 			   const std::vector<unsigned int> & NR,
 			   const unsigned int& NC );
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
-			   const std::vector<soth::bound_vector_t> &b );
+			   const std::vector<soth::VectorBound> &b );
 };
 
 #endif // #ifndef __SOTH_RANDOM_GENERATOR__

@@ -12,7 +12,7 @@ namespace soth
   /* -------------------------------------------------------------------------- */
   /* -------------------------------------------------------------------------- */
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-				 std::vector<soth::bound_vector_t> &b,
+				 std::vector<soth::VectorBound> &b,
 				 const unsigned int NB_STAGE,
 				 const std::vector<unsigned int> & RANKFREE,
 				 const std::vector<unsigned int> & RANKLINKED,
@@ -77,7 +77,7 @@ namespace soth
   }
 
   void generateDeficientDataSet( std::vector<Eigen::MatrixXd> &J,
-				 std::vector<soth::bound_vector_t> &b,
+				 std::vector<soth::VectorBound> &b,
 				 const unsigned int NB_STAGE,
 				 const int RANKFREE[],
 				 const int RANKLINKED[],
@@ -156,7 +156,7 @@ namespace soth
 
 
   void randomProblem( std::vector<Eigen::MatrixXd> &J,
-		      std::vector<soth::bound_vector_t> &b,
+		      std::vector<soth::VectorBound> &b,
 		      bool verbose )
   {
     unsigned int NB_STAGE,NC;
@@ -188,7 +188,7 @@ namespace soth
 
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
-			    std::vector<soth::bound_vector_t> &b,
+			    std::vector<soth::VectorBound> &b,
 			    unsigned int& NB_STAGE,
 			    std::vector<unsigned int> & NR,
 			    unsigned int& NC )
@@ -266,7 +266,7 @@ namespace soth
 
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
-			    std::vector<soth::bound_vector_t> &b )
+			    std::vector<soth::VectorBound> &b )
   {
     unsigned int NB_STAGE;
     std::vector<unsigned int> NR;
@@ -276,7 +276,7 @@ namespace soth
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
-			   const std::vector<soth::bound_vector_t> &b,
+			   const std::vector<soth::VectorBound> &b,
 			   const unsigned int& NB_STAGE,
 			   const std::vector<unsigned int> & NR,
 			   const unsigned int& NC )
@@ -331,7 +331,7 @@ namespace soth
 
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
-			   const std::vector<soth::bound_vector_t> &b )
+			   const std::vector<soth::VectorBound> &b )
   {
     unsigned int NB_STAGE;
     std::vector<unsigned int> NR;

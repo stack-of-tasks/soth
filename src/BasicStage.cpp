@@ -1,5 +1,4 @@
-#include <soth/BasicStage.hpp>
-
+#include "soth/BasicStage.hpp"
 
 namespace soth
 {
@@ -25,7 +24,7 @@ namespace soth
     :Jmap( Jdata,innr,innc )
     ,boundsMap( bdata,innr )
 
-    ,J( Jmap ), bound( boundsMap )
+    ,J( Jmap ), bounds( boundsMap )
     ,nr(innr),nc(innc)
 
     ,Y(Y)
@@ -36,7 +35,7 @@ namespace soth
     :Jmap( inJ.data(),inJ.rows(),inJ.cols() )
     ,boundsMap( inbounds.data(),inbounds.size(),1)
 
-    ,J( Jmap ), bound( boundsMap )
+    ,J( Jmap ), bounds( boundsMap )
     ,nr( inJ.rows() ), nc( inJ.cols() )
 
     ,Y(inY)
@@ -66,9 +65,9 @@ namespace soth
   }
 
   VectorBound BasicStage::
-  getBound( void )
+  getBounds( void )
   {
-    return bound;
+    return bounds;
   }
 
 } // namespace soth

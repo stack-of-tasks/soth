@@ -3,19 +3,22 @@
 
 #include "soth/Algebra.hpp"
 #include "soth/Bound.hpp"
+#include <vector>
 
 namespace soth
 {
 
-  /* ActiveSet is a invertible map that gives the row where an active constraint is stored,
-   * ie MAP such as J(MAP,:) == WMLY. The map is invertible, which means that it is possible
-   * to acces to the constraint reference of a given row of WMLY. It also stores the type of the
-   * active constraint (+/-/=), and the free/occupied lines of WMLY.
-   * Take care: WMLY is supposed to be an indirect matrix build on W_MLY, in which case
-   * the active set is not aware of the indirection (ie: to access to the constraint of WMLY(row),
-   * mapInv should be call with W.indirectRow(row), and not directly with row). Similarly, the
-   * row where an active constraint is stored in WMLY will need to inverse the W.indirectRow map, which
-   * is not done in the class.
+  /* ActiveSet is a invertible map that gives the row where an active
+   * constraint is stored, ie MAP such as J(MAP,:) == WMLY. The map is
+   * invertible, which means that it is possible to acces to the constraint
+   * reference of a given row of WMLY. It also stores the type of the active
+   * constraint (+/-/=), and the free/occupied lines of WMLY.  Take care: WMLY
+   * is supposed to be an indirect matrix build on W_MLY, in which case the
+   * active set is not aware of the indirection (ie: to access to the
+   * constraint of WMLY(row), mapInv should be call with W.indirectRow(row),
+   * and not directly with row). Similarly, the row where an active constraint
+   * is stored in WMLY will need to inverse the W.indirectRow map, which is not
+   * done in the class.
    */
   class ActiveSet
   {
@@ -62,7 +65,7 @@ namespace soth
   public: /* --- Deprecated --- */
     /* DEPRECATED*/void   permuteRows( const VectorXi & P );
 
-  protected:
+  protected: /* TODO: change that for using the ConstraintRef def in Bound.hpp. */
     typedef std::pair<Bound::bound_t,int> cstref_t;
     typedef std::vector<cstref_t> cstref_vector_t;
     typedef std::vector<unsigned int> mapinv_vector_t;
@@ -88,8 +91,7 @@ namespace soth
    */
   template< typename AS,typename Indirect >
   class SubActiveSet
-    : public AS
-  //DEBUG    : protected AS
+    : protected AS
   {
   public:
     SubActiveSet( unsigned int nr );

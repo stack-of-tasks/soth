@@ -1,10 +1,7 @@
 #include <Eigen/Core>
 #include <Eigen/Householder>
 #include <Eigen/QR>
-namespace Eigen
-{
-  #include "soth/DestructiveColPivQR.hpp"
-}
+#include "soth/DestructiveColPivQR.hpp"
 #include <iostream>
 
 using namespace Eigen;

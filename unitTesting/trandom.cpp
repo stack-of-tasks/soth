@@ -72,14 +72,14 @@ namespace DummyActiveSet
   }
 
   std::vector<double> stageErrors( const std::vector<Eigen::MatrixXd>& Jref,
-				   const std::vector<soth::bound_vector_t>& bref,
+				   const std::vector<soth::VectorBound>& bref,
 				   const VectorXd& usot )
   {
     std::vector<double> errors(Jref.size());
     for( unsigned int i=0;i<Jref.size();++i )
       {
 	const MatrixXd& J = Jref[i];
-	const soth::bound_vector_t& b = bref[i];
+	const soth::VectorBound& b = bref[i];
 
 	VectorXd e = J*usot;
 	errors[i]=0;
@@ -129,7 +129,7 @@ namespace DummyActiveSet
    * norm to the reference optimum. Return true is the solution found by SOT is valid and
    * better. */
   bool compareSolvers( const std::vector<Eigen::MatrixXd>& Jref,
-		       const std::vector<soth::bound_vector_t>& bref,
+		       const std::vector<soth::VectorBound>& bref,
 		       const std::vector< std::vector<int> >& active,
 		       const std::vector< std::vector<Bound::bound_t> >& bounds,
 		       const double & urefnorm,
@@ -214,7 +214,7 @@ namespace DummyActiveSet
       }
   }
 
-  void selectConstraint( const std::vector<soth::bound_vector_t>& bref,
+  void selectConstraint( const std::vector<soth::VectorBound>& bref,
 			 const std::vector<bool>& activeBool,
 			 std::vector< std::vector<int> > & aset )
   {
@@ -222,7 +222,7 @@ namespace DummyActiveSet
     int cst = 0;
     for( unsigned int i=0;i<bref.size();++i )
       {
-	for( unsigned int r=0;r<bref[i].size();++r )
+	for( int r=0;r<bref[i].size();++r )
 	  if( (bref[i][r].getType() == Bound::BOUND_TWIN)
 	      || (activeBool[cst++]) ) aset[i].push_back(r);
 
@@ -233,7 +233,7 @@ namespace DummyActiveSet
       }
   }
 
-  void selectBool( const std::vector<soth::bound_vector_t>& bref,
+  void selectBool( const std::vector<soth::VectorBound>& bref,
 		   std::vector<std::vector<int> > aset,
 		   const std::vector<bool>& boundBool,
 		   std::vector< std::vector<Bound::bound_t> >& boundSelec )
@@ -259,7 +259,7 @@ namespace DummyActiveSet
       }
   }
 
-  int computeNbDouble( const std::vector<soth::bound_vector_t>& bref,
+  int computeNbDouble( const std::vector<soth::VectorBound>& bref,
 		       std::vector<std::vector<int> > aset )
   {
     int nbDoubleConstraint = 0;
@@ -273,14 +273,14 @@ namespace DummyActiveSet
     return nbDoubleConstraint;
   }
 
-  int computeNbConst( const std::vector<soth::bound_vector_t>& bref,
+  int computeNbConst( const std::vector<soth::VectorBound>& bref,
 		      std::vector<int>& nr )
   {
     int nbConstraint = 0; nr.resize(bref.size());
     for( unsigned int i=0;i<bref.size();++i )
       {
 	nr[i]=bref[i].size();
-	for( unsigned int r = 0;r<bref[i].size();++r )
+	for( int r = 0;r<bref[i].size();++r )
 	  if(bref[i][r].getType() != Bound::BOUND_TWIN)
 	    nbConstraint ++;
       }
@@ -291,7 +291,7 @@ namespace DummyActiveSet
   /* Explore all the possible active set.
    */
   bool explore( const std::vector<Eigen::MatrixXd>& Jref,
-		const std::vector<soth::bound_vector_t>& bref,
+		const std::vector<soth::VectorBound>& bref,
 		const VectorXd& uref )
   {
     std::vector<int> nr(Jref.size());
@@ -328,7 +328,7 @@ namespace DummyActiveSet
 
 
   void detailActiveSet( const std::vector<Eigen::MatrixXd>& Jref,
-			const std::vector<soth::bound_vector_t>& bref,
+			const std::vector<soth::VectorBound>& bref,
 			const VectorXd& uref,
 			unsigned long int refc,unsigned long int refb )
   {
@@ -361,7 +361,7 @@ int main (int argc, char** argv)
   unsigned int NB_STAGE,NC;
   std::vector<unsigned int> NR,RANKLINKED,RANKFREE;
   std::vector<Eigen::MatrixXd> J;
-  std::vector<soth::bound_vector_t> b;
+  std::vector<soth::VectorBound> b;
 
   if( (argc==3)&& std::string(argv[1])=="-file")
     {

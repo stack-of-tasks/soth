@@ -4,21 +4,13 @@
 #include <Eigen/Core>
 #include <list>
 #include <string>
-#include "soth/SubMatrix.hpp"
-#include "soth/solvers.hpp"
-#include "soth/Algebra.hpp"
-#include "soth/BaseY.hpp"
 #include "soth/Bound.hpp"
-#include "soth/ActiveSet.hpp"
-#include "soth/Givens.hpp"
-#include "soth/Allocator.hpp"
+#include "soth/Algebra.hpp"
 
 namespace soth
 {
 
-
-  typedef Matrix<Bound, Dynamic,1> VectorBound;
-  std::ostream& operator<< (std::ostream& os, const VectorBound& t);
+  class BaseY;
 
   /* --- STAGE -------------------------------------------------------------- */
   class BasicStage
@@ -35,7 +27,7 @@ namespace soth
     typedef MatrixBase<MapBound> VectorBoundRef;
 
     const MatrixXdRef & J;
-    const VectorBoundRef & bound;
+    const VectorBoundRef & bounds;
     const unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
     const BaseY& Y;
 
@@ -58,7 +50,7 @@ namespace soth
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;
     MatrixXd getJ();
-    VectorBound getBound();
+    VectorBound getBounds();
 
   };
 
