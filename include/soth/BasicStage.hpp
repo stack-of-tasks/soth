@@ -23,8 +23,8 @@ namespace soth
     MapBound boundsMap;
 
   protected:
-    typedef MatrixBase<MapXd> MatrixXdRef;
-    typedef MatrixBase<MapBound> VectorBoundRef;
+    typedef MapXd MatrixXdRef;
+    typedef MapBound VectorBoundRef;
 
     const MatrixXdRef & J;
     const VectorBoundRef & bounds;

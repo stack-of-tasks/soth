@@ -1,5 +1,5 @@
 #define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 45
+#define SOTH_DEBUG_MODE 145
 
 #include "soth/debug.hpp"
 #include "soth/Stage.hpp"
@@ -53,7 +53,6 @@ namespace soth
     sotDEBUG(45) << "# In {" << name << endl;
     assert( !isReset );
     // TODO: disable the checks on release.
-    activeSet.reset();
     isReset=true; isInit = false; isOptimumCpt = false;
     isLagrangeCpt = false; isDampCpt =false;
 
@@ -63,62 +62,94 @@ namespace soth
 
     sotDEBUG(45) << "# Out }" << name << endl;
   }
-  //    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false)
+
+  void Stage::
+  setInitialActiveSet( void )
+  {
+    activeSet.reset();
+
+    /* TODO: set active set to TWIN only by default. */
+    for( unsigned int i=0;i<nr;++i )
+      {
+	if( bounds[i].getType() != Bound::BOUND_TWIN ) continue;
+	activeSet.activeRow( i,Bound::BOUND_TWIN );
+     }
+  }
+
+  void Stage::
+  setInitialActiveSet( const cstref_vector_t & initialGuess, bool checkTwin )
+  {
+    for( unsigned int i=0;i<initialGuess.size();++i )
+      {
+	activeSet.activeRow( initialGuess[i] );
+      }
+
+    if( checkTwin )
+      {
+	for( unsigned int i=0;i<nr;++i )
+	  {
+	    if( (bounds[i].getType()==Bound::BOUND_TWIN)
+		&&(!activeSet.isActive(i)) )
+	      activeSet.activeRow( i,Bound::BOUND_TWIN );
+	  }
+      }
+  }
 
 
 
   /* Compute ML=J(initIr,:)*Y. */
   void Stage::
-  computeInitialJY( const ActiveSet & initialIr )
+  computeInitialJY( void )
   {
-    if( isAllRow(initialIr) ) { computeInitialJY_allRows(); return; }
-    if( initialIr.nbActive()==0 )
+    if( sizeA()==0 )
       {
 	sotDEBUG(5) << "Initial IR empty." << std::endl;
 	freeML.reset();
 	ML_.setZero(); return;
       }
 
-    activeSet.setInitialActivation(initialIr);
-    sotDEBUG(25) << "initIr = " << activeSet << std::endl;
+    activeSet.defrag(); // TODO: not always necessary? but cheap.
 
-    // DEBUG: const cast!! because SubMatrix does not support const&.
-    SubMatrix<MatrixXd,RowPermutation> Jact( (MatrixXd&)J,(VectorXi)activeSet );
+    VectorXi activeCst = activeSet;
+
     Block<MatrixXd> ML = ML_.topRows(sizeA());
-    ML = Jact;
+    // DEBUG: const cast!! because SubMatrix does not support const&.
+    ML = SubMatrix<MatrixXdRef,RowPermutation>( const_cast<MatrixXdRef&>(J),&activeCst );
     sotDEBUG(15) << "Ja = " << (MATLAB)ML << std::endl;
-    Y.applyThisOnTheLeft( ML );
 
     freeML.resetTop(sizeA());
 
-    for( unsigned int cst=0;cst<nr;++cst )
+    SubMatrix<VectorBoundRef,RowPermutation>
+      ba( const_cast<VectorBoundRef&>(bounds),&activeCst );
+    for( unsigned int r=0;r<sizeA();++r )
       {
-	if( activeSet.isActive(cst) )
-	  e[activeSet.where(cst)] = bounds[cst].getBound( activeSet.whichBound(cst) );
+	Bound::bound_t bt = activeSet.whichBound( activeCst[r] );
+	e_[r]=ba[r].getBound( bt );
+	if( bt == Bound::BOUND_INF )
+	  {
+	    ML.row(r) *= -1; e_[r] *= -1;
+	  }
       }
+
+    Y.applyThisOnTheLeft( ML );
 
     sotDEBUG(5) << "JY = " << (MATLAB)ML << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
-  }
-  /* Compute ML=J(:,:)*Y. */
-  void Stage::
-  computeInitialJY_allRows(void)
-  {
-    ActiveSet Ir(nr);
-    for( unsigned int i=0;i<nr;++i )
-      {
-	if( bounds[i].getType() != Bound::BOUND_TWIN ) continue;
-	unsigned int r = Ir.activeRow( i,Bound::BOUND_TWIN );
-	assert( r==Ir.nbActive()-1 );
-     }
-    computeInitialJY( Ir );
-  }
 
+#ifndef NDEBUG
+    for( unsigned int cst=0;cst<nr;++cst )
+      {
+	if( bounds[cst].getType() == Bound::BOUND_TWIN )
+	  { assert( activeSet.isActive(cst) ); }
+      }
+#endif
+
+  }
+ 
   /* The BaseY is given as a non const ref. It is equal to the Y ref
    * stored in the stage. */
   void Stage::
-  computeInitialCOD( const ActiveSet & initialIr,
-		     BaseY & Yinit )
+  computeInitialCOD( BaseY & Yinit )
   {
     /*
      * ML=J(initIr,:)*Y;
@@ -141,8 +172,8 @@ namespace soth
     sotDEBUG(5) << "J = " << (MATLAB)J << std::endl;
 
     /* Compute ML=J(initIr,:)*Y. */
-    computeInitialJY(initialIr);
-    assert( Yinit.getRank() >= 0 && Yinit.getRank()<(int)nc );
+    computeInitialJY();
+    assert( Yinit.getRank() >= 0 && Yinit.getRank()<=(int)nc );
     const unsigned int previousRank = Y.getRank();
 
     isWIdenty = true;
@@ -1124,7 +1155,7 @@ namespace soth
       { return checkBound(u,du,*cstptr,*tauptr); }
   }
 
-  bool Stage:: // TODO: Ytu could be passed instead of u.
+  bool Stage:: // TODO: Ytu could be passed instead of u. TODO! u is not usefull any more.
   maxLambda( const VectorXd& u, double & lmax,unsigned int& row ) const
   {
     /* TODO: unactive the search for TWINS. */
@@ -1322,8 +1353,6 @@ namespace soth
   SubVectorXd Stage::
   eactive( VectorXd& e_ ) const
   {
-    //    assert( false && "WORK IN PROGRESS" );
-
     e_.resize(nr); e_.setConstant(-1.11111);
 
     for( unsigned int cst=0;cst<nr;++cst )
@@ -1400,7 +1429,6 @@ namespace soth
   }
 
 
-  ActiveSet Stage::_allRows(0);
   double Stage::EPSILON = 1e-6;
 
 }; // namespace soth

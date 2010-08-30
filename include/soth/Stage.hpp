@@ -86,17 +86,19 @@ namespace soth
     Stage( const MatrixXd & J, const VectorBound & bounds, BaseY& Y  );
 
     /* --- INIT ------------------------------------------------------------- */
-    void reset();
+    void setInitialActiveSet( void );
+    void setInitialActiveSet( const cstref_vector_t & initialGuess,
+			      bool checkTwin=false );
+
+    void reset( void );
     /* Return the rank of the current COD = previousRank+size(L).
      * Give a non-const ref on Y so that it is possible to modify it.
      */
-    void computeInitialCOD( const ActiveSet & initialIr,
-			    BaseY & Yinit );
+    void computeInitialCOD( BaseY & Yinit );
 
   protected:
     void nullifyLineDeficient( const Index row, const Index in_r );
-    void computeInitialJY( const ActiveSet & initialIr );
-    void computeInitialJY_allRows(void);
+    void computeInitialJY();
     void conditionalWinit( bool id );
     /* --- DOWN ------------------------------------------------------------- */
   public:
@@ -227,12 +229,8 @@ namespace soth
     inline Index rank() const {return sizeL;}
 
   public:
-    static ActiveSet& allRows() { return _allRows; }
     static double EPSILON;
 
-  protected:
-    static ActiveSet _allRows;
-    bool isAllRow( const ActiveSet& idx ) { return (&idx == &_allRows); }
 
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;

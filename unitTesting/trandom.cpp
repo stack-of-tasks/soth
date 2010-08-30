@@ -402,11 +402,21 @@ int main (int argc, char** argv)
   hcod.setNameByOrder("stage_");
 
   hcod.setDamping(0.1);
+  hcod.setInitialActiveSet();
+
   VectorXd solution;
   hcod.activeSearch( solution );
   if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
   cout << "Optimal solution = " << (MATLAB)solution << endl;
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
+
+
+  cout << " --- RE --------------------------------- " << endl;
+  sotDEBUG(1) << " --- RE --------------------------------- " << endl;
+  hcod.activeSearch( solution );
+  cout << "Optimal solution = " << (MATLAB)solution << endl;
+  cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
+
 
   //exit(0); // DEBUG
 

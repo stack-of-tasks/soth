@@ -13,14 +13,13 @@ namespace soth
   :
     sizeProblem(inSizeProblem)
     ,Y(sizeProblem)
-    ,stages(0),initialActiveSets(0)
+    ,stages(0)
     ,solution(sizeProblem)
     ,du(sizeProblem),Ytu(sizeProblem),Ytdu(sizeProblem),rho(sizeProblem)
     ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false)
   {
     stages.reserve(nbStage);
-    initialActiveSets.reserve(nbStage);
   }
 
   /* --- SETTERS/GETTERS ---------------------------------------------------- */
@@ -34,15 +33,7 @@ namespace soth
     stages.resize( s+1 );
     stages[s] = stage_ptr_t(new soth::Stage( J,bounds,Y ));
 
-    initialActiveSets.resize( s+1 );
-    initialActiveSets[s].resize(0);
     isInit=false;
-  }
-  void HCOD::
-  pushBackStage( const MatrixXd & J, const VectorBound & bounds,const VectorXi& Ir0 )
-  {
-    pushBackStage(J,bounds);
-    setInitialActiveSet(Ir0,stages.size()-1);
   }
   void HCOD::
   pushBackStages( const std::vector<MatrixXd> & J,
@@ -69,16 +60,12 @@ namespace soth
   }
 
   void HCOD::
-  setInitialActiveSet( const VectorXi& Ir0,unsigned int i )
+  setInitialActiveSet()
   {
-    assert( i<initialActiveSets.size() );
-    initialActiveSets[i] = Ir0;
-  }
-  const VectorXi& HCOD::
-  getInitialActiveSet( unsigned int i )
-  {
-    assert( i<initialActiveSets.size() );
-    return initialActiveSets[i];
+    for( stage_iter_t iter=stages.begin();iter!=stages.end();++iter )
+      {
+	(*iter)->setInitialActiveSet();
+      }
   }
 
   int HCOD::sizeA() const
@@ -154,7 +141,7 @@ namespace soth
 	assert( stages[i]!=0 );
 	sotDEBUG(5) <<" --- STAGE " <<i
 		    << " ---------------------------------" << std::endl;
-	stages[i]->computeInitialCOD(soth::Stage::allRows(),Y);
+	stages[i]->computeInitialCOD(Y);
       }
     isReset=false; isInit=true;
   }

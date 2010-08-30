@@ -34,11 +34,8 @@ int main (int argc, char** argv)
     {
       hcod.pushBackStage( J[i],b[i] );
       assert(NR[i]>0);
-      if (NR[i]>1)
-        hcod.setInitialActiveSet( Eigen::VectorXi::LinSpaced(NR[i],0, NR[i]-1),i);
-      else
-        hcod.setInitialActiveSet( Eigen::VectorXi::Zero(1), i);
     }
+  hcod.setInitialActiveSet();
   hcod.setNameByOrder("stage_");
 
   hcod.initialize();

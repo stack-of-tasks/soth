@@ -16,23 +16,22 @@ namespace soth
     typedef std::vector<stage_ptr_t> stage_sequence_t;
     typedef stage_sequence_t::iterator stage_iter_t;
     typedef stage_sequence_t::reverse_iterator stage_riter_t;
-    typedef std::vector<VectorXi> activeset_sequence_t;
 
   public:
     HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
 
     void pushBackStage( const MatrixXd & J, const VectorBound & bounds );
-    void pushBackStage( const MatrixXd & J, const VectorBound & bounds,const VectorXi& Ir0 );
     void pushBackStages( const std::vector<MatrixXd> & J,
 			 const std::vector<VectorBound> & bounds );
 
     Stage& stage( unsigned int i );
     const Stage& stage( unsigned int i ) const;
-    Stage& operator[] ( unsigned int i ) { return stage(i); }
-    const Stage& operator[] ( unsigned int i ) const { return stage(i); }
+    inline Stage& operator[] ( unsigned int i ) { return stage(i); }
+    inline const Stage& operator[] ( unsigned int i ) const { return stage(i); }
 
-    void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
-    const VectorXi& getInitialActiveSet( unsigned int i );
+    void setInitialActiveSet();
+    //void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
+    //const VectorXi& getInitialActiveSet( unsigned int i );
 
     void setDamping( const double & d );
     double getMaxDamping();
@@ -92,7 +91,6 @@ namespace soth
     unsigned int sizeProblem;
     soth::BaseY Y;
     stage_sequence_t stages;
-    activeset_sequence_t initialActiveSets;
     VectorXd solution;
 
     VectorXd du,Ytu,Ytdu,rho;

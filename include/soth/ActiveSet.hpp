@@ -111,8 +111,9 @@ namespace soth
     inline unsigned int   where( unsigned int cst ) const { return map(cst); }
     VectorXi              getIndirection( void ) const;
     void                  disp( std::ostream& os, bool classic=true ) const;
-    inline                 operator VectorXi (void) const {  return getIndirection(); }
+    inline                operator VectorXi (void) const {  return getIndirection(); }
 
+    void                  defrag( void );
     void                  setInitialActivation( const AS& as0 );
 
   public:
@@ -291,9 +292,10 @@ namespace soth
       return VectorXi();
 
     VectorXi res(nba);
-    int row = 0;
-    for( unsigned int i=0;i<size();++i )
-      if(! AS::freerow[i] ) res(row++) = whichConstraint(i);
+    for( unsigned int r=0;r<nba;++r )
+      {
+	res[r] = mapInv(r);
+      }
     return res;
   }
 
@@ -307,7 +309,20 @@ namespace soth
     pushIndirectBack(row);
   }
 
-
+  template< typename AS,typename Indirect >
+  void SubActiveSet<AS,Indirect>::
+  defrag( void )
+  {
+    VectorXi csts = *this;
+    cstref_vector_t cstrefs( csts.size() );
+    for( int i=0;i<csts.size();++i )
+      { cstrefs[i] = ConstraintRef( csts[i],whichBound(csts[i]) ); }
+    reset();
+    for( int i=0;i<csts.size();++i )
+      {
+	activeRow( cstrefs[i] );
+      }
+  }
 
 
 } // namespace soth
