@@ -8,7 +8,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(PROJECT_NAME soth)
 project(${PROJECT_NAME})
 
-SET(PROJECT_VERSION 1.0)
+SET(PROJECT_VERSION 0.0.1)
 
 SET(CMAKE_VERBOSE_MAKEFILE true)
 
@@ -54,9 +54,10 @@ IF(EIGEN3_FOUND)
 ENDIF(EIGEN3_FOUND)
 
 # --- BOOST HEADER ---------------------------------------------------
-FIND_PACKAGE( Boost 1.36.0 )
+FIND_PACKAGE( Boost 1.36.0 COMPONENTS signals )
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
@@ -75,10 +76,12 @@ SET(install_pkg_include_dir "\${includedir}")
 
 IF(UNIX)
   SET (${PROJECT_NAME}_LDFLAGS "-Wl,-R${install_pkg_libdir} ${LIBINCL_KW}${PROJECT_NAME}${LIB_EXT} ${${PROJECT_NAME}_LDFLAGS}")
+  SET (${PROJECT_NAME}_CXXFLAGS "-I${EIGEN3_INCLUDE_DIR} -I${Boost_INCLUDE_DIRS}")
 ENDIF(UNIX)
 
 IF(WIN32)
   SET (${PROJECT_NAME}_LDFLAGS "${LIBINCL_KW}${PROJECT_NAME}${LIB_EXT} ${${PROJECT_NAME}_LDFLAGS}")
+  SET (${PROJECT_NAME}_CXXFLAGS "What is the damned windows extension? Check me out! -I${EIGEN3_INCLUDE_DIR} -I${Boost_INCLUDE_DIRS}")
 ENDIF(WIN32)
 
 # Install the file in the appropriate place.

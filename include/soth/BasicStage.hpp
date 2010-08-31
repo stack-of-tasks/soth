@@ -7,15 +7,21 @@
 #include "soth/Bound.hpp"
 #include "soth/Algebra.hpp"
 
+#ifndef WITHOUT_NOTIFIOR
+#include <boost/signals.hpp>
+#endif
+
 namespace soth
 {
 
   class BaseY;
 
   /* --- STAGE -------------------------------------------------------------- */
-  class BasicStage
+  class BasicStage : boost::noncopyable
   {
   private:
+    VectorBound boundsInternal;
+
     typedef Map<MatrixXd> MapXd;
     typedef Map<VectorBound> MapBound;
 
@@ -39,6 +45,9 @@ namespace soth
     /* Constructor from size and data maps. */
     BasicStage( const unsigned int nr, const unsigned int nc,
 		const double * Jdata, const Bound * bdata, const BaseY& Y );
+    /* Same as upper, with bdata:=&boundsInternal. */
+    BasicStage( const unsigned int nr, const unsigned int nc,
+		const double * Jdata, const BaseY& Y );
 
     /* Reset the data map from references - no copy. */
     void set( const MatrixXd & J, const VectorBound & bounds );
@@ -51,6 +60,15 @@ namespace soth
     std::string name;
     MatrixXd getJ();
     VectorBound getBounds();
+    VectorBound& getBoundsInternal();
+
+  public: /* Notification, could be removed conditionnaly to the lack of boost::signal. */
+#ifndef WITHOUT_NOTIFIOR
+    typedef boost::function<void (std::string,ConstraintRef,std::string)> listener_function_t;
+    boost::signal<void (std::string,ConstraintRef,std::string)> notifior;
+#else
+    inline void notifior( int,int,std::string) {}
+#endif
 
   };
 

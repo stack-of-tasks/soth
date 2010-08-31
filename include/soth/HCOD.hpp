@@ -21,6 +21,8 @@ namespace soth
     HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
 
     void pushBackStage( const MatrixXd & J, const VectorBound & bounds );
+    void pushBackStage( const unsigned int & nr, const double * Jdata, const Bound * bdata );
+    void pushBackStage( const unsigned int & nr, const double * Jdata );
     void pushBackStages( const std::vector<MatrixXd> & J,
 			 const std::vector<VectorBound> & bounds );
 
@@ -83,6 +85,7 @@ namespace soth
     { return testLagrangeMultipliers(stageRef,&os); }
 
     void setNameByOrder( const std::string root = ""  );
+    void notifiorRegistration( const Stage::listener_function_t & f );
 
   protected:
     HCOD( void ) : Y(0) {};

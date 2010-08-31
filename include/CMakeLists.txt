@@ -3,12 +3,19 @@
 #
 
 SET(${PROJECT_NAME}_HEADERS
-    soth/soth.h
-    soth/Algebra.h
-    soth/SubMatrix.h
-    soth/DestructiveColPivQR.h
-    soth/debug.h
-    soth/ActiveSet.h
+     soth/ActiveSet.hpp
+     soth/Algebra.hpp
+     soth/Allocator.hpp
+     soth/BaseY.hpp
+     soth/BasicStage.hpp
+     soth/Bound.hpp
+     soth/debug.hpp
+     soth/DestructiveColPivQR.hpp
+     soth/Givens.hpp
+     soth/HCOD.hpp
+     soth/solvers.hpp
+     soth/Stage.hpp
+     soth/SubMatrix.hpp
 )
 
 # Recreate correct path for the headers
@@ -25,6 +32,6 @@ ENDFOREACH(lHeader)
 # Install procedure for the header files
 #----------------------------------------------------
 INSTALL(FILES ${fullpath_${PROJECT_NAME}_HEADERS}
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/include/dynamic-graph/tutorial
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
         PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE
 )

@@ -21,7 +21,8 @@ namespace soth
   BasicStage::
   BasicStage( const unsigned int innr, const unsigned int innc,
 	      const double * Jdata, const Bound * bdata, const BaseY& Y )
-    :Jmap( Jdata,innr,innc )
+    :boundsInternal(0)
+    ,Jmap( Jdata,innr,innc )
     ,boundsMap( bdata,innr )
 
     ,J( Jmap ), bounds( boundsMap )
@@ -31,8 +32,22 @@ namespace soth
   {}
 
   BasicStage::
+  BasicStage( const unsigned int innr, const unsigned int innc,
+	      const double * Jdata, const BaseY& Y )
+    :boundsInternal(innr)
+    ,Jmap( Jdata,innr,innc )
+    ,boundsMap( boundsInternal.data(),innr )
+
+    ,J( Jmap ), bounds( boundsMap )
+    ,nr(innr),nc(innc)
+
+    ,Y(Y)
+  {}
+
+  BasicStage::
   BasicStage( const MatrixXd & inJ, const VectorBound & inbounds, const BaseY& inY  )
-    :Jmap( inJ.data(),inJ.rows(),inJ.cols() )
+    :boundsInternal(0)
+    ,Jmap( inJ.data(),inJ.rows(),inJ.cols() )
     ,boundsMap( inbounds.data(),inbounds.size(),1)
 
     ,J( Jmap ), bounds( boundsMap )
@@ -68,6 +83,13 @@ namespace soth
   getBounds( void )
   {
     return bounds;
+  }
+
+  VectorBound& BasicStage::
+  getBoundsInternal()
+  {
+    assert( boundsInternal.data() == boundsMap.data() );
+    return boundsInternal;
   }
 
 } // namespace soth

@@ -29,12 +29,23 @@ namespace soth
   void HCOD::
   pushBackStage( const MatrixXd & J, const VectorBound & bounds )
   {
-    unsigned int s = stages.size();
-    stages.resize( s+1 );
-    stages[s] = stage_ptr_t(new soth::Stage( J,bounds,Y ));
+    stages.push_back( stage_ptr_t(new soth::Stage( J,bounds,Y )));
+    isInit=false;
+  }
+  void HCOD::
+  pushBackStage( const unsigned int & nr, const double * Jdata, const Bound * bdata )
+  {
+    stages.push_back(stage_ptr_t(new soth::Stage( nr,sizeProblem,Jdata,bdata,Y )));
+    isInit=false;
+  }
+  void HCOD::
+  pushBackStage( const unsigned int & nr, const double * Jdata )
+  {
+    stages.push_back( stage_ptr_t(new soth::Stage( nr,sizeProblem,Jdata,Y )) );
 
     isInit=false;
   }
+
   void HCOD::
   pushBackStages( const std::vector<MatrixXd> & J,
 		  const std::vector<VectorBound> & bounds )
@@ -92,7 +103,16 @@ namespace soth
 	stages[i]->name = os.str();
       }
   }
-
+  void HCOD::
+  notifiorRegistration( const Stage::listener_function_t & f )
+  {
+#ifndef WITHOUT_NOTIFIOR
+    for (size_t i=0; i<stages.size(); ++i)
+      {
+	stages[i]->notifior.connect(f);
+      }
+#endif
+  }
 
   void HCOD::setDamping( const double & d )
   {
@@ -515,7 +535,7 @@ namespace soth
     /* verif += sum Ji' li. */
     for( unsigned int i=0;i<=stageRef;++i )
       {
-	const Stage s = *stages[i];
+	const Stage & s = *stages[i];
 	MatrixXd J_(s.nbConstraints(),sizeProblem);
 	verifL += s.Jactive(J_).transpose()*s.getLagrangeMultipliers();
       }

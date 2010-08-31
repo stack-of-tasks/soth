@@ -106,6 +106,7 @@ namespace soth
     void                  unactiveRow( unsigned int row );
     unsigned int          mapInv( unsigned int row ) const;
     unsigned int          map( unsigned int ref ) const;
+    Bound::bound_t        whichBoundInv( unsigned int row ) const;
     /* For compatibility */
     inline unsigned int   whichConstraint( unsigned int row ) const { return mapInv(row); }
     inline unsigned int   where( unsigned int cst ) const { return map(cst); }
@@ -232,6 +233,12 @@ namespace soth
       { if( indirect(row)==row_ )  return row; }
     assert( false && "This could not happen." );
     return -1;
+  }
+  template< typename AS,typename Indirect >
+  Bound::bound_t SubActiveSet<AS,Indirect>::
+  whichBoundInv( unsigned int row ) const
+  {
+    return whichBound(mapInv(row));
   }
 
   template< typename AS,typename Indirect >

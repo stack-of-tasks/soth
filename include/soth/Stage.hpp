@@ -84,6 +84,10 @@ namespace soth
 
   public:
     Stage( const MatrixXd & J, const VectorBound & bounds, BaseY& Y  );
+    Stage( const unsigned int nr, const unsigned int nc,
+	   const double * Jdata, const Bound * bdata, const BaseY& Y );
+    Stage( const unsigned int nr, const unsigned int nc,
+	   const double * Jdata, const BaseY& Y );
 
     /* --- INIT ------------------------------------------------------------- */
     void setInitialActiveSet( void );
@@ -192,6 +196,7 @@ namespace soth
 
     bool testRecomposition( void ) const;
     bool testSolution( const VectorXd & solution ) const;
+    bool testUnactiveTwins( void );
 
     /* For debug purpose, give the line of an active constraint (assert the activity). */
     Index where( unsigned int cst ) const;

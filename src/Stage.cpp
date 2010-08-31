@@ -11,35 +11,61 @@ namespace soth
 
   using std::endl;
 
+#define SOTH_STAGE_COMMON_CONSTRUCTOR                                                \
+    W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)                                          \
+                                                                                     \
+    ,Ir(),Irn(),Iw(),Im(),Il()                                                       \
+                                                                                     \
+    ,M(ML_,&Irn,&Im),L(ML_,&Ir,&Il)                                                  \
+    ,W(W_,&Iw,&Irn)                                                                  \
+                                                                                     \
+    ,Wr(W_,&Iw,&Ir),Mr(ML_,&Ir,&Im)                                                  \
+    ,e(e_,&Iw),lambda(lambda_,&Iw)                                                   \
+                                                                                     \
+    ,sizeM(0),sizeL(0)                                                               \
+                                                                                     \
+    ,activeSet(nr,Iw)                                                                \
+    ,freeML(nr)                                                                      \
+                                                                                     \
+    ,Ld_(nr,nr),Ldwork_(nr,nr),edwork_(nr)                                           \
+    ,Ld(Ld_,false,false),Ldwork(Ldwork_,&Ld.getRowIndices(),&Ld.getColIndices())     \
+    ,edwork(edwork_,&Ld.getRowIndices())                                             \
+    ,Wd()                                                                            \
+    ,dampingFactor( DAMPING_FACTOR )                                                 \
+                                                                                     \
+    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false)
+
+#define SOTH_STAGE_COMMON_INIT                                                       \
+  do {                                                                               \
+       Wd.reserve( int(nr*(nr+1)/2) );					             \
+     } while(false)
+
   Stage::
   Stage( const MatrixXd & J, const VectorBound & bounds,BaseY & Y )
     :BasicStage(J,bounds,Y)
-
-    ,W_(nr,nr),ML_(nr,nc),e_(nr),lambda_(nr)
-
-    ,Ir(),Irn(),Iw(),Im(),Il()
-
-    ,M(ML_,&Irn,&Im),L(ML_,&Ir,&Il)
-    ,W(W_,&Iw,&Irn)
-
-    ,Wr(W_,&Iw,&Ir),Mr(ML_,&Ir,&Im)
-    ,e(e_,&Iw),lambda(lambda_,&Iw)
-
-    ,sizeM(0),sizeL(0)
-
-    ,activeSet(nr,Iw)
-    ,freeML(nr)
-
-    ,Ld_(nr,nr),Ldwork_(nr,nr),edwork_(nr)
-    ,Ld(Ld_,false,false),Ldwork(Ldwork_,&Ld.getRowIndices(),&Ld.getColIndices())
-    ,edwork(edwork_,&Ld.getRowIndices())
-    ,Wd()
-    ,dampingFactor( DAMPING_FACTOR )
-
-    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false)
+    ,SOTH_STAGE_COMMON_CONSTRUCTOR
   {
-    Wd.reserve( int(nr*(nr+1)/2) );
+    SOTH_STAGE_COMMON_INIT;
   }
+
+  Stage::
+  Stage( const unsigned int IN_nr, const unsigned int IN_nc,
+	 const double * IN_Jdata, const Bound * IN_bdata, const BaseY& IN_Y )
+    :BasicStage(IN_nr,IN_nc,IN_Jdata,IN_bdata,IN_Y)
+    ,SOTH_STAGE_COMMON_CONSTRUCTOR
+  {
+    SOTH_STAGE_COMMON_INIT;
+  }
+
+  Stage::
+  Stage( const unsigned int IN_nr, const unsigned int IN_nc,
+	 const double * IN_Jdata, const BaseY& IN_Y )
+    :BasicStage(IN_nr,IN_nc,IN_Jdata,IN_Y)
+    ,SOTH_STAGE_COMMON_CONSTRUCTOR
+  {
+    SOTH_STAGE_COMMON_INIT;
+  }
+
 
   const double Stage::DAMPING_FACTOR = 1e-2;
 
@@ -104,6 +130,7 @@ namespace soth
     if( sizeA()==0 )
       {
 	sotDEBUG(5) << "Initial IR empty." << std::endl;
+	assert(testUnactiveTwins());
 	freeML.reset();
 	ML_.setZero(); return;
       }
@@ -136,16 +163,24 @@ namespace soth
     sotDEBUG(5) << "JY = " << (MATLAB)ML << std::endl;
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
 
+    assert(testUnactiveTwins());
+  }
+
+  bool Stage::
+  testUnactiveTwins( void )
+  {
 #ifndef NDEBUG
+    sotDEBUG(5) << "Checking activation of twins." << std::endl;
     for( unsigned int cst=0;cst<nr;++cst )
       {
-	if( bounds[cst].getType() == Bound::BOUND_TWIN )
-	  { assert( activeSet.isActive(cst) ); }
+	if( (bounds[cst].getType() == Bound::BOUND_TWIN)
+	    &&(! activeSet.isActive(cst)) )
+	  return false;
       }
 #endif
-
+    return true;
   }
- 
+
   /* The BaseY is given as a non const ref. It is equal to the Y ref
    * stored in the stage. */
   void Stage::
@@ -350,6 +385,10 @@ namespace soth
   downdate( const unsigned int position,
 	    GivensSequence & Ydown )
   {
+    notifior(name,
+	     ConstraintRef(activeSet.mapInv(position),
+			   activeSet.whichBoundInv(position) ),
+	     "downdate");
     /*
      *   gr = Neutralize row <position> in W <position>
      *   L=gr'*L
@@ -565,6 +604,7 @@ namespace soth
   update( const ConstraintRef & cst,GivensSequence & Yup )
   {
     sotDEBUG(5) << " --- UPDATE ----------------------------" << std::endl;
+    notifior(name,cst,"update");
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
     assert( (cst.type==Bound::BOUND_SUP)||(cst.type==Bound::BOUND_INF) );
     /*
