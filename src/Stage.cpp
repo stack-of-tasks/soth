@@ -1,13 +1,15 @@
 #define SOTH_DEBUG
-#define SOTH_DEBUG_MODE 145
-
+#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
+
 #include "soth/Stage.hpp"
 #include "soth/DestructiveColPivQR.hpp"
 #include "soth/BaseY.hpp"
 
 namespace soth
 {
+
+
 
   using std::endl;
 
@@ -127,6 +129,7 @@ namespace soth
   void Stage::
   computeInitialJY( void )
   {
+    sotDEBUG(5) << "b = " << (VectorBound)bounds << endl;
     if( sizeA()==0 )
       {
 	sotDEBUG(5) << "Initial IR empty." << std::endl;
