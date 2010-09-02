@@ -35,6 +35,8 @@ namespace soth
     //void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
     //const VectorXi& getInitialActiveSet( unsigned int i );
 
+    void useDamp( bool c ) { withDamp = c ; }
+    bool useDamp() { return withDamp; }
     void setDamping( const double & d );
     double getMaxDamping();
 
@@ -87,6 +89,9 @@ namespace soth
     void setNameByOrder( const std::string root = ""  );
     void notifiorRegistration( const Stage::listener_function_t & f );
 
+    bool isDebugOnce;
+    void debugOnce(void) { isDebugOnce = true; }
+
   protected:
     HCOD( void ) : Y(0) {};
 
@@ -98,7 +103,7 @@ namespace soth
 
     VectorXd du,Ytu,Ytdu,rho;
     int freezedStages;
-    bool isReset,isInit,isSolutionCpt;
+    bool isReset,isInit,isSolutionCpt,withDamp;
   };
 
 

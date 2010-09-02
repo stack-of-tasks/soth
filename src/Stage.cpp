@@ -854,7 +854,7 @@ namespace soth
   void Stage::
   damp( void  )
   {
-    assert(! isDampCpt );
+    //assert(! isDampCpt );
     if (sizeL==0)
       {
 	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;

@@ -17,8 +17,12 @@ namespace soth
     ,solution(sizeProblem)
     ,du(sizeProblem),Ytu(sizeProblem),Ytdu(sizeProblem),rho(sizeProblem)
     ,freezedStages(0)
-    ,isReset(false),isInit(false),isSolutionCpt(false)
+    ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
   {
+# ifndef NDEBUG
+    sotDebugTrace::openFile();
+#endif
+
     stages.reserve(nbStage);
   }
 
@@ -116,11 +120,13 @@ namespace soth
 
   void HCOD::setDamping( const double & d )
   {
+    useDamp( d!=0.0 );
     for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
       {	(*iter)->damping(d);      }
   }
   double HCOD::getMaxDamping()
   {
+    if(! useDamp() ) return 0;
     double maxD=-1;
     for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
       {
@@ -289,6 +295,7 @@ namespace soth
   damp( void )
   {
     assert(isInit);
+    if(! useDamp() )  return;
     BOOST_FOREACH( stage_ptr_t sptr,stages )
       {	sptr->damp();      }
   }
@@ -406,6 +413,8 @@ namespace soth
 
   void HCOD::activeSearch( VectorXd & u )
   {
+    if( isDebugOnce ) {  sotDebugTrace::openFile(); isDebugOnce = false; }
+    else { if(sotDEBUGFLOW.outputbuffer.good()) sotDebugTrace::closeFile(); }
     sotDEBUGIN(15);
     /*
      * foreach stage: stage.initCOD(Ir_init)
@@ -441,7 +450,7 @@ namespace soth
 
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	assert( testRecomposition(&std::cerr) );
-	//damp();
+	damp();
 	computeSolution();
 	assert( testSolution(&std::cerr) );
 
@@ -479,6 +488,7 @@ namespace soth
     sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
 
     u=solution;
+    sotDEBUG(5) << "uf =" << (MATLAB)u << std::endl;
     sotDEBUGOUT(15);
   }
 
