@@ -27,6 +27,10 @@ namespace soth
     : type(BOUND_DOUBLE),valInf(inValInf),valSup(inValSup),valTwin(valInf)
   {
   }
+  Bound::Bound( const double & val )
+    : type(BOUND_TWIN),valInf(val),valSup(val),valTwin(valInf)
+  {
+  }
 
   const double& Bound::
   getBound( bound_t inType ) const

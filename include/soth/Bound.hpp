@@ -30,6 +30,7 @@ namespace soth
     Bound( const Bound& clone );
     Bound( const double & val, bound_t type );
     Bound( const double & inValInf, const double & inValSup );
+    Bound( const double & valTwin );
 
     const bound_t& getType( void ) const { return type; }
     const double& getBound( bound_t type ) const;
