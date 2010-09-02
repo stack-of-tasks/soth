@@ -9,7 +9,7 @@
 
 int main (int argc, char** argv)
 {
-  sotDebugTrace::openFile();
+  soth::sotDebugTrace::openFile();
   const int NB_STAGE = 3;
   const int RANKFREE[]   = { 3, 4, 3,     5, 3 };
   const int RANKLINKED[] = { 2, 2, 1,     5, 3 };
@@ -43,7 +43,8 @@ int main (int argc, char** argv)
   assert(  (hcod.rank()==10)   && (hcod[0].rank()==3)
 	 &&(hcod[1].rank()==4) && (hcod[2].rank()==3)  );
 
-  if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
+  if( soth::sotDEBUGFLOW.outputbuffer.good() )
+    hcod.show( soth::sotDEBUGFLOW.outputbuffer );
   double tau = hcod.computeStepAndUpdate();
   hcod.makeStep(tau);
   assert((std::abs(tau-1.)<=10*soth::Stage::EPSILON)&&"Check bound test failed.");

@@ -9,7 +9,7 @@
 
 int main (int argc, char** argv)
 {
-  sotDebugTrace::openFile();
+  soth::sotDebugTrace::openFile();
   const unsigned int NB_STAGE = 3;
   const int RANKFREE[]   = { 5, 2, 5,     5, 3 };
   //const int RANKFREE[]   = { 5, 4, 5,     5, 3 };

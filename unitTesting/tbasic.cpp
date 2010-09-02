@@ -26,7 +26,8 @@ void testBasicStage()
 
   soth::BaseY Y(5);
   soth::BasicStage st( 5,4,m1.data(),b1.data(),Y );
-  st.set( m1.data(),b1.data() );
+  //st.set( m1.data(),b1.data() );
+  st.set( m1,b1 );
 
   std::cout << "J=" << st.getJ() << endl;
   std::cout << "b=" << st.getBounds() << endl;
