@@ -34,8 +34,8 @@
 
 
 
-#ifndef __VS_DEBUG_HH
-#define __VS_DEBUG_HH
+#ifndef __SOTH_DEBUG_HH
+#define __SOTH_DEBUG_HH
 
 #include <stdio.h>
 #include <iostream>
@@ -50,6 +50,8 @@
 #   undef SOTH_DEBUG
 #endif
 
+namespace soth
+{
 
 #ifndef SOTH_DEBUG_MODE
 #define SOTH_DEBUG_MODE 0
@@ -181,7 +183,11 @@ inline void sotTDEBUGF( const char* format,...) { return; }
 #define sotTDEBUGINOUT(level) sotTDEBUG(level) << "# In/Out { }" << std::endl
 
 
-#endif /* #ifdef __VS_DEBUG_HH */
+
+}; //namespace soth;
+
+#endif /* #ifdef __SOTH_DEBUG_HH */
+
 
 /*
  * Local variables:
