@@ -15,6 +15,7 @@ namespace soth
     typedef boost::shared_ptr<soth::Stage> stage_ptr_t;
     typedef std::vector<stage_ptr_t> stage_sequence_t;
     typedef stage_sequence_t::iterator stage_iter_t;
+    typedef stage_sequence_t::const_iterator stage_citer_t;
     typedef stage_sequence_t::reverse_iterator stage_riter_t;
 
   public:
@@ -36,9 +37,9 @@ namespace soth
     //const VectorXi& getInitialActiveSet( unsigned int i );
 
     void useDamp( bool c ) { withDamp = c ; }
-    bool useDamp() { return withDamp; }
+    bool useDamp() const { return withDamp; }
     void setDamping( const double & d );
-    double getMaxDamping();
+    double getMaxDamping() const;
 
     //sizes
     int sizeA() const;

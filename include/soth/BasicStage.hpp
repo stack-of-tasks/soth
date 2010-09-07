@@ -58,8 +58,8 @@ namespace soth
 
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;
-    MatrixXd getJ();
-    VectorBound getBounds();
+    MatrixXd getJ() const;
+    VectorBound getBounds() const;
     VectorBound& getBoundsInternal();
 
   public: /* Notification, could be removed conditionnaly to the lack of boost::signal. */

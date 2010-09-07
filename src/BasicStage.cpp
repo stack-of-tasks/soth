@@ -82,13 +82,13 @@ namespace soth
   }
 
   MatrixXd BasicStage::
-  getJ( void )
+  getJ( void ) const
   {
     return J;
   }
 
   VectorBound BasicStage::
-  getBounds( void )
+  getBounds( void ) const
   {
     return bounds;
   }

@@ -59,6 +59,7 @@ namespace soth
     SubMatrixXd W;
     SubMatrixXd Wr,Mr;
     SubVectorXd e,lambda;
+    mutable VectorXd lambdadamped; // For debug only, can be removed on release.
 
     bool isWIdenty;
     /* sizeL = card(Ir). sizeM = previousRank. */
@@ -137,12 +138,15 @@ namespace soth
     template< typename VectorDerived >
     void applyDamping( MatrixBase<VectorDerived>& x  ) const;
     template< typename VD1,typename VD2 >
-    void applyDampingTranspose( MatrixBase<VD1>& x,const MatrixBase<VD2>& y  ) const;
+    void applyDamping( MatrixBase<VD1>& x,MatrixBase<VD2>& y  ) const;
     template< typename VectorDerived >
     void applyDampingTranspose( MatrixBase<VectorDerived>& x  ) const;
+    template< typename VD1,typename VD2 >
+    void applyDampingTranspose( MatrixBase<VD1>& x,const MatrixBase<VD2>& y  ) const;
 
     void damping( const double & factor ) { dampingFactor = factor; }
-    double damping( void ) { return dampingFactor; }
+    double damping( void ) const { return dampingFactor; }
+    bool useDamp( void ) const { return isDampCpt; }
 
     /* --- MULTIPLICATORS --------------------------------------------------- */
   public:
@@ -216,10 +220,15 @@ namespace soth
     const_SubMatrixXd getL() const { return L; }
     TriSubMatrixXd getLtri() { return L.triangularView<Lower>(); }
     const_TriSubMatrixXd getLtri() const { return L.triangularView<Lower>(); }
+    TriSubMatrixXd getLdtri() { return Ld.triangularView<Lower>(); }
+    const_TriSubMatrixXd getLdtri() const { return Ld.triangularView<Lower>(); }
     SubVectorXd gete() { return e; }
     const_SubVectorXd gete() const { return e; }
     SubVectorXd getLagrangeMultipliers() { return lambda; }
     const_SubVectorXd getLagrangeMultipliers() const { return lambda; }
+    MatrixXd getWr() const { if(isWIdenty) return MatrixXd::Identity(sizeL,sizeL); else return Wr; }
+
+    VectorXd getLagrangeDamped() const { return lambdadamped; }
 
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );
@@ -232,6 +241,9 @@ namespace soth
     // sizeN = card(In) = sizeA-sizeL.
     inline int sizeN( void ) const { assert(sizeA()-sizeL>=0);return sizeA()-sizeL; }
     inline Index rank() const {return sizeL;}
+
+    inline int getSizeM() const { return sizeM; }
+    inline int getSizeL() const { return sizeL; }
 
   public:
     static double EPSILON;

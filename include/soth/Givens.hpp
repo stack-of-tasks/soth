@@ -463,8 +463,12 @@ namespace soth
   inline MATLAB::
   MATLAB( unsigned int size,const GivensSequence & m1 )
   {
-    MatrixXd Yex(size,size); Yex.setIdentity(); m1.applyThisOnTheLeft(Yex);
-    initMatrix(Yex);
+    if( size == 0 ) initMatrixColNull(0);
+    else
+      {
+	MatrixXd Yex(size,size); Yex.setIdentity(); m1.applyThisOnTheLeft(Yex);
+	initMatrix(Yex);
+      }
   }
 
 

@@ -124,11 +124,11 @@ namespace soth
     for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
       {	(*iter)->damping(d);      }
   }
-  double HCOD::getMaxDamping()
+  double HCOD::getMaxDamping() const
   {
     if(! useDamp() ) return 0;
     double maxD=-1;
-    for( stage_iter_t iter = stages.begin();iter!=stages.end();++iter )
+    for( stage_citer_t iter = stages.begin();iter!=stages.end();++iter )
       {
 	double d = (*iter)->damping();
 	assert( d>=0 );
@@ -340,13 +340,16 @@ namespace soth
   {
     Ytu += tau*Ytdu;
     if( compute_u ) { solution += tau*du; }
-    //makeStep(compute_u);
+    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
+    sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
   }
   void HCOD::
   makeStep( bool compute_u )
   {
     Ytu += Ytdu;
     if( compute_u ) { solution += du; }
+    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
+    sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
   }
 
   /* Return true iff the search is positive, ie if downdate was
@@ -450,7 +453,7 @@ namespace soth
 
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	assert( testRecomposition(&std::cerr) );
-	damp();
+	//damp();
 	computeSolution();
 	assert( testSolution(&std::cerr) );
 
@@ -538,16 +541,51 @@ namespace soth
 
     /* verifL = Jsr' lsr, with Jsr = I and lsr = u. */
     if( stageRef==stages.size() )
-      { verifL = solution; stageRef -- ; }
+      { verifL = solution; }
     else
       verifL.setZero();
 
     /* verif += sum Ji' li. */
-    for( unsigned int i=0;i<=stageRef;++i )
+    const unsigned int nbstage = std::min(stages.size()-1,stageRef);
+    for( unsigned int i=0;i<=nbstage;++i )
       {
 	const Stage & s = *stages[i];
-	MatrixXd J_(s.nbConstraints(),sizeProblem);
-	verifL += s.Jactive(J_).transpose()*s.getLagrangeMultipliers();
+	verifL += s.Jactive().transpose()*s.getLagrangeMultipliers();
+	sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+
+	if( s.useDamp() )
+	  {
+	    if( i<stageRef )
+	      {
+		// Jd = damp*inv(L{i})*W{i}(:,sn{i}+1:end)'*J{i}
+		VectorXd ld = s.getLagrangeDamped()*s.damping();
+		sotDEBUG(5) << "ld = " << (MATLAB)ld << std::endl;
+
+		solveInPlaceWithUpperTriangular(s.getL().transpose(),ld);
+		sotDEBUG(5) << "Lild = " << (MATLAB)ld << std::endl;
+
+		VectorXd WLld = s.getWr().transpose()*ld;
+		sotDEBUG(5) << "WLild = " << (MATLAB)WLld << std::endl;
+
+		verifL += s.Jactive().transpose()*WLld;
+	      }
+	    else
+	      {
+		VectorXd WJu = s.getWr()*s.Jactive()*solution;
+		sotDEBUG(5) << "W = " << (MATLAB)s.getWr() << std::endl;
+		sotDEBUG(5) << "J = " << (MATLAB)s.Jactive() << std::endl;
+		sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
+
+		solveInPlaceWithUpperTriangular(s.getL(),WJu);
+		sotDEBUG(5) << "LiWJu = " << (MATLAB)WJu << std::endl;
+		solveInPlaceWithUpperTriangular(s.getL().transpose(),WJu);
+		sotDEBUG(5) << "LitLiWJu = " << (MATLAB)WJu << std::endl;
+
+		verifL += s.damping()*s.damping()*s.Jactive().transpose()
+		  * s.getWr()*WJu;
+	      }
+	  }
+
       }
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 

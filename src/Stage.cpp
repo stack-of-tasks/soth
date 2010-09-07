@@ -814,29 +814,36 @@ namespace soth
     if( isWIdenty ) We = e;
     else            We = Wr.transpose()*e;
     sotDEBUG(25) << "Wre = " << (MATLAB)We << std::endl;
+
+    VectorXd MLz(sizeL);
     if(! initialization )
       {
+	const_TriSubMatrixXd Ltri = getLtri();
+
 	const VectorBlock<VectorXd> ulprec = Ytu.segment( sizeM,sizeL );
 	const VectorBlock<VectorXd> umprec = Ytu.head( sizeM );
-	if( sizeM >0 )   We.noalias() -= getLtri()*ulprec + Mr*(umprec+dum);
-	else             We.noalias() -= getLtri()*ulprec;
+
+	if( sizeM >0 )   MLz.noalias() = Ltri*ulprec + Mr*(umprec+dum);
+	else             MLz.noalias() = Ltri*ulprec;
+
       }
-    else if( sizeM>0 )   We.noalias() -= Mr*dum;
+    else if( sizeM>0 )   MLz = Mr*dum;
+    else MLz.setZero();
+
+    We.noalias() -= MLz;
+    sotDEBUG(5) << "MLz = " << (MATLAB)MLz << std::endl;
+
+
     /* TODO: this sum u+du could be done only once, while it is done at each
      * stage now. */
     sotDEBUG(5) << "Wre_Lu_Mru_Mrdu = " << (MATLAB)We << std::endl;
 
     if( isDampCpt )
       {
-	if(! initialization )
-	  {
-	    const VectorBlock<VectorXd> ulprec = Ytu.segment( sizeM,sizeL );
-	    applyDampingTranspose( We,ulprec );
-	  }
-	else
-	  {
-	    applyDampingTranspose( We );
-	  }
+	MLz *= -1;
+	soth::solveInPlaceWithLowerTriangular(L,MLz);
+	applyDampingTranspose( We,MLz );
+	sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
 	soth::solveInPlaceWithLowerTriangular(Ld,We);
       }
     else
@@ -909,6 +916,32 @@ namespace soth
 
     edwork.setZero();
     StackMatrix<VectorDerived,SubVectorXd> ew(x,edwork);
+    sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    Wd >> ew;
+
+    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
+    sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
+    return;
+  }
+
+  template< typename VD1,typename VD2 >
+  void Stage::
+  applyDamping( MatrixBase<VD1>& x,MatrixBase<VD2>& y  ) const
+  {
+    typedef MatrixBase<VD1> VectorBase1;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase1);
+    typedef MatrixBase<VD1> VectorBase2;
+    EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase2);
+    assert( isDampCpt );
+    assert( x.size() == L.cols() && x.size() == L.rows() );
+    if (sizeL==0)
+      {
+	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
+	return;
+      }
+
+    y.setZero();
+    StackMatrix<VD1,VD2> ew(x,y);
     sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
     Wd >> ew;
 
@@ -1050,8 +1083,19 @@ namespace soth
       {
 	/* Compute lambda = e-W*MLYtu by the way. */
 	computeErrorFromJu(MLYtu);
+
+	// Wn ( Mn z - Wn' e ) DEBUG
+	// if( isWIdenty ) lambda.setZero();
+	// else
+	//   {
+	//     lambda = W.rightCols(sizeN())
+	//       * ( M.topRows(sizeN())*Ytu.head(sizeM)
+	// 	  - W.rightCols(sizeN()).transpose()*e );
+	//   }
       }
     sotDEBUG(5) << "WtJu = " << (MATLAB)MLYtu << endl;
+
+    VectorXd MrLYtu; if(isDampCpt) MrLYtu=MLYtu.tail(sizeL);
 
     /* MLYtu := W'e - [ML] Yt u . */
     MLYtu *= -1;
@@ -1072,10 +1116,25 @@ namespace soth
 
     if( isDampCpt )
       {
-	Ytrho.segment(sizeM,sizeL).noalias()
-	  -= (dampingFactor*dampingFactor)*Ytu.segment(sizeM, sizeL);
-      }
+	// rho = [J;Jd]' ( [Ju-e; Jdu-0 ] ) = J'Ju-e + Jd'Jdu
+	// rho += Jd' Jd u = Mr' Linv' Linv Mr Ytu
+	if( sizeL>0 )
+	  {
+	    sotDEBUG(5) << "MrLYtu = "<< (MATLAB)MrLYtu << endl;
 
+	    soth::solveInPlaceWithLowerTriangular(L,MrLYtu);
+	    MrLYtu *= (dampingFactor*dampingFactor);
+	    Ytrho.segment(sizeM,sizeL).noalias() -= MrLYtu;
+	    sotDEBUG(5) << "llLiMrLYtu = "<< (MATLAB)MrLYtu << endl;
+
+	    if( sizeM>0 )
+	      {
+		soth::solveInPlaceWithLowerTriangular(L,MrLYtu);
+		Ytrho.head(sizeM) -= Mr.transpose()*MrLYtu;
+		sotDEBUG(5) << "MrllLiMrLYtu = "<< (MATLAB)(MatrixXd)(Mr.transpose()*MrLYtu) << endl;
+	      }
+	  }
+      }
   }
 
 
@@ -1101,21 +1160,30 @@ namespace soth
 
     if( isDampCpt )
       {
-	solveInPlaceWithUpperTriangular(Ld.transpose(), rho_i);
-	applyDamping( rho_i );
+	VectorXd Ldir = rho_i;
+	solveInPlaceWithUpperTriangular(Ld.transpose(), Ldir);
+	lambdadamped.resize(sizeL);
+	applyDamping( rho_i,lambdadamped );
+	sotDEBUG(5) << "ld = " << (MATLAB)lambdadamped << endl;
+
+	if( isWIdenty ) l.noalias() = rho_i;
+	else            l.noalias() = Wr * rho_i;
+
+	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
       }
     else
-      { solveInPlaceWithUpperTriangular(L.transpose(), rho_i); }
-    sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
+      {
+	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+ 	if( isWIdenty ) l.noalias() = rho_i;
+	else            l.noalias() = Wr * rho_i;
+      }
 
-
-    if( isWIdenty ) l.noalias() = rho_i;
-    else            l.noalias() = Wr * rho_i;
     if( sizeM>0 )
       {
 	VectorBlock<VectorXd> rho_under = rho.head(sizeM);
-	rho_under.noalias() -= M.bottomRows(sizeL).transpose()*rho_i;
+	rho_under.noalias() -= Mr.transpose()*rho_i;
       }
+    sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
   }
 
   void Stage::
@@ -1438,6 +1506,12 @@ namespace soth
     os << "W{"<<stageRef<<"} = " << MATLAB(W,isWIdenty) << std::endl;
     os << "M{"<<stageRef<<"} = " << (MATLAB)M << std::endl;
     os << "L{"<<stageRef<<"} = " << (MATLAB)L << std::endl;
+    if( isDampCpt )
+      {
+	os << "Ld{"<<stageRef<<"} = " << (MATLAB)Ld << std::endl;
+	os << "Wd{"<<stageRef<<"} = " << MATLAB(sizeL*2,Wd) << std::endl;
+      }
+
 
     if( check )
     {
