@@ -264,6 +264,95 @@ namespace soth
 
   }
 
+
+  void readProblemFromBinFile( const std::string name,
+			    std::vector<Eigen::MatrixXd> &J,
+			    std::vector<soth::VectorBound> &b,
+			    unsigned int& NB_STAGE,
+			    std::vector<unsigned int> & NR,
+			    unsigned int& NC )
+  {
+    std::ifstream fin((name+".txt").c_str());
+    std::ifstream fbin((name+".dat").c_str());
+    std::string syntax1,syntax2;
+    MatrixXd Ji,eiinf,eisup;
+
+    fin >> syntax1 >> syntax2 >> NC;
+    assert( (syntax1 == "variable")&&(syntax2 == "size") );
+    NB_STAGE=0;  unsigned int & s= NB_STAGE;
+    fin >> syntax1;
+    do
+      {
+	NR.resize(s+1); J.resize(s+1); b.resize(s+1);
+
+	unsigned int nre;
+	fin >> syntax2 >> nre;
+	assert( (syntax1 == "level")&&(syntax2 == "equalities") );
+
+	MatrixXd Je; VectorXd ee;
+	if( nre>0 )
+	  {
+	    Je.resize(nre,NC); ee.resize(nre);
+	    for( unsigned int i=0;i<nre;++i )
+	      {
+		for( unsigned int j=0;j<NC;++j )
+		  {
+		    fin >> Je(i,j);
+		    fbin.read(reinterpret_cast<char*>(&Je(i,j)), sizeof(double));
+		  }
+		fin >> ee(i);
+		fbin.read(reinterpret_cast<char*>(&ee(i)), sizeof(double));
+	      }
+	  }
+
+	fin >> syntax1 >>  NR[s];
+	assert( (syntax1 == "inequalities") );
+
+	/* Copy the equalities line into the total matrix. */
+	NR[s]+=nre; assert(NR[s]>0);
+	J[s].resize(NR[s],NC); b[s].resize(NR[s]);
+	if( nre>0 )
+	  {
+	    J[s].topRows(nre)=Je;
+	    for( unsigned int i=0;i<nre;++i )  b[s][i] = ee(i);
+	  }
+
+	/* Parse the inequalities. */
+	if( NR[s]>nre )
+	  {
+	    double bi,bu;
+	    for( unsigned int i=nre;i<NR[s];++i )
+	      {
+		for( unsigned int j=0;j<NC;++j )
+		  {
+		    fin >> J[s](i,j);
+		    fbin.read(reinterpret_cast<char*>(&J[s](i,j)), sizeof(double));
+		  }
+		fin >> bi>>bu;
+		fbin.read(reinterpret_cast<char*>(&bi), sizeof(double));
+		fbin.read(reinterpret_cast<char*>(&bu), sizeof(double));
+		if( bi<-1e10 ) // bound sup only
+		  {
+		    assert( bu<=1e10 );
+		    b[s][i] = Bound( bu,Bound::BOUND_SUP );
+		  }
+		else if( 1e10<bu ) // bound inf only
+		  {
+		    b[s][i] = Bound( bi,Bound::BOUND_INF );
+		  }
+		else // double bound
+		  {
+		    b[s][i] = std::make_pair( bi,bu );
+		  }
+	      }
+	  }
+	sotDEBUG(5) << "J"<<s<<" = " << (MATLAB)J[s] << endl;
+	sotDEBUG(5) << "b"<<s<<" = " << b[s] << endl;
+	fin >> syntax1; s++;
+      } while( syntax1 == "level" );
+
+  }
+
   void readProblemFromFile( const std::string name,
 			    std::vector<Eigen::MatrixXd> &J,
 			    std::vector<soth::VectorBound> &b )

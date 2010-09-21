@@ -365,7 +365,13 @@ int main (int argc, char** argv)
 
   if( (argc==3)&& std::string(argv[1])=="-file")
     {
+      std::cout <<"Read from file ... " << std::endl;
       readProblemFromFile( argv[2],J,b,NB_STAGE,NR,NC);
+    }
+  else if( (argc==3)&& std::string(argv[1])=="-bin")
+    {
+      std::cout <<"Read from bin file ... " << std::endl;
+      readProblemFromBinFile( argv[2],J,b,NB_STAGE,NR,NC);
     }
   else
     {
