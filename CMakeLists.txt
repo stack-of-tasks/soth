@@ -54,7 +54,7 @@ IF(EIGEN3_FOUND)
 ENDIF(EIGEN3_FOUND)
 
 # --- BOOST HEADER ---------------------------------------------------
-FIND_PACKAGE( Boost 1.36.0 COMPONENTS signals )
+FIND_PACKAGE( Boost 1.36.0 COMPONENTS signals program_options)
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})

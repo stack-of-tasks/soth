@@ -19,9 +19,9 @@ namespace soth
     ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
   {
-# ifndef NDEBUG
-    sotDebugTrace::openFile();
-#endif
+// # ifndef NDEBUG
+//     sotDebugTrace::openFile();
+// #endif
 
     stages.reserve(nbStage);
   }

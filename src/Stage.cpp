@@ -825,7 +825,6 @@ namespace soth
 
 	if( sizeM >0 )   MLz.noalias() = Ltri*ulprec + Mr*(umprec+dum);
 	else             MLz.noalias() = Ltri*ulprec;
-
       }
     else if( sizeM>0 )   MLz = Mr*dum;
     else MLz.setZero();
@@ -840,10 +839,14 @@ namespace soth
 
     if( isDampCpt )
       {
-	MLz *= -1;
-	soth::solveInPlaceWithLowerTriangular(L,MLz);
-	applyDampingTranspose( We,MLz );
+	if( initialization ) applyDampingTranspose(We);
+	else
+	  {
+	    VectorXd lz = Ytu.segment( sizeM,sizeL );
+	    applyDampingTranspose( We,lz );
+	  }
 	sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
+	sotDEBUG(5) << "WdeJu = " << (MATLAB)We << std::endl;
 	soth::solveInPlaceWithLowerTriangular(Ld,We);
       }
     else
@@ -1084,6 +1087,15 @@ namespace soth
 	/* Compute lambda = e-W*MLYtu by the way. */
 	computeErrorFromJu(MLYtu);
 
+	// DEBUG
+	if(name == "stage_1" )
+	  {
+	    sotDEBUG(5) << "MLYtu = " << MLYtu << std::endl;
+	    sotDEBUG(5) << "We = " << W.transpose()*e << std::endl;
+	    sotDEBUG(5) << "e = " << e << std::endl;
+	  }
+
+
 	// Wn ( Mn z - Wn' e ) DEBUG
 	// if( isWIdenty ) lambda.setZero();
 	// else
@@ -1095,16 +1107,16 @@ namespace soth
       }
     sotDEBUG(5) << "WtJu = " << (MATLAB)MLYtu << endl;
 
-    VectorXd MrLYtu; if(isDampCpt) MrLYtu=MLYtu.tail(sizeL);
-
     /* MLYtu := W'e - [ML] Yt u . */
     MLYtu *= -1;
     if( isWIdenty ) MLYtu.noalias() += e;
     else            MLYtu.noalias() += W.transpose()*e;
     sotDEBUG(5) << "Wte_Ju = " << (MATLAB)MLYtu << endl;
+    sotDEBUG(5) << "Wte_Ju = [" << MLYtu.transpose() << "]';" << endl;
 
     /* TODO: W'(e-Ju) is null on the Ir part.
-     * ... maybe not for u=u0+du, with non null u0. */
+     * ... maybe not for u=u0+du, with non null u0.
+     * ... yes it is for tau=1.  */
 
     /* Ytrho := [M L]' * MLYtu = [ M L ]' ( W'e - [M L] Ytu ). */
     Ytrho.head(sizeM).noalias() = M.transpose()*MLYtu;
@@ -1117,22 +1129,11 @@ namespace soth
     if( isDampCpt )
       {
 	// rho = [J;Jd]' ( [Ju-e; Jdu-0 ] ) = J'Ju-e + Jd'Jdu
-	// rho += Jd' Jd u = Mr' Linv' Linv Mr Ytu
-	if( sizeL>0 )
+	// rho -= l^2 Ytu
+	unsigned int sML = sizeM+sizeL;
+	if( sML>0 )
 	  {
-	    sotDEBUG(5) << "MrLYtu = "<< (MATLAB)MrLYtu << endl;
-
-	    soth::solveInPlaceWithLowerTriangular(L,MrLYtu);
-	    MrLYtu *= (dampingFactor*dampingFactor);
-	    Ytrho.segment(sizeM,sizeL).noalias() -= MrLYtu;
-	    sotDEBUG(5) << "llLiMrLYtu = "<< (MATLAB)MrLYtu << endl;
-
-	    if( sizeM>0 )
-	      {
-		soth::solveInPlaceWithLowerTriangular(L,MrLYtu);
-		Ytrho.head(sizeM) -= Mr.transpose()*MrLYtu;
-		sotDEBUG(5) << "MrllLiMrLYtu = "<< (MATLAB)(MatrixXd)(Mr.transpose()*MrLYtu) << endl;
-	      }
+	    Ytrho.head(sML) -= (dampingFactor*dampingFactor)*Ytu.head(sML);
 	  }
       }
   }
@@ -1156,6 +1157,7 @@ namespace soth
     if( sizeL==0 )
       {	l.setZero(); return; }
     VectorBlock<VectorXd> rho_i = rho.segment(sizeM,sizeL);
+    VectorBlock<VectorXd> rho_under = rho.head(sizeM);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
 
     if( isDampCpt )
@@ -1169,19 +1171,22 @@ namespace soth
 	if( isWIdenty ) l.noalias() = rho_i;
 	else            l.noalias() = Wr * rho_i;
 
-	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+	if( sizeM>0 )
+	  {
+	    rho_under.noalias() -= Mr.transpose()*rho_i;
+	    rho_under.tail(sizeL).noalias() -= dampingFactor*lambdadamped;
+	  }
       }
     else
       {
 	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
  	if( isWIdenty ) l.noalias() = rho_i;
 	else            l.noalias() = Wr * rho_i;
-      }
 
-    if( sizeM>0 )
-      {
-	VectorBlock<VectorXd> rho_under = rho.head(sizeM);
-	rho_under.noalias() -= Mr.transpose()*rho_i;
+	if( sizeM>0 )
+	  {
+	    rho_under.noalias() -= Mr.transpose()*rho_i;
+	  }
       }
     sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
   }
@@ -1189,10 +1194,26 @@ namespace soth
   void Stage::
   computeLagrangeMultipliers( VectorXd& rho )
   {
+    // DEBUG
+    if(name == "stage_0" )
+      {
+	sotDEBUG(5) << "rho0b = " << rho << std::endl;
+	sotDEBUG(5) << "lag0b = " << lambda << std::endl;
+      }
+
     assert( isInit );
     computeLagrangeMultipliers(rho,lambda);
     sotDEBUG(1) << "l = " << (MATLAB)lambda << endl;
     isLagrangeCpt=true;
+
+    // DEBUG
+    if(name == "stage_0" )
+      {
+	sotDEBUG(5) << "rho0 = " << rho << std::endl;
+	sotDEBUG(5) << "lag0 = " << lambda << std::endl;
+      }
+
+
   }
 
   /* --- BOUND -------------------------------------------------------------- */
@@ -1546,6 +1567,6 @@ namespace soth
   }
 
 
-  double Stage::EPSILON = 1e-6;
+  double Stage::EPSILON = 1e-8;
 
 }; // namespace soth

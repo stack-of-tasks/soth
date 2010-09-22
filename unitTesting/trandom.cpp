@@ -352,6 +352,9 @@ namespace DummyActiveSet
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+
+#include <boost/program_options.hpp>
+
 int main (int argc, char** argv)
 {
 # ifndef NDEBUG
@@ -363,15 +366,52 @@ int main (int argc, char** argv)
   std::vector<Eigen::MatrixXd> J;
   std::vector<soth::VectorBound> b;
 
-  if( (argc==3)&& std::string(argv[1])=="-file")
+
+  boost::program_options::variables_map optionMap;
+  {
+    namespace po = boost::program_options;
+    po::options_description desc("trandom options");
+    desc.add_options()
+      ("help", "produce help message")
+      ("seed,s",po::value<int>(),"specify the seed of the random generator")
+      ("file,f", po::value<std::string>(),"ascii file")
+      ("bin,b", po::value<std::string>(),
+       "file root (no extention to reach both ascii file for specification and bin file for values")
+      ;
+
+    po::positional_options_description p;
+    p.add("seed", -1);
+
+    po::store(po::command_line_parser(argc, argv).
+	      options(desc).positional(p).run(), optionMap);
+    po::notify(optionMap);
+
+    if (optionMap.count("help"))
+      {
+	std::cout << desc << std::endl;
+	exit(0);
+      }
+
+    int nbExclusive = 0;
+    if( optionMap.count("bin") ) nbExclusive++;
+    if( optionMap.count("file") ) nbExclusive++;
+    if( optionMap.count("seed") ) nbExclusive++;
+    if( nbExclusive>1 )
+      {
+	std::cout << "Option bin, file and seed are exclusive." << std::endl;
+	exit(-1);
+      }
+  }
+
+  if( optionMap.count("file") )
     {
       std::cout <<"Read from file ... " << std::endl;
-      readProblemFromFile( argv[2],J,b,NB_STAGE,NR,NC);
+      readProblemFromFile( optionMap["file"].as<std::string>(),J,b,NB_STAGE,NR,NC);
     }
-  else if( (argc==3)&& std::string(argv[1])=="-bin")
+  else if( optionMap.count("bin") )
     {
       std::cout <<"Read from bin file ... " << std::endl;
-      readProblemFromBinFile( argv[2],J,b,NB_STAGE,NR,NC);
+      readProblemFromFile( optionMap["bin"].as<std::string>(),J,b,NB_STAGE,NR,NC);
     }
   else
     {
@@ -379,8 +419,7 @@ int main (int argc, char** argv)
       struct timeval tv;
       gettimeofday(&tv,NULL);
       int seed = tv.tv_usec % 7919; //= 7594;
-      if( argc == 2 )
-	{  seed = atoi(argv[1]);  }
+      if( optionMap.count("seed") ) { seed = optionMap["seed"].as<int>(); }
       std::cout << "seed = " << seed << std::endl;
       soth::Random::setSeed(seed);
 
@@ -422,9 +461,6 @@ int main (int argc, char** argv)
   hcod.activeSearch( solution );
   cout << "Optimal solution = " << (MATLAB)solution << endl;
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
-
-
-  //exit(0); // DEBUG
 
   /* --- CHECK --- */
   VectorXd u=solution,du = VectorXd::Zero(NC);
