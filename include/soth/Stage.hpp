@@ -60,6 +60,7 @@ namespace soth
     SubMatrixXd Wr,Mr;
     SubVectorXd e,lambda;
     mutable VectorXd lambdadamped; // For debug only, can be removed on release.
+    VectorXd lzfreezed;
 
     bool isWIdenty;
     /* sizeL = card(Ir). sizeM = previousRank. */
@@ -81,7 +82,7 @@ namespace soth
     /* Check if the stage has been reset, initialized, if the optimum
      * has been computed, and if the lagrange multipliers have been
      * computed. */
-    bool isReset,isInit,isOptimumCpt,isLagrangeCpt,isDampCpt;
+    bool isReset,isInit,isOptimumCpt,isLagrangeCpt,isDampCpt,isFreezed;
 
   public:
     Stage( const MatrixXd & J, const VectorBound & bounds, BaseY& Y  );

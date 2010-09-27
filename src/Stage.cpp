@@ -35,7 +35,7 @@ namespace soth
     ,Wd()                                                                            \
     ,dampingFactor( DAMPING_FACTOR )                                                 \
                                                                                      \
-    ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false)
+      ,isReset(false),isInit(false),isOptimumCpt(false),isLagrangeCpt(false),isDampCpt(false),isFreezed(false)
 
 #define SOTH_STAGE_COMMON_INIT                                                       \
   do {                                                                               \
@@ -83,6 +83,7 @@ namespace soth
     // TODO: disable the checks on release.
     isReset=true; isInit = false; isOptimumCpt = false;
     isLagrangeCpt = false; isDampCpt =false;
+    isFreezed = false;
 
 #ifndef NDEBUG
     ML_ = MatrixXd::Ones(nr,nc);
@@ -373,6 +374,8 @@ namespace soth
 	      }
 	  }
       }
+
+    isFreezed =true;
     sotDEBUG(55) << "# Out } " << name << endl;
   }
 
@@ -842,7 +845,11 @@ namespace soth
 	if( initialization ) applyDampingTranspose(We);
 	else
 	  {
-	    VectorXd lz = Ytu.segment( sizeM,sizeL );
+	    VectorXd lz = -Ytu.segment( sizeM,sizeL );
+	    if( isFreezed )
+	      {
+		lz += lzfreezed.segment( sizeM,sizeL );
+	      }
 	    applyDampingTranspose( We,lz );
 	  }
 	sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
@@ -946,9 +953,11 @@ namespace soth
     y.setZero();
     StackMatrix<VD1,VD2> ew(x,y);
     sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    sotDEBUG(45) << "W = " << MATLAB(sizeL*2,Wd) << endl;
+
     Wd >> ew;
 
-    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
+    sotDEBUG(45) << "ed1 = " << (MATLAB)ew << endl;
     sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
     return;
   }
@@ -1086,6 +1095,7 @@ namespace soth
       {
 	/* Compute lambda = e-W*MLYtu by the way. */
 	computeErrorFromJu(MLYtu);
+	lzfreezed = Ytu;
 
 	// DEBUG
 	if(name == "stage_1" )
@@ -1162,32 +1172,22 @@ namespace soth
 
     if( isDampCpt )
       {
-	VectorXd Ldir = rho_i;
-	solveInPlaceWithUpperTriangular(Ld.transpose(), Ldir);
+	solveInPlaceWithUpperTriangular(Ld.transpose(), rho_i);
 	lambdadamped.resize(sizeL);
 	applyDamping( rho_i,lambdadamped );
 	sotDEBUG(5) << "ld = " << (MATLAB)lambdadamped << endl;
-
-	if( isWIdenty ) l.noalias() = rho_i;
-	else            l.noalias() = Wr * rho_i;
-
-	if( sizeM>0 )
-	  {
-	    rho_under.noalias() -= Mr.transpose()*rho_i;
-	    rho_under.tail(sizeL).noalias() -= dampingFactor*lambdadamped;
-	  }
       }
     else
       {
 	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
- 	if( isWIdenty ) l.noalias() = rho_i;
-	else            l.noalias() = Wr * rho_i;
-
-	if( sizeM>0 )
-	  {
-	    rho_under.noalias() -= Mr.transpose()*rho_i;
-	  }
       }
+
+    if( isWIdenty ) l.noalias() = rho_i;
+    else            l.noalias() = Wr * rho_i;
+
+    if( sizeM>0 )
+      {	rho_under.noalias() -= Mr.transpose()*rho_i;      }
+
     sotDEBUG(5) << "Lirho = " << (MATLAB)rho_i << endl;
   }
 

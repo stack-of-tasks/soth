@@ -296,6 +296,7 @@ namespace soth
   {
     assert(isInit);
     if(! useDamp() )  return;
+    sotDEBUG(1) << "Damp ... " << std::endl;
     BOOST_FOREACH( stage_ptr_t sptr,stages )
       {	sptr->damp();      }
   }
@@ -453,7 +454,7 @@ namespace soth
 
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	assert( testRecomposition(&std::cerr) );
-	//damp();
+	damp();
 	computeSolution();
 	assert( testSolution(&std::cerr) );
 
@@ -550,6 +551,9 @@ namespace soth
     for( unsigned int i=0;i<=nbstage;++i )
       {
 	const Stage & s = *stages[i];
+	sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+	sotDEBUG(5) << "J = " << (soth::MATLAB)s.Jactive() << std::endl;
+	sotDEBUG(5) << "l = " << (soth::MATLAB)s.getLagrangeMultipliers() << std::endl;
 	verifL += s.Jactive().transpose()*s.getLagrangeMultipliers();
 	sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
@@ -557,32 +561,21 @@ namespace soth
 	  {
 	    if( i<stageRef )
 	      {
-		// Jd = damp*inv(L{i})*W{i}(:,sn{i}+1:end)'*J{i}
-		VectorXd ld = s.getLagrangeDamped()*s.damping();
+		// Jd = [J; l.Y' ]
+		// verif += J'lambda + Y*lambdad = J'l + Y1:m.0 + Ym+1:m+l.lambdad
+		VectorXd ld = VectorXd::Zero(sizeProblem);
+		ld.segment( s.getSizeM(),s.getSizeL() ) = s.getLagrangeDamped();
 		sotDEBUG(5) << "ld = " << (MATLAB)ld << std::endl;
 
-		solveInPlaceWithUpperTriangular(s.getL().transpose(),ld);
-		sotDEBUG(5) << "Lild = " << (MATLAB)ld << std::endl;
-
-		VectorXd WLld = s.getWr().transpose()*ld;
-		sotDEBUG(5) << "WLild = " << (MATLAB)WLld << std::endl;
-
-		verifL += s.Jactive().transpose()*WLld;
+		Y.applyThisOnVector(ld);
+		verifL += s.damping()*ld;
 	      }
 	    else
 	      {
-		VectorXd WJu = s.getWr()*s.Jactive()*solution;
-		sotDEBUG(5) << "W = " << (MATLAB)s.getWr() << std::endl;
-		sotDEBUG(5) << "J = " << (MATLAB)s.Jactive() << std::endl;
-		sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
-
-		solveInPlaceWithUpperTriangular(s.getL(),WJu);
-		sotDEBUG(5) << "LiWJu = " << (MATLAB)WJu << std::endl;
-		solveInPlaceWithUpperTriangular(s.getL().transpose(),WJu);
-		sotDEBUG(5) << "LitLiWJu = " << (MATLAB)WJu << std::endl;
-
-		verifL += s.damping()*s.damping()*s.Jactive().transpose()
-		  * s.getWr()*WJu;
+		VectorXd z0( sizeProblem ); z0.setZero();
+		z0.head( s.getSizeM()+s.getSizeL() ) = Ytu.head( s.getSizeM()+s.getSizeL() );
+		Y.applyThisOnVector(z0);
+		verifL += s.damping()*s.damping()*z0;
 	      }
 	  }
 
