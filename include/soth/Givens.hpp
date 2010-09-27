@@ -435,7 +435,7 @@ namespace soth
   void GivensSequence::
   applyTransposeOnTheLeft(MatrixBase<Derived> & M) const
   {
-    for (size_t i=0; i<G.size(); ++i)
+    for (int i=G.size()-1; i>=0; --i)
       G[i].applyTransposeOnTheLeft(M);
   }
 
@@ -444,8 +444,8 @@ namespace soth
   void GivensSequence::
   applyThisOnTheRight(MatrixBase<Derived> & M) const
   {
-    for (size_t i=0; i<G.size(); ++i)
-      G[i].applyThisOnTheRight(M);
+    for (int i=G.size()-1; i>=0; --i)
+      { G[i].applyThisOnTheRight(M); }
   }
 
   // M := G'*M.
