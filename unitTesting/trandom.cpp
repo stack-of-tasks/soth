@@ -49,21 +49,47 @@ namespace DummyActiveSet
 
 
   VectorXd SOT_Solver( std::vector<Eigen::MatrixXd> J,
-		       std::vector<VectorXd> e )
+		       std::vector<VectorXd> e,
+		       double damping = 0.0)
   {
     const unsigned int NC = J[0].cols();
 
     VectorXd u = VectorXd::Zero(NC);
     MatrixXd Pa = MatrixXd::Identity(NC,NC);
     const double EPSILON = Stage::EPSILON;
+    MatrixXd Inc = damping*MatrixXd::Identity(NC,NC);
 
     for( unsigned int i=0;i<J.size();++i )
       {
 	if( J[i].rows() == 0 ) continue;
 	MatrixXd JPi = J[i]*Pa;
 	ULV ulv; ulv.compute(JPi,EPSILON);
-	u += ulv.solve( e[i]-J[i]*u );
+
+	if( damping>0 )
+	  {
+	    MatrixXd JPidamped
+	      = soth::StackMatrix<MatrixXd,MatrixXd>( J[i],Inc )*Pa;
+	    sotDEBUG(5) << "JPd"<<i<<" = " << (MATLAB)JPidamped << endl;
+	    ULV ulvd; ulvd.compute(JPidamped,EPSILON);
+
+	    const unsigned int nr = e[i].size();
+	    VectorXd ed(nr+NC);
+	    ed.head(nr) = e[i]-J[i]*u;
+	    ed.tail(NC) = -damping*u;
+	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)ed << endl;
+
+	    u += ulvd.solve( ed );
+	    sotDEBUG(5) << "du"<<i<<" = " << (MATLAB)ulvd.solve( ed ) << endl;
+	  }
+	else
+	  {
+	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)(e[i]-J[i]*u) << endl;
+	    u += ulv.solve( e[i]-J[i]*u );
+	  }
+
 	ulv.decreaseProjector( Pa );
+	sotDEBUG(5) << "P"<<i<<" = " << (MATLAB)Pa << endl;
+	sotDEBUG(5) << "u"<<i<<" = " << (MATLAB)u << endl;
       }
 
     return u;
@@ -80,12 +106,11 @@ namespace DummyActiveSet
       {
 	const MatrixXd& J = Jref[i];
 	const soth::VectorBound& b = bref[i];
-
 	VectorXd e = J*usot;
 	errors[i]=0;
 	for( unsigned int r = 0;int(r)<J.rows();++r )
 	  {
-	    double x = b[r].distance(e(r));
+	    double x = b[r].distance(e[r]);
 	    errors[i] += x*x;
 	  }
 	sotDEBUG(5) << "err(" << i << ") = " << errors[i] << endl;
@@ -134,7 +159,8 @@ namespace DummyActiveSet
 		       const std::vector< std::vector<Bound::bound_t> >& bounds,
 		       const double & urefnorm,
 		       const std::vector<double> & erefnorm,
-		       const bool verbose = false )
+		       const bool verbose = false,
+		       const double damping = 0.0 )
   {
     /* Build the SOT problem. */
     const unsigned int NC = Jref[0].cols();
@@ -160,7 +186,7 @@ namespace DummyActiveSet
       }
 
     /* Find the optimum. */
-    VectorXd usot = SOT_Solver( Jsot,esot );
+    VectorXd usot = SOT_Solver( Jsot,esot,damping );
     sotDEBUG(45) << "usot" <<" = " << (MATLAB)usot << endl;
 
     /* Check the bounds. */
@@ -178,11 +204,8 @@ namespace DummyActiveSet
 	    for( unsigned int r=0;r<active[i].size();++r )
 	      {
 		const int ref = active[i][r];
-		//if( (bref[i][ref].getType()) !=  Bound::BOUND_DOUBLE )
-		  {
-		    if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
-		    else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
-		  }
+		if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
+		else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
 		std::cout <<active[i][r] << " ";
 	      }
 	    std::cout << " ]";
@@ -446,7 +469,8 @@ int main (int argc, char** argv)
     }
   hcod.setNameByOrder("stage_");
 
-  hcod.setDamping(0.1);
+  const double dampingFactor = 0.1;
+  hcod.setDamping(dampingFactor);
   hcod.setInitialActiveSet();
 
   VectorXd solution;
@@ -458,122 +482,36 @@ int main (int argc, char** argv)
 
   cout << " --- RE --------------------------------- " << endl;
   sotDEBUG(1) << " --- RE --------------------------------- " << endl;
-  hcod.activeSearch( solution );
+  //  hcod.activeSearch( solution );
   cout << "Optimal solution = " << (MATLAB)solution << endl;
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
 
-  /* --- CHECK --- */
-  VectorXd u=solution,du = VectorXd::Zero(NC);
-  MatrixXd Ja,Japrec;
-  VectorXd ea,eaprec;
-  MatrixXd Pa = MatrixXd::Identity(NC,NC);
-  VectorXd usvd = VectorXd::Zero(NC);
 
-  /* Checks and recheck ...
-   * These checks are not valid: first, checking if the bound is
-   * or is not respected has little meaning, when the stages are not full rank.
-   * Second, when a slack is freezed, it is not possible to check its value any
-   * more with the initial reference value. .. TODO again
-
-     const double EPSILON = 10*Stage::EPSILON;
-     for( unsigned int i=0;i<hcod.nbStages();++i )
+  cout << " --- CHECK ------------------------------ " << endl;
+  sotDEBUG(1) << " --- CHECK ------------------------------ " << endl;
+  std::vector< std::vector<int> > active(NB_STAGE);
+  std::vector< std::vector<Bound::bound_t> > bounds(NB_STAGE);
+  for( unsigned int i=0;i<NB_STAGE;++i )
     {
-      Stage & st = hcod[i];
-      MatrixXd J_(NR[i],NC); VectorXd e_(NR[i]);
+      active[i].resize(hcod[i].sizeA());
+      bounds[i].resize(b[i].size(),soth::Bound::BOUND_TWIN);
+      for( unsigned int r=0;r<hcod[i].sizeA();++r )
+       	{
+	  soth::ConstraintRef cst = hcod[i].which(r);
+	  assert( cst.row>=0 && cst.row<b[i].size() );
+	  assert( cst.type==soth::Bound::BOUND_TWIN
+		  || cst.type==soth::Bound::BOUND_INF
+		  || cst.type==soth::Bound::BOUND_SUP );
+	  active[i][r]=cst.row;
+	  bounds[i][cst.row]=cst.type;
+       	}
+    }
+  DummyActiveSet::compareSolvers( J,b,active,bounds,solution.norm(),
+   				  DummyActiveSet::stageErrors(J,b,solution),
+				  true,dampingFactor );
 
-      std::cout << "Stage " << i << "... " << endl;
-      // {
-      // 	for( int r=0;r<NR[i];++r )
-      // 	  {
-      // 	    double Ju = J[i].row(r)*solution;
-      // 	    cout << "   "<<i << ":" << r << (hcod[i].isActive(r)?"a":" ") <<"\t";
-      // 	    switch( b[i][r].getType() )
-      // 	      {
-      // 	      case Bound::BOUND_TWIN:
-      // 		{
-      // 		  double x = b[i][r].getBound( Bound::BOUND_TWIN );
-      // 		  if( std::abs( x-Ju )<EPSILON )
-      // 		    cout << "    (=)    :  \t  Ju="  << Ju
-      // 			 << " ~ " << x << "=b" << endl;
-      // 		  else
-      // 		    cout << "!! " << " (=):  \t  Ju="  << Ju
-      // 			 << " != " << x << "=b" << endl;
-      // 		  break;
-      // 		}
-      // 	      case Bound::BOUND_INF:
-      // 		{
-      // 		  double x = b[i][r].getBound( Bound::BOUND_INF );
-      // 		  if( x<Ju+EPSILON )
-      // 		    cout << "    (b<.)  :  \t  Ju="  << Ju
-      // 			 << " > " << x << "=b" << endl;
-      // 		  else
-      // 		    cout << "!! " << " (b<.):  \t  Ju="  << Ju
-      // 			 << " !< " << x << "=b" << endl;
-      // 		  break;
-      // 		}
-      // 	      case Bound::BOUND_SUP:
-      // 		{
-      // 		  double x = b[i][r].getBound( Bound::BOUND_SUP );
-      // 		  if( Ju<x+EPSILON )
-      // 		    cout << "    (.<b)  :  \t  Ju="  << Ju
-      // 			 << " < " << x << "=b" << endl;
-      // 		  else
-      // 		    cout << "!! " << " (.<b):  \t  Ju="  << Ju
-      // 			 << " !> " << x << "=b" << endl;
-      // 		  break;
-      // 		}
-      // 	      case Bound::BOUND_DOUBLE:
-      // 		{
-      // 		  double xi = b[i][r].getBound( Bound::BOUND_INF );
-      // 		  double xs = b[i][r].getBound( Bound::BOUND_SUP );
-      // 		  if( (xi<Ju+EPSILON)&&(Ju<xs+EPSILON) )
-      // 		    cout << "    (b<.<b):  \t  binf="<<xi<<" < Ju="  << Ju
-      // 			 << " < " << xs << "=bsup" << endl;
-      // 		  else
-      // 		    cout << "!!  (b<.<b):  \t  binf="<<xi<<" !< Ju="  << Ju
-      // 			 << " !< " << xs << "=bsup" << endl;
-      // 		  break;
-      // 		}
-      // 	      }
-
-
-      // 	  }
-      // }
-
-
-      // sotDEBUG(1) << "Check bounds of " << i << "."<<endl;
-      // DEBUG assert( st.checkBound(u,du,NULL,NULL) );
-
-      if( st.sizeA()==0 ) continue;
-
-      SubMatrix<MatrixXd,RowPermutation> Jai = st.Jactive(J_);
-      SubMatrix<VectorXd,RowPermutation> eai = st.eactive(e_);
-
-      if( st.rank() == st.sizeA() )
-	{
-	  sotDEBUG(1) << "Check fullrankness of " << i << "."<<endl;
-	  assert( ( eai - Jai*u ).norm()<st.EPSILON );
-	}
-
-      MatrixXd JPi = Jai*Pa;
-      const unsigned int rank = st.rank();
-      sotDEBUG(5) << "e"<<i<< " = " << (MATLAB)eai << endl;
-      sotDEBUG(5) << "J"<<i<< " = " << (MATLAB)Jai << endl;
-      sotDEBUG(5) << "JP"<<i<< " = " << (MATLAB)JPi << endl;
-      sotDEBUG(5) << "rank"<<i<< " = " << (MATLAB)rank << endl;
-
-      ULV ulv; ulv.compute(JPi,rank); usvd += ulv.solve( eai-Jai*usvd );
-      ulv.decreaseProjector( Pa );
-
-      ulv.disp(true);
-      sotDEBUG(5) << "usvd"<<i<< " = " << (MATLAB)usvd << endl;
-      sotDEBUG(5) << "V"<<i<< " = " << (MATLAB)ulv.matrixV() << endl;
-      sotDEBUG(5) << "P"<<i<< " = " << (MATLAB)Pa << endl;
-
-      sotDEBUG(1) << "Check pinv of " << i << "." << endl;
-      assert( std::abs(( eai-Jai*u ).norm() - ( eai-Jai*usvd ).norm()) < 10*Stage::EPSILON );
-      } */
-
+  cout << " --- EXPLORE ---------------------------- " << endl;
+  sotDEBUG(1) << " --- EXPLORE ---------------------------- " << endl;
 
 #ifdef NDEBUG
   if(! DummyActiveSet::explore(J,b,solution) )
@@ -581,5 +519,4 @@ int main (int argc, char** argv)
 #else
   //  DummyActiveSet::detailActiveSet( J,b,solution,3045,3);
 #endif
-
 }
