@@ -46,6 +46,7 @@ namespace soth
     inline unsigned int   size( void ) const { return cstMap.size(); }
     bool                  isFreezed( unsigned int ref ) const;
     bool                  isActive( unsigned int ref ) const;
+    bool                  wasActive( unsigned int ref,const Bound::bound_t type ) const;
     Bound::bound_t        whichBound( unsigned int ref,bool checkActive=false ) const;
     double                sign( unsigned int ref ) const;
     /* Map: from the cst ref, give the row of J.
@@ -72,6 +73,7 @@ namespace soth
     cstref_vector_t cstMap;
     mapinv_vector_t cstMapInv;
     std::vector<bool> freerow,freezed;
+    Matrix<Bound::bound_t,Dynamic,1> activated;
     unsigned int nba;
 
   protected: /* Internal management */
@@ -122,6 +124,7 @@ namespace soth
     using AS::            whichBound;
     using AS::            nbActive;
     using AS::            isActive;
+    using AS::            wasActive;
     using AS::            isFreezed;
     using AS::            freeze;
     using AS::            sign;

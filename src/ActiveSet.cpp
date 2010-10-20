@@ -9,7 +9,7 @@ namespace soth
 
   ActiveSet::
   ActiveSet( unsigned int nr )
-    :cstMap(nr),cstMapInv(nr),freerow(nr),freezed(nr),nba(0)
+    :cstMap(nr),cstMapInv(nr),freerow(nr),freezed(nr),activated(nr),nba(0)
   {
     reset();
   }
@@ -21,6 +21,8 @@ namespace soth
     std::fill( cstMapInv.begin(),cstMapInv.end(),size() );
     std::fill( freerow.begin(),freerow.end(),true );
     std::fill( freezed.begin(),freezed.end(),false );
+    activated.fill(Bound::BOUND_NONE);
+
     nba=0;
   }
 
@@ -44,6 +46,15 @@ namespace soth
     cstMap[ref]=ConstraintRef(row,type);
     cstMapInv[row]=ref;
     freerow[row]=false; nba++;
+
+    if( activated[ref]==Bound::BOUND_NONE )
+      activated[ref]=type;
+    else
+      {
+	assert( activated[ref]!=type );
+	assert( type==Bound::BOUND_INF || type==Bound::BOUND_SUP );
+	activated[ref]=Bound::BOUND_DOUBLE;
+     }
   }
 
   /* Active the given constraint at any free row of ML, and return the
@@ -144,6 +155,19 @@ namespace soth
   {
     assert( ref<size() );
     return( cstMap[ref].type != Bound::BOUND_NONE );
+  }
+  bool ActiveSet::
+  wasActive( unsigned int ref,const Bound::bound_t type ) const
+  {
+    assert( ref<size() ); assert( activated.size() == (int)size() );
+    assert( type==Bound::BOUND_INF || type==Bound::BOUND_SUP );
+    assert( activated[ref]==Bound::BOUND_INF || activated[ref]==Bound::BOUND_SUP
+	    || activated[ref]==Bound::BOUND_NONE || activated[ref]==Bound::BOUND_DOUBLE );
+    if( type==Bound::BOUND_INF )
+      return activated[ref]==Bound::BOUND_INF || activated[ref]==Bound::BOUND_DOUBLE;
+    else if( type==Bound::BOUND_SUP )
+      return activated[ref]==Bound::BOUND_SUP || activated[ref]==Bound::BOUND_DOUBLE;
+    else return( false );
   }
   double ActiveSet::
   sign( unsigned int ref ) const
