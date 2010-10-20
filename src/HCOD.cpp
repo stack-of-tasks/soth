@@ -417,8 +417,8 @@ namespace soth
 
   void HCOD::activeSearch( VectorXd & u )
   {
-    if( isDebugOnce ) {  sotDebugTrace::openFile(); isDebugOnce = false; }
-    else { if(sotDEBUGFLOW.outputbuffer.good()) sotDebugTrace::closeFile(); }
+    // if( isDebugOnce ) {  sotDebugTrace::openFile(); isDebugOnce = false; }
+    // else { if(sotDEBUGFLOW.outputbuffer.good()) sotDebugTrace::closeFile(); }
     sotDEBUGIN(15);
     /*
      * foreach stage: stage.initCOD(Ir_init)
@@ -556,30 +556,24 @@ namespace soth
 	sotDEBUG(5) << "l = " << (soth::MATLAB)s.getLagrangeMultipliers() << std::endl;
 	verifL += s.Jactive().transpose()*s.getLagrangeMultipliers();
 	sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
-
-	if( s.useDamp() )
-	  {
-	    if( i<stageRef )
-	      {
-		// Jd = [J; l.Y' ]
-		// verif += J'lambda + Y*lambdad = J'l + Y1:m.0 + Ym+1:m+l.lambdad
-		VectorXd ld = VectorXd::Zero(sizeProblem);
-		ld.segment( s.getSizeM(),s.getSizeL() ) = s.getLagrangeDamped();
-		sotDEBUG(5) << "ld = " << (MATLAB)ld << std::endl;
-
-		Y.applyThisOnVector(ld);
-		verifL += s.damping()*ld;
-	      }
-	    else
-	      {
-		VectorXd z0( sizeProblem ); z0.setZero();
-		z0.head( s.getSizeM()+s.getSizeL() ) = Ytu.head( s.getSizeM()+s.getSizeL() );
-		Y.applyThisOnVector(z0);
-		verifL += s.damping()*s.damping()*z0;
-	      }
-	  }
-
       }
+    sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+
+    // Damping
+    if( nbstage>0 && stageRef<stages.size() )
+      {
+      const Stage & s = *stages[nbstage];
+      if( s.useDamp() )
+	{
+	  const unsigned int sm = s.getSizeM();
+	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
+	  z.tail(sizeProblem-sm).setZero();
+	  VectorXd Yz(sizeProblem);
+	  Y.multiply(z,Yz);
+	  Yz *= s.damping()*s.damping();
+	  verifL += Yz;
+	}
+    }
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     const double sumNorm = verifL.norm();
