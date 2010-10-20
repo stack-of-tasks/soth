@@ -477,6 +477,7 @@ namespace soth
 	  {
 	    /* Remove all the non-zero compononent of ML(i+1:end,sizeM). */
 	    sotDEBUG(5) << "Found a non zero at "<<i << std::endl;
+	    conditionalWinit(false);
 	    Block<MatrixXd> ML(ML_,0,0,nr,sizeM+1);
 	    for( Index j=i+1;j<sizeN();++j )  // PSEUDOZERO
 	      {
@@ -846,10 +847,6 @@ namespace soth
 	else
 	  {
 	    VectorXd lz = -Ytu.segment( sizeM,sizeL );
-	    if( isFreezed )
-	      {
-		lz += lzfreezed.segment( sizeM,sizeL );
-	      }
 	    applyDampingTranspose( We,lz );
 	  }
 	sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
@@ -1016,8 +1013,11 @@ namespace soth
     return;
   }
 
-  /* --- INDIRECT ----------------------------------------------------------- */
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
 
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* err = Ju-e = W [M L 0] Y^u - e
    * where MLYtu has already been computed.
    */
@@ -1025,6 +1025,8 @@ namespace soth
   void Stage::
   computeErrorFromJu(const VectorXd& MLYtu,MatrixBase<D>& err) const
   {
+    assert( false && "DEPRECATED" );
+
     assert( MLYtu.size() == int(sizeA()) );
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<D>);
 
@@ -1032,11 +1034,15 @@ namespace soth
     else            err.noalias() =  W*MLYtu-e;
   }
 
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* Compute W'Ju = MLYtu = M*Ytu.head + L*Ytu.tail.
+   * TODO: After a little bit of reformulation, Just need to compute Mn.z.
    */
   void Stage::
   computeMLYtu( const VectorXd& Ytu,VectorXd& MLYtu ) const
   {
+    assert( false && "DEPRECATED" );
+
     assert(Ytu.size() == int(nc));
     MLYtu.noalias() = M*Ytu.head(sizeM);
     MLYtu.tail(sizeL).noalias()
@@ -1045,12 +1051,15 @@ namespace soth
     sotDEBUG(45) << "MLYtu = " << (MATLAB)MLYtu << endl;
   }
 
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* err = Ju-e = W [M L 0] Y^u - e
    */
   template <typename D>
   void Stage::
   computeError(const VectorXd& Ytu, MatrixBase<D>& err) const
   {
+    assert( false && "DEPRECATED" );
+
     assert(Ytu.size() == int(nc) );
     assert( isInit );
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(MatrixBase<D>);
@@ -1060,24 +1069,31 @@ namespace soth
     computeErrorFromJu(MLYtu,err);
   }
 
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* Compute the error from scratch, and stored it in lambda. */
   void Stage::
   computeError(const VectorXd& Ytu)
   {
+    assert( false && "DEPRECATED" );
+
     assert( isInit );
     computeError(Ytu,lambda);
     isLagrangeCpt =true;
   }
 
+  /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* Compute the error from already compute MLYtu, and stored it in lambda. */
   void Stage::
   computeErrorFromJu(const VectorXd& MLYtu)
   {
+    assert( false && "DEPRECATED" );
+
     computeErrorFromJu(MLYtu,lambda);
     sotDEBUG(1) << "l = " << (MATLAB)lambda << endl;
     isLagrangeCpt =true;
   }
 
+  /* --- INDIRECT ----------------------------------------------------------- */
 
   /* Compute J' (Ju-e) in Y base:
    * Ytrho = -Y'J'(Ju-e) = [ M L ]' ( W'e - [M L] Ytu ).
@@ -1089,63 +1105,64 @@ namespace soth
     assert( isInit );
     assert(Ytu.size() == int(nc) );
 
-    //TODO : manage temporary memory ?
-    VectorXd MLYtu; computeMLYtu(Ytu,MLYtu);
-    if( inLambda )
+    if( sizeN()==0 )
       {
-	/* Compute lambda = e-W*MLYtu by the way. */
-	computeErrorFromJu(MLYtu);
-	lzfreezed = Ytu;
+	sotDEBUG(5) << "sizeN==0, rho=0." << std::endl;
+	Ytrho.setZero();
+	lambda.setZero();
+	isLagrangeCpt =true;
+      }
+    else if( isWIdenty )
+      {
+	assert( sizeL==0 );
+	VectorXd MnYtu = M*Ytu.head(sizeM) - e;
+	sotDEBUG(5) << "Ju = " << (MATLAB)MnYtu << endl;
 
-	// DEBUG
-	if(name == "stage_1" )
+	if( inLambda )
 	  {
-	    sotDEBUG(5) << "MLYtu = " << MLYtu << std::endl;
-	    sotDEBUG(5) << "We = " << W.transpose()*e << std::endl;
-	    sotDEBUG(5) << "e = " << e << std::endl;
+	    /* Compute lambda = e-W*MLYtu by the way. */
+	    lambda.noalias() = MnYtu;
+	    isLagrangeCpt =true;
 	  }
 
-
-	// Wn ( Mn z - Wn' e ) DEBUG
-	// if( isWIdenty ) lambda.setZero();
-	// else
-	//   {
-	//     lambda = W.rightCols(sizeN())
-	//       * ( M.topRows(sizeN())*Ytu.head(sizeM)
-	// 	  - W.rightCols(sizeN()).transpose()*e );
-	//   }
+	/* rho = Mn' ( en - Mn zbar ) */
+	Ytrho.head(sizeM).noalias() = - M.transpose()*MnYtu;
+	Ytrho.tail(nc-sizeM).setZero();
+	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
       }
-    sotDEBUG(5) << "WtJu = " << (MATLAB)MLYtu << endl;
+    else
+      {
+	assert(! isWIdenty );
 
-    /* MLYtu := W'e - [ML] Yt u . */
-    MLYtu *= -1;
-    if( isWIdenty ) MLYtu.noalias() += e;
-    else            MLYtu.noalias() += W.transpose()*e;
-    sotDEBUG(5) << "Wte_Ju = " << (MATLAB)MLYtu << endl;
-    sotDEBUG(5) << "Wte_Ju = [" << MLYtu.transpose() << "]';" << endl;
+	//TODO : manage temporary memory ?
+	Block<SubMatrixXd> Mn = M.topRows(sizeN());
+	SubMatrixXd::ColsBlockXpr Wn = W.leftCols(sizeN());
+	VectorXd MnYtu = Mn*Ytu.head(sizeM) - Wn.transpose()*e;
 
-    /* TODO: W'(e-Ju) is null on the Ir part.
-     * ... maybe not for u=u0+du, with non null u0.
-     * ... yes it is for tau=1.  */
+	sotDEBUG(25) << "Mn = " << (MATLAB)Mn << endl;
+	sotDEBUG(25) << "Wn = " << (MATLAB)Wn << endl;
+	sotDEBUG(5) << "WtJu = " << (MATLAB)MnYtu << endl;
 
-    /* Ytrho := [M L]' * MLYtu = [ M L ]' ( W'e - [M L] Ytu ). */
-    Ytrho.head(sizeM).noalias() = M.transpose()*MLYtu;
-    Ytrho.segment(sizeM,sizeL).noalias()
-      = getLtri().transpose()*MLYtu.tail(sizeL);
-    Ytrho.tail(nc-sizeM-sizeL).setZero();
-    /* TODO: nobody ever will access the tail, could be neglected. */
-    sotDEBUG(5) << "rho_nodamp = " << (MATLAB)Ytrho << endl;
+	if( inLambda )
+	  {
+	    /* Compute lambda = e-W*MLYtu by the way. */
+	    lambda.noalias() = Wn*MnYtu;
+	    isLagrangeCpt =true;
+	  }
+
+	/* rho = Mn' ( en - Mn zbar ) */
+	Ytrho.head(sizeM).noalias() = - Mn.transpose()*MnYtu;
+	Ytrho.tail(nc-sizeM).setZero();
+	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
+      }
 
     if( isDampCpt )
       {
-	// rho = [J;Jd]' ( [Ju-e; Jdu-0 ] ) = J'Ju-e + Jd'Jdu
-	// rho -= l^2 Ytu
-	unsigned int sML = sizeM+sizeL;
-	if( sML>0 )
-	  {
-	    Ytrho.head(sML) -= (dampingFactor*dampingFactor)*Ytu.head(sML);
-	  }
+	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
+	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
+	sotDEBUG(5) << "rhod = " << Ytrho << endl;
       }
+
   }
 
 
@@ -1170,17 +1187,7 @@ namespace soth
     VectorBlock<VectorXd> rho_under = rho.head(sizeM);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
 
-    if( isDampCpt )
-      {
-	solveInPlaceWithUpperTriangular(Ld.transpose(), rho_i);
-	lambdadamped.resize(sizeL);
-	applyDamping( rho_i,lambdadamped );
-	sotDEBUG(5) << "ld = " << (MATLAB)lambdadamped << endl;
-      }
-    else
-      {
-	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
-      }
+    solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
 
     if( isWIdenty ) l.noalias() = rho_i;
     else            l.noalias() = Wr * rho_i;
@@ -1194,26 +1201,10 @@ namespace soth
   void Stage::
   computeLagrangeMultipliers( VectorXd& rho )
   {
-    // DEBUG
-    if(name == "stage_0" )
-      {
-	sotDEBUG(5) << "rho0b = " << rho << std::endl;
-	sotDEBUG(5) << "lag0b = " << lambda << std::endl;
-      }
-
     assert( isInit );
     computeLagrangeMultipliers(rho,lambda);
     sotDEBUG(1) << "l = " << (MATLAB)lambda << endl;
     isLagrangeCpt=true;
-
-    // DEBUG
-    if(name == "stage_0" )
-      {
-	sotDEBUG(5) << "rho0 = " << rho << std::endl;
-	sotDEBUG(5) << "lag0 = " << lambda << std::endl;
-      }
-
-
   }
 
   /* --- BOUND -------------------------------------------------------------- */
@@ -1241,6 +1232,12 @@ namespace soth
 	    assert( (bdtype==Bound::BOUND_INF)||(bdtype==Bound::BOUND_SUP) );
 	    sotDEBUG(5) << "Violation at " <<name <<" "
 			<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+
+	    if( activeSet.wasActive(i,bdtype) )
+	      {
+		sotDEBUG(5) << "Was active: zap! " << std::endl;
+		continue;
+	      }
 
 	    Bound::bound_t bitype = b.check(val,EPSILON);
 	    if( bitype==Bound::BOUND_NONE )
