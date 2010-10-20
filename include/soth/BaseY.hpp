@@ -77,13 +77,13 @@ namespace soth
     BaseY& operator*= (const GivensSequence& G);
 
     template< typename DerivedI, typename DerivedO >
-    void multiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res )
+    void multiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res ) const
     {
       if( isExplicit ) res = matrixExplicit*m;
       else { res=m; applyThisOnTheRight(res); }
     }
     template< typename DerivedI, typename DerivedO >
-    void transposeMultiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res )
+    void transposeMultiply( const MatrixBase<DerivedI>& m, MatrixBase<DerivedO>& res ) const
     {
       if( isExplicit ) res = matrixExplicit.transpose()*m;
       else { res=m; applyTransposeOnTheRight(res); }
