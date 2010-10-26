@@ -100,4 +100,19 @@ namespace soth
     return boundsInternal;
   }
 
+
+  VectorXd BasicStage::
+  getJrow( const unsigned int & cst  ) const
+  {
+    return J.row(cst);
+  }
+
+  const Bound & BasicStage::
+  getBoundRow( const unsigned int & cst  ) const
+  {
+    return bounds[cst];
+  }
+
+
+
 } // namespace soth
