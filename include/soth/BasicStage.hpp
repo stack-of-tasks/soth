@@ -56,6 +56,12 @@ namespace soth
 
     unsigned int nbConstraints( void ) const { return nr; }
 
+    /* Return the J row of the <cst> constraint (in the global ppol,
+     * not only in the active pool. */
+    VectorXd getJrow( const unsigned int & cst  ) const;
+    /* Return the bound-values of constraint <cst>.*/
+    const Bound & getBoundRow( const unsigned int & cst  ) const;
+
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;
     MatrixXd getJ() const;
