@@ -60,6 +60,10 @@ namespace soth
     inline unsigned int   where( unsigned int ref ) const { return map(ref); }
     inline unsigned int   whichConstraint( unsigned int row ) const { return mapInv(row); }
 
+    /* Damping */
+    void dampBoundValue( const ConstraintRef & cst,const double & value );
+    std::pair<double,double> getBoundDamping( const unsigned int & cst );
+
   public: /* --- Display --- */
     /* Return a compact of the active line, ordered by row values. */
     void                  disp( std::ostream& os,bool classic=true ) const;
@@ -74,6 +78,7 @@ namespace soth
     mapinv_vector_t cstMapInv;
     std::vector<bool> freerow,freezed;
     Matrix<Bound::bound_t,Dynamic,1> activated;
+    VectorXd dampingInf, dampingSup;
     unsigned int nba;
 
   protected: /* Internal management */
@@ -128,6 +133,8 @@ namespace soth
     using AS::            isFreezed;
     using AS::            freeze;
     using AS::            sign;
+    using AS::            dampBoundValue;
+    using AS::            getBoundDamping;
 
   protected: /* Forbidden to avoid ambiguities on which 'row' the arg refers to. */
     void                  active( unsigned int ref, Bound::bound_t type, unsigned int row );

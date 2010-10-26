@@ -9,7 +9,8 @@ namespace soth
 
   ActiveSet::
   ActiveSet( unsigned int nr )
-    :cstMap(nr),cstMapInv(nr),freerow(nr),freezed(nr),activated(nr),nba(0)
+    :cstMap(nr),cstMapInv(nr),freerow(nr),freezed(nr),activated(nr)
+    ,dampingInf(nr),dampingSup(nr),nba(0)
   {
     reset();
   }
@@ -22,6 +23,7 @@ namespace soth
     std::fill( freerow.begin(),freerow.end(),true );
     std::fill( freezed.begin(),freezed.end(),false );
     activated.fill(Bound::BOUND_NONE);
+    dampingInf.setZero();    dampingSup.setZero();
 
     nba=0;
   }
@@ -51,7 +53,7 @@ namespace soth
       activated[ref]=type;
     else
       {
-	assert( activated[ref]!=type );
+	//assert( activated[ref]!=type );
 	assert( type==Bound::BOUND_INF || type==Bound::BOUND_SUP );
 	activated[ref]=Bound::BOUND_DOUBLE;
      }
@@ -121,7 +123,20 @@ namespace soth
     freerow[row]=true;
   }
 
+  void ActiveSet::
+  dampBoundValue( const ConstraintRef & cst,const double & value )
+  {
+    assert( cst.type==Bound::BOUND_INF || cst.type==Bound::BOUND_SUP );
+    const unsigned int & i = cst.row;
+    if( cst.type==Bound::BOUND_INF && +value>dampingInf[i] ) dampingInf[i] = +value;
+    if( cst.type==Bound::BOUND_SUP && -value>dampingSup[i] ) dampingSup[i] = -value;
+  }
 
+  std::pair<double,double> ActiveSet::
+  getBoundDamping( const unsigned int & cst )
+  {
+    return std::make_pair( dampingInf[cst],dampingSup[cst] );
+  }
 
   /* ------------------------------------------------------------------------ */
   /* --- ACCESSORS ---------------------------------------------------------- */
