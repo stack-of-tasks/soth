@@ -213,6 +213,18 @@ namespace soth
   downdate( stage_iter_t stageIter,const unsigned int & rowDown )
   {
     assert(isInit);
+
+    if( useDamp() )
+      {
+	Stage & s = **stageIter;
+	ConstraintRef cst = s.which(rowDown);
+	double Ju = s.getJrow(cst.row).transpose()*solution;
+	const Bound& b = s.getBoundRow(cst.row);
+	double b_Ju = b.getBound( cst.type ) - Ju;
+	s.dampBoundValue( cst,b_Ju );
+	sotDEBUG(5) << "Damp cst " << cst << " with " << b_Ju << std::endl;
+      }
+
     sotDEBUG(5) << "Downdate " << (*stageIter)->name<<", row "<<rowDown
 		<<" (cst="<<(*stageIter)->which(rowDown)<<")."<< std::endl;
     GivensSequence Ydown;
@@ -560,21 +572,21 @@ namespace soth
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     // Damping
-    if( nbstage>0 && stageRef<stages.size() )
-      {
-      const Stage & s = *stages[nbstage];
-      if( s.useDamp() )
-	{
-	  const unsigned int sm = s.getSizeM();
-	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
-	  z.tail(sizeProblem-sm).setZero();
-	  VectorXd Yz(sizeProblem);
-	  Y.multiply(z,Yz);
-	  Yz *= s.damping()*s.damping();
-	  verifL += Yz;
-	}
-    }
-    sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+    // if( nbstage>0 && stageRef<stages.size() )
+    //   {
+    //   const Stage & s = *stages[nbstage];
+    //   if( s.useDamp() )// && s.sizeN()>0 )
+    // 	{
+    // 	  const unsigned int sm = s.getSizeM();
+    // 	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
+    // 	  z.tail(sizeProblem-sm).setZero();
+    // 	  VectorXd Yz(sizeProblem);
+    // 	  Y.multiply(z,Yz);
+    // 	  Yz *= s.damping()*s.damping();
+    // 	  verifL += Yz;
+    // 	}
+    // }
+    // sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     const double sumNorm = verifL.norm();
     const bool res = sumNorm<1e-6;
