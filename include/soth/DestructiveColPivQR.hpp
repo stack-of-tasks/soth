@@ -315,7 +315,6 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     // first, we look up in our table m_colSqNorms which column has the biggest squared norm
     Index biggest_col_index;
     RealScalar biggest_col_sq_norm = m_colSqNorms.tail(cols-k).maxCoeff(&biggest_col_index);
-
     biggest_col_index += k;
 
     // since our table m_colSqNorms accumulates imprecision at every step, we must now recompute
@@ -336,7 +335,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     {
       m_nonzero_pivots = k;
       m_hCoeffs.tail(size-k).setZero();
-      m_q.bottomRightCorner(rows-k,cols-k)
+      m_q.bottomRightCorner(rows-k,rows-k)
           .template triangularView<StrictlyLower>()
           .setZero();
       break;
