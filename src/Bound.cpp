@@ -82,6 +82,31 @@ namespace soth
   /* Return the bound that is violated, NONE if bound are OK.
    * In case of twin-bounds, no check is performed, NONE is always returned. */
   Bound::bound_t Bound::
+  check( const double & val,std::pair<double,double> damp, const double & EPSILON ) const
+  {
+    switch( type )
+      {
+      case BOUND_INF:
+	if( val<valInf-damp.first-EPSILON ) return BOUND_INF;
+	break;
+      case BOUND_SUP:
+	if( valSup+EPSILON+damp.second<val ) return BOUND_SUP;
+	break;
+      case BOUND_TWIN:
+	break;
+      case BOUND_DOUBLE:
+	if( val<valInf-damp.first-EPSILON ) return BOUND_INF;
+	if( valSup+damp.first+EPSILON<val ) return BOUND_SUP;
+	break;
+      case BOUND_NONE:
+	assert( false&& "Cannot check a bound for 0 constraint." );
+      }
+    return BOUND_NONE;
+  }
+
+  /* Return the bound that is violated, NONE if bound are OK.
+   * In case of twin-bounds, no check is performed, NONE is always returned. */
+  Bound::bound_t Bound::
   checkSaturation( const double & val,const double & EPSILON ) const
   {
     switch( type )
