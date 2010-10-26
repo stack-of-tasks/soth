@@ -148,6 +148,7 @@ namespace soth
     void damping( const double & factor ) { dampingFactor = factor; }
     double damping( void ) const { return dampingFactor; }
     bool useDamp( void ) const { return isDampCpt; }
+    void dampBoundValue( const ConstraintRef & cst,const double & value );
 
     /* --- MULTIPLICATORS --------------------------------------------------- */
   public:
@@ -245,6 +246,9 @@ namespace soth
 
     inline int getSizeM() const { return sizeM; }
     inline int getSizeL() const { return sizeL; }
+
+    using BasicStage::getJrow;
+    using BasicStage::getBoundRow;
 
   public:
     static double EPSILON;

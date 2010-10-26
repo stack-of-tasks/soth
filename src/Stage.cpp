@@ -1013,6 +1013,14 @@ namespace soth
     return;
   }
 
+  void Stage::
+  dampBoundValue( const ConstraintRef & cst,const double & value )
+  {
+    activeSet.dampBoundValue( cst,value );
+  }
+
+
+
   /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* --- TODO DEPRECATED ---------------------------------------------------- */
   /* --- TODO DEPRECATED ---------------------------------------------------- */
@@ -1111,6 +1119,7 @@ namespace soth
 	Ytrho.setZero();
 	lambda.setZero();
 	isLagrangeCpt =true;
+	//return;
       }
     else if( isWIdenty )
       {
@@ -1156,12 +1165,12 @@ namespace soth
 	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
       }
 
-    if( isDampCpt )
-      {
-	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
-	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
-	sotDEBUG(5) << "rhod = " << Ytrho << endl;
-      }
+    // if( isDampCpt )
+    //   {
+    // 	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
+    // 	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
+    // 	sotDEBUG(5) << "rhod = " << Ytrho << endl;
+    //   }
 
   }
 
@@ -1226,18 +1235,22 @@ namespace soth
 	sotDEBUG(5) << "bound = " << b << endl;
 	sotDEBUG(5) <<"Ju="<<val<<"  --  Jdu="<<dval<<" -- Jupdu="<<val+dval<<endl;
 
-	Bound::bound_t bdtype = b.check(val+dval,EPSILON);
+	Bound::bound_t bdtype;
+	if( isDampCpt ) bdtype=b.check(val+dval,activeSet.getBoundDamping(i),EPSILON);
+	else            bdtype=b.check(val+dval,EPSILON);
+	sotDEBUG(5) << "Damping " << activeSet.getBoundDamping(i).first << ","
+		    << activeSet.getBoundDamping(i).second << std::endl;
 	if( bdtype!=Bound::BOUND_NONE )
 	  {
 	    assert( (bdtype==Bound::BOUND_INF)||(bdtype==Bound::BOUND_SUP) );
 	    sotDEBUG(5) << "Violation at " <<name <<" "
 			<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 
-	    if( activeSet.wasActive(i,bdtype) )
-	      {
-		sotDEBUG(5) << "Was active: zap! " << std::endl;
-		continue;
-	      }
+	    // if( activeSet.wasActive(i,bdtype) )
+	    //   {
+	    // 	sotDEBUG(5) << "Was active: zap! " << std::endl;
+	    // 	continue;
+	    //   }
 
 	    Bound::bound_t bitype = b.check(val,EPSILON);
 	    if( bitype==Bound::BOUND_NONE )
