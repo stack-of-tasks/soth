@@ -469,9 +469,55 @@ int main (int argc, char** argv)
     }
   hcod.setNameByOrder("stage_");
 
-  const double dampingFactor = 0.1;
+  const double dampingFactor = 0.01;
   hcod.setDamping(dampingFactor);
   hcod.setInitialActiveSet();
+
+  // DEBUG
+  //   a{1} =  [ -5 -6 +12 +15 -16 +19 +21 +24 +25 -10 -8 +1 -20 -2 +26 -4 -18 +28 -22 +27 +29 -0 +3 +7
+  //   a{1} =  [ -5 -6 +12 +15 -16 +19 +21 +24 +25 -10 -8 +1 -20 -2 +26 -4 -18 +28 -22 +27 +29 -0 +3 +7
+
+//   cstref_vector_t Ir0;
+//   Ir0.push_back( ConstraintRef(5,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(6,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(12,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(15,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(16,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(19,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(21,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(24,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(25,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(10,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(8,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(1,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(20,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(2,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(26,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(4,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(18,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(28,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(22,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(27,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(29,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(0,Bound::BOUND_INF) );
+//   Ir0.push_back( ConstraintRef(3,Bound::BOUND_SUP) );
+//   Ir0.push_back( ConstraintRef(7,Bound::BOUND_SUP) );
+
+// // Update stage_0, -14
+// // Update stage_0, +9
+// // Update stage_0, -11
+// // Update stage_0, +13
+// // Update stage_0, -17
+// // Update stage_0, +23
+
+//   b[0][14] = std::make_pair( -1e25,1e25 );
+//   b[0][9] = std::make_pair( -1e25,1e25 );
+//   b[0][11] = std::make_pair( -1e25,1e25 );
+//   b[0][13] = std::make_pair( -1e25,1e25 );
+//   b[0][17] = std::make_pair( -1e25,1e25 );
+//   b[0][23] = std::make_pair( -1e25,1e25 );
+
+//  hcod[0].setInitialActiveSet(Ir0,false);
 
   VectorXd solution;
   hcod.activeSearch( solution );
@@ -480,12 +526,14 @@ int main (int argc, char** argv)
   cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
 
 
-  cout << " --- RE --------------------------------- " << endl;
-  sotDEBUG(1) << " --- RE --------------------------------- " << endl;
-  //  hcod.activeSearch( solution );
-  cout << "Optimal solution = " << (MATLAB)solution << endl;
-  cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
-
+  if(0)
+    {
+      cout << " --- RE --------------------------------- " << endl;
+      sotDEBUG(1) << " --- RE --------------------------------- " << endl;
+      hcod.activeSearch( solution );
+      cout << "Optimal solution = " << (MATLAB)solution << endl;
+      cout << "Optimal active set = "; hcod.showActiveSet(std::cout);
+    }
 
   cout << " --- CHECK ------------------------------ " << endl;
   sotDEBUG(1) << " --- CHECK ------------------------------ " << endl;
