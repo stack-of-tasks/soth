@@ -102,7 +102,7 @@ namespace soth
     stage_sequence_t stages;
     VectorXd solution;
 
-    VectorXd du,Ytu,Ytdu,rho;
+    VectorXd uNext,Ytu,YtuNext,rho;
     int freezedStages;
     bool isReset,isInit,isSolutionCpt,withDamp;
   };

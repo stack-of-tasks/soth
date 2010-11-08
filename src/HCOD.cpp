@@ -15,7 +15,7 @@ namespace soth
     ,Y(sizeProblem)
     ,stages(0)
     ,solution(sizeProblem)
-    ,du(sizeProblem),Ytu(sizeProblem),Ytdu(sizeProblem),rho(sizeProblem)
+    ,uNext(sizeProblem),Ytu(sizeProblem),YtuNext(sizeProblem),rho(sizeProblem)
     ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
   {
@@ -243,8 +243,8 @@ namespace soth
   {
     Y *= Yup;
     Yup.applyTransposeOnTheRight(Ytu);
-    Yup.applyTransposeOnTheRight(Ytdu); /* TODO: this second multiplication could
-					 * be avoided. */
+    Yup.applyTransposeOnTheRight(YtuNext); /* TODO: this second multiplication could
+					    * be avoided. */
   }
 
 
@@ -283,24 +283,21 @@ namespace soth
   {
     assert(isInit);
 
-    /* Initial solve. */
-    /* TODO: Ytdu.head(nullspace) only could be set to 0/Ytu.
-     *  Does it make any diff? */
-    if( isSolutionCpt ) Ytdu = -Ytu; else Ytdu.setZero();
+    YtuNext.setZero();
     for( unsigned int i=0;i<stages.size();++i )
       {
-	stages[i]->computeSolution(Ytu,Ytdu,!isSolutionCpt);
+        stages[i]->computeSolution(YtuNext);
       }
 
     if( compute_u )
       {
-	Y.multiply(Ytdu,du);
-	sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
-	sotDEBUG(5) << "du = " << (MATLAB)du << std::endl;
+        Y.multiply(YtuNext,uNext);
+        sotDEBUG(5) << "u0 = " << (MATLAB)solution << std::endl;
+        sotDEBUG(5) << "u1 = " << (MATLAB)uNext << std::endl;
       }
 
-    sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
-    sotDEBUG(5) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+    sotDEBUG(5) << "Ytu0 = " << (MATLAB)Ytu << std::endl;
+    sotDEBUG(5) << "Ytu1 = " << (MATLAB)YtuNext << std::endl;
     isSolutionCpt=true;
   }
   void HCOD::
@@ -323,7 +320,7 @@ namespace soth
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
 	sotDEBUG(5) << "Check stage " << (*iter)->name << "." << std::endl;
-	if(! (*iter)->checkBound( solution,du,cst,tau ) )
+	if(! (*iter)->checkBound( solution,uNext,cst,tau ) )
 	  stageUp=iter;
       }
     if( tau<1 )
@@ -342,7 +339,7 @@ namespace soth
     for( stage_iter_t iter = stages.begin(); iter!=stages.end(); ++iter )
       {
 	sotDEBUG(5) << "Check stage " << (*iter)->name << "." << std::endl;
-	if(! (*iter)->checkBound( solution,du,cst,tau ) )
+	if(! (*iter)->checkBound( solution,uNext,cst,tau ) )
 	  stageUp=iter;
       }
     return tau;
@@ -351,16 +348,16 @@ namespace soth
   void HCOD::
   makeStep( double tau, bool compute_u )
   {
-    Ytu += tau*Ytdu;
-    if( compute_u ) { solution += tau*du; }
+    Ytu *= (1-tau); Ytu += tau*YtuNext;
+    if( compute_u ) { solution *= (1-tau); solution += tau*uNext; }
     sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
     sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
   }
   void HCOD::
   makeStep( bool compute_u )
   {
-    Ytu += Ytdu;
-    if( compute_u ) { solution += du; }
+    Ytu = YtuNext;
+    if( compute_u ) { solution = uNext; }
     sotDEBUG(5) << "Ytu = " << (MATLAB)Ytu << std::endl;
     sotDEBUG(5) << "u = " << (MATLAB)solution << std::endl;
   }
@@ -438,7 +435,7 @@ namespace soth
      * u0 = solve
      * do
      *   tau,cst_ref = max( violation(stages) )
-     *   u += du*tau
+     *   u += (1-tau)u0 + tau*u1
      *   if( tau<1 )
      *     update(cst_ref); break;
      *
@@ -534,7 +531,7 @@ namespace soth
     bool res = true;
     for( unsigned int i=0;i<stages.size();++i )
       {
-	bool sres=stages[i]->testSolution( solution+du );
+	bool sres=stages[i]->testSolution( uNext );
 	if( os&&(!sres) ) *os << "Stage " <<i<<" has not been properly inverted."<<std::endl;
 	res&=sres;
       }
@@ -572,21 +569,21 @@ namespace soth
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     // Damping
-    // if( nbstage>0 && stageRef<stages.size() )
-    //   {
-    //   const Stage & s = *stages[nbstage];
-    //   if( s.useDamp() )// && s.sizeN()>0 )
-    // 	{
-    // 	  const unsigned int sm = s.getSizeM();
-    // 	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
-    // 	  z.tail(sizeProblem-sm).setZero();
-    // 	  VectorXd Yz(sizeProblem);
-    // 	  Y.multiply(z,Yz);
-    // 	  Yz *= s.damping()*s.damping();
-    // 	  verifL += Yz;
-    // 	}
-    // }
-    // sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
+    if( nbstage>0 && stageRef<stages.size() )
+      {
+      const Stage & s = *stages[nbstage];
+      if( s.useDamp() )// && s.sizeN()>0 )
+    	{
+    	  const unsigned int sm = s.getSizeM();
+    	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
+    	  z.tail(sizeProblem-sm).setZero();
+    	  VectorXd Yz(sizeProblem);
+    	  Y.multiply(z,Yz);
+    	  Yz *= s.damping()*s.damping();
+    	  verifL += Yz;
+    	}
+    }
+    sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     const double sumNorm = verifL.norm();
     const bool res = sumNorm<1e-6;
@@ -610,12 +607,12 @@ namespace soth
     os<<"Y = " << (MATLAB)Yex << std::endl;
     if( isSolutionCpt )
       {
-	os << "u = " << (MATLAB)solution << std::endl;
-	os << "du = " << (MATLAB)du << std::endl;
-	os << "Ytu = " << (MATLAB)Ytu << std::endl;
-	os << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+	os << "u0 = " << (MATLAB)solution << std::endl;
+	os << "u1 = " << (MATLAB)uNext << std::endl;
+	os << "Ytu0 = " << (MATLAB)Ytu << std::endl;
+	os << "Ytu1 = " << (MATLAB)YtuNext << std::endl;
 	assert( (solution-Y.matrixExplicit*Ytu).norm() < Stage::EPSILON );
-	assert( (du-Y.matrixExplicit*Ytdu).norm() < Stage::EPSILON );
+	assert( (uNext-Y.matrixExplicit*YtuNext).norm() < Stage::EPSILON );
       }
     sotDEBUGOUT(15);
   }

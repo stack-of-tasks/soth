@@ -133,7 +133,7 @@ namespace soth
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void computeSolution( const VectorXd& Ytu, VectorXd & Ytdu, bool init ) const;
+    void computeSolution( const VectorXd& Ytu ) const;
 
     void damp( void );
     template< typename VectorDerived >
@@ -174,9 +174,9 @@ namespace soth
      * specified, the step is computed btw (with tau_out <= tau_in) and the
      * constraint to update is returned.
      */
-    bool checkBound( const VectorXd& u,const VectorXd& du,
+    bool checkBound( const VectorXd& u0,const VectorXd& u1,
 		     ConstraintRef*, double* tau );
-    bool checkBound( const VectorXd& u,const VectorXd& du,
+    bool checkBound( const VectorXd& u0,const VectorXd& u1,
 		     ConstraintRef& cstmax, double& taumax );
     bool maxLambda( const VectorXd& u, double & lmax, unsigned int & row ) const;
     void freezeSlacks(const bool & slacks = true);

@@ -797,7 +797,7 @@ namespace soth
   /* --- DIRECT ------------------------------------------------------------- */
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::
-  computeSolution( const VectorXd& Ytu, VectorXd& Ytdu,bool initialization ) const
+  computeSolution( const VectorXd& Ytu ) const
   {
     assert( isInit );
     if (sizeL==0)
@@ -806,12 +806,11 @@ namespace soth
       return;
     }
     sotDEBUG(5) << "e = " << (MATLAB)e << std::endl;
-
-    const VectorBlock<VectorXd> dum = Ytdu.head( sizeM );
-    VectorBlock<VectorXd> We = Ytdu.segment( sizeM,sizeL );
-
     sotDEBUG(25) << "Ytu = " << (MATLAB)Ytu << std::endl;
-    sotDEBUG(25) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+
+    const VectorBlock<VectorXd> zm = Ytu.head( sizeM );
+    VectorBlock<VectorXd> We = Ytu.segment( sizeM,sizeL );
+
     if(! isWIdenty ) { sotDEBUG(45) << "Wr = " << (MATLAB)Wr << endl; }
     else             { sotDEBUG(45) << "W = " << MATLAB(W,isWIdenty) << endl; }
 
@@ -819,46 +818,22 @@ namespace soth
     else            We = Wr.transpose()*e;
     sotDEBUG(25) << "Wre = " << (MATLAB)We << std::endl;
 
-    VectorXd MLz(sizeL);
-    if(! initialization )
-      {
-	const_TriSubMatrixXd Ltri = getLtri();
-
-	const VectorBlock<VectorXd> ulprec = Ytu.segment( sizeM,sizeL );
-	const VectorBlock<VectorXd> umprec = Ytu.head( sizeM );
-
-	if( sizeM >0 )   MLz.noalias() = Ltri*ulprec + Mr*(umprec+dum);
-	else             MLz.noalias() = Ltri*ulprec;
-      }
-    else if( sizeM>0 )   MLz = Mr*dum;
-    else MLz.setZero();
-
-    We.noalias() -= MLz;
-    sotDEBUG(5) << "MLz = " << (MATLAB)MLz << std::endl;
-
-
-    /* TODO: this sum u+du could be done only once, while it is done at each
-     * stage now. */
-    sotDEBUG(5) << "Wre_Lu_Mru_Mrdu = " << (MATLAB)We << std::endl;
+    if( sizeM>0 )   We -= Mr*zm;
+    sotDEBUG(5) << "Wre_Mru = " << (MATLAB)We << std::endl;
 
     if( isDampCpt )
       {
-	if( initialization ) applyDampingTranspose(We);
-	else
-	  {
-	    VectorXd lz = -Ytu.segment( sizeM,sizeL );
-	    applyDampingTranspose( We,lz );
-	  }
-	sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
-	sotDEBUG(5) << "WdeJu = " << (MATLAB)We << std::endl;
-	soth::solveInPlaceWithLowerTriangular(Ld,We);
+        applyDampingTranspose(We);
+        sotDEBUG(5) << "Ld = " << (MATLAB)Ld << std::endl;
+        sotDEBUG(5) << "Wde = " << (MATLAB)We << std::endl;
+        soth::solveInPlaceWithLowerTriangular(Ld,We);
       }
     else
       {
-	soth::solveInPlaceWithLowerTriangular(L,We);
+        soth::solveInPlaceWithLowerTriangular(L,We);
       }
-    sotDEBUG(5) << "LiWrde = " << (MATLAB)We << std::endl;
-    sotDEBUG(45) << "Ytdu = " << (MATLAB)Ytdu << std::endl;
+    sotDEBUG(5) << "LiWe = " << (MATLAB)We << std::endl;
+    sotDEBUG(45) << "Ytu = " << (MATLAB)Ytu << std::endl;
   }
 
 
@@ -1165,12 +1140,12 @@ namespace soth
 	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
       }
 
-    // if( isDampCpt )
-    //   {
-    // 	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
-    // 	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
-    // 	sotDEBUG(5) << "rhod = " << Ytrho << endl;
-    //   }
+    if( isDampCpt )
+      {
+    	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
+    	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
+    	sotDEBUG(5) << "rhod = " << Ytrho << endl;
+      }
 
   }
 
@@ -1219,83 +1194,79 @@ namespace soth
   /* --- BOUND -------------------------------------------------------------- */
 
   /* Return true if the previous tau is correct (ie maxlocal(tau)>taumax */
-  bool Stage::checkBound( const VectorXd& u,const VectorXd& du,
-			  ConstraintRef& cstmax, double& taumax )
+  bool Stage::checkBound( const VectorXd& u0,const VectorXd& u1,
+                          ConstraintRef& cstmax, double& taumax )
   {
     bool res = true;
     for( unsigned int i=0;i<nr;++i )
       {
-	if( activeSet.isActive(i) ) continue;
-	assert( bounds[i].getType()!=Bound::BOUND_TWIN );
+        if( activeSet.isActive(i) ) continue;
+        assert( bounds[i].getType()!=Bound::BOUND_TWIN );
 
-	/* This has already been computed and could be avoided... TODO. */
-	double val = J.row(i)*u;
-	double dval = J.row(i)*du;
-	const Bound & b = bounds[i];
-	sotDEBUG(5) << "bound = " << b << endl;
-	sotDEBUG(5) <<"Ju="<<val<<"  --  Jdu="<<dval<<" -- Jupdu="<<val+dval<<endl;
+        /* This has already been computed and could be avoided... TODO. */
+        double val0 = J.row(i)*u0;
+        double val1 = J.row(i)*u1;
+        const Bound & b = bounds[i];
+        sotDEBUG(5) << "bound = " << b << endl;
+        sotDEBUG(5) <<"Ju0="<<val0<<"  --  Ju1="<<val1<<" -- dval="<<val1-val0<<endl;
 
-	Bound::bound_t bdtype;
-	if( isDampCpt ) bdtype=b.check(val+dval,activeSet.getBoundDamping(i),EPSILON);
-	else            bdtype=b.check(val+dval,EPSILON);
-	sotDEBUG(5) << "Damping " << activeSet.getBoundDamping(i).first << ","
-		    << activeSet.getBoundDamping(i).second << std::endl;
-	if( bdtype!=Bound::BOUND_NONE )
-	  {
-	    assert( (bdtype==Bound::BOUND_INF)||(bdtype==Bound::BOUND_SUP) );
-	    sotDEBUG(5) << "Violation at " <<name <<" "
-			<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+        Bound::bound_t btype1;
+        if( isDampCpt ) btype1=b.check(val1,activeSet.getBoundDamping(i),EPSILON);
+        else            btype1=b.check(val1,EPSILON);
+        sotDEBUG(5) << "Damping " << activeSet.getBoundDamping(i).first << ","
+                    << activeSet.getBoundDamping(i).second << std::endl;
+        if( btype1!=Bound::BOUND_NONE )
+          {
+            assert( (btype1==Bound::BOUND_INF)||(btype1==Bound::BOUND_SUP) );
+            sotDEBUG(5) << "Violation at " <<name <<" "
+                        << ((btype1==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 
-	    // if( activeSet.wasActive(i,bdtype) )
-	    //   {
-	    // 	sotDEBUG(5) << "Was active: zap! " << std::endl;
-	    // 	continue;
-	    //   }
+            Bound::bound_t btype0 = b.check(val0,EPSILON);
+            if( btype0==Bound::BOUND_NONE )
+              {
+                assert( ( b.checkSaturation(val0,EPSILON)!=btype1 )
+                        && "Was saturated, and is now violate." );
 
-	    Bound::bound_t bitype = b.check(val,EPSILON);
-	    if( bitype==Bound::BOUND_NONE )
-	      {
-		assert( ( b.checkSaturation(val,EPSILON)!=bdtype)
-			&& "Was saturated, and is now violate." );
-
-		const double & bval = b.getBound(bdtype);
-		double btau = (bval-val)/dval;
-		assert(btau>=0); assert(btau<1);
-		if( btau<taumax )
-		  {
-		    sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
-				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-		    res=false;
-		    taumax=btau; cstmax = ConstraintRef(i,bdtype);
-		  }
-	      }
-	    else
-	      {
-		if(taumax==1)
-		  {
-		    sotDEBUG(5) << "Violation Ju and Ju+du at " <<name <<" "
-				<< ((bdtype==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
-		    taumax=1-EPSILON; cstmax = ConstraintRef(i,bdtype);
-		    res=false;
-		  }
-	      }
-	  }
+                const double & bval = b.getBound(btype1);
+                double btau = (bval-val0)/(val1-val0);
+                assert(btau>=0); assert(btau<1);
+                if( btau<taumax )
+                  {
+                    sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
+                                << ((btype1==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+                    res=false;
+                    taumax=btau; cstmax = ConstraintRef(i,btype1);
+                  }
+              }
+            else
+             {
+                if(taumax==1)
+                  {
+                    sotDEBUG(5) << "Violation Ju0 and Ju1 at " <<name <<" "
+                                << ((btype1==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
+                    taumax=1-EPSILON; cstmax = ConstraintRef(i,btype1);
+                    res=false;
+                  }
+              }
+          }
       }
     return res;
   }
 
-  bool Stage::checkBound( const VectorXd& u,const VectorXd& du,
-			  ConstraintRef* cstptr, double* tauptr )
+
+ bool Stage::checkBound( const VectorXd& u0,const VectorXd& u1,
+                          ConstraintRef* cstptr, double* tauptr )
   {
     if( (tauptr==NULL)&&(cstptr==NULL) )
-      { double tau=1; ConstraintRef cst; return checkBound(u,du,cst,tau); }
+      { double tau=1; ConstraintRef cst; return checkBound(u0,u1,cst,tau); }
     else if( (tauptr!=NULL)&&(cstptr==NULL) )
-      { ConstraintRef cst; return checkBound(u,du,cst,*tauptr); }
+      { ConstraintRef cst; return checkBound(u0,u1,cst,*tauptr); }
     else if( (tauptr==NULL)&&(cstptr!=NULL) )
-      { double tau=1; return checkBound(u,du,*cstptr,tau); }
+      { double tau=1; return checkBound(u0,u1,*cstptr,tau); }
     else /* ie when ( (tauptr!=NULL)&&(cstptr!=NULL) ). */
-      { return checkBound(u,du,*cstptr,*tauptr); }
+      { return checkBound(u0,u1,*cstptr,*tauptr); }
   }
+
 
   bool Stage:: // TODO: Ytu could be passed instead of u. TODO! u is not usefull any more.
   maxLambda( const VectorXd& u, double & lmax,unsigned int& row ) const
