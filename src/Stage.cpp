@@ -375,6 +375,33 @@ namespace soth
 	  }
       }
 
+    if( isDampCpt&& sizeL>0 )
+      {
+	sotDEBUG(15) << "Freeze the damping." << name << endl;
+	sotDEBUG(15) << "L = " << (MATLAB)L << endl;
+	sotDEBUG(15) << "Ld = " << (MATLAB)Ld << endl;
+	L = Ld;
+	if( sizeM>0 )
+	  {
+	    MatrixXd Mx( sizeL,sizeM );
+	    StackMatrix<SubMatrixXd,MatrixXd> Mw(Mr,Mx);
+	    Wd >> Mw;
+	  }
+	VectorXd Wre;
+	if( isWIdenty )
+	  { applyDampingTranspose(e); }
+	else
+	  {
+            VectorXd Wre = Wr.transpose()*e;
+	    VectorXd WetaWre = Wre;
+	    applyDampingTranspose(WetaWre);
+	    /* e = Wr*Wr'*e + W0*W0'*e
+	     * => W0*W0'e = e - Wr*Wr'*e
+	     * e := Wr*Weta*Wr'*e + W0*W0'*e = Wr*Weta*Wr'*e + e - Wr*Wr'*e
+	     */
+	    e += Wr*WetaWre - Wr*Wre;
+	  }
+      }
     isFreezed =true;
     sotDEBUG(55) << "# Out } " << name << endl;
   }
@@ -847,6 +874,18 @@ namespace soth
     if (sizeL==0)
       {
 	sotDEBUG(10) << "size of L is 0, skipping damp" << std::endl;
+	Ld.setColRange(0,0);
+	Ld.setRowRange(0,0);
+	Wd.clear();
+	isDampCpt=true; return;
+      }
+    if( isFreezed )
+      {
+	sotDEBUG(10) << "Freezed, no more damping." << std::endl;
+	Wd.clear();
+	Ld.setColRange(0,sizeL);
+	Ld.setRowRange(0,sizeL);
+	Ld = L;
 	isDampCpt=true; return;
       }
 
@@ -954,9 +993,10 @@ namespace soth
     edwork.setZero();
     StackMatrix<VectorDerived,SubVectorXd> ew(x,edwork);
     sotDEBUG(45) << "ed0 = " << (MATLAB)ew << endl;
+    sotDEBUG(45) << "Wd = " << MATLAB(sizeL*2,Wd) << endl;
     Wd.transpose() >> ew;
 
-    sotDEBUG(55) << "ed1 = " << (MATLAB)ew << endl;
+    sotDEBUG(45) << "ed1 = " << (MATLAB)ew << endl;
     sotDEBUG(5) << "ed = " << (MATLAB)x << endl;
     return;
   }
@@ -1140,12 +1180,13 @@ namespace soth
 	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
       }
 
-    if( isDampCpt )
-      {
-    	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
-    	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
-    	sotDEBUG(5) << "rhod = " << Ytrho << endl;
-      }
+    // if( isDampCpt )
+    //   {
+    // 	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
+    // 	// TODO: + ou - ???
+    // 	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
+    // 	sotDEBUG(5) << "rhod = " << Ytrho << endl;
+    //   }
 
   }
 
@@ -1171,7 +1212,16 @@ namespace soth
     VectorBlock<VectorXd> rho_under = rho.head(sizeM);
     sotDEBUG(5) << "rho = " << (MATLAB)rho_i << endl;
 
-    solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+    // if( isDampCpt )
+    //   {
+    //  	solveInPlaceWithUpperTriangular(Ld.transpose(), rho_i);
+    // 	applyDampingTranspose( rho_i );
+    //   }
+    // else
+      {
+	sotDEBUG(5) << "L = " << (MATLAB)L << endl;
+	solveInPlaceWithUpperTriangular(L.transpose(), rho_i);
+      }
 
     if( isWIdenty ) l.noalias() = rho_i;
     else            l.noalias() = Wr * rho_i;
@@ -1224,8 +1274,8 @@ namespace soth
             Bound::bound_t btype0 = b.check(val0,EPSILON);
             if( btype0==Bound::BOUND_NONE )
               {
-                assert( ( b.checkSaturation(val0,EPSILON)!=btype1 )
-                        && "Was saturated, and is now violate." );
+                // assert( ( b.checkSaturation(val0,EPSILON)!=btype1 )
+                //         && "Was saturated, and is now violate." );
 
                 const double & bval = b.getBound(btype1);
                 double btau = (bval-val0)/(val1-val0);
@@ -1385,6 +1435,8 @@ namespace soth
   bool Stage::
   testRecomposition( void ) const
   {
+    /* When damp is used, recomposition is wrong after freezing. */
+    if( isFreezed ) return true;
     MatrixXd Jrec; recompose(Jrec);
     MatrixXd Ja_;   SubMatrix<MatrixXd,RowPermutation> Ja = Jactive(Ja_);
     sotDEBUG(15) << "Jrec="<<(MATLAB)Jrec << endl;

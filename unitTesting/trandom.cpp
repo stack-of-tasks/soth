@@ -471,6 +471,7 @@ int main (int argc, char** argv)
 
   const double dampingFactor = 0.01;
   hcod.setDamping(dampingFactor);
+  hcod.stage(0).damping(0);
   hcod.setInitialActiveSet();
 
   // DEBUG

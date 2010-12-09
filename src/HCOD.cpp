@@ -19,9 +19,9 @@ namespace soth
     ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
   {
-// # ifndef NDEBUG
-//     sotDebugTrace::openFile();
-// #endif
+# ifndef NDEBUG
+    sotDebugTrace::openFile();
+#endif
 
     stages.reserve(nbStage);
   }
@@ -483,7 +483,7 @@ namespace soth
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 		computeLagrangeMultipliers(stageMinimal);
 		if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
-		assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
+		//assert( testLagrangeMultipliers(stageMinimal,std::cerr) );
 
 		if( searchAndDowndate(stageMinimal) )
 		  {
