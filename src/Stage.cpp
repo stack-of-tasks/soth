@@ -5,6 +5,7 @@
 #include "soth/Stage.hpp"
 #include "soth/DestructiveColPivQR.hpp"
 #include "soth/BaseY.hpp"
+#include <Eigen/LU>
 
 namespace soth
 {
@@ -380,27 +381,35 @@ namespace soth
 	sotDEBUG(15) << "Freeze the damping." << name << endl;
 	sotDEBUG(15) << "L = " << (MATLAB)L << endl;
 	sotDEBUG(15) << "Ld = " << (MATLAB)Ld << endl;
-	L = Ld;
-	if( sizeM>0 )
-	  {
-	    MatrixXd Mx( sizeL,sizeM );
-	    StackMatrix<SubMatrixXd,MatrixXd> Mw(Mr,Mx);
-	    Wd >> Mw;
-	  }
-	VectorXd Wre;
-	if( isWIdenty )
-	  { applyDampingTranspose(e); }
-	else
-	  {
-            VectorXd Wre = Wr.transpose()*e;
-	    VectorXd WetaWre = Wre;
-	    applyDampingTranspose(WetaWre);
-	    /* e = Wr*Wr'*e + W0*W0'*e
-	     * => W0*W0'e = e - Wr*Wr'*e
-	     * e := Wr*Weta*Wr'*e + W0*W0'*e = Wr*Weta*Wr'*e + e - Wr*Wr'*e
-	     */
-	    e += Wr*WetaWre - Wr*Wre;
-	  }
+
+	{
+	  MatrixXd Wd1t = MatrixXd::Identity( sizeL,sizeL );
+	  MatrixXd Wd2t = MatrixXd::Zero( sizeL,sizeL );
+	  StackMatrix<MatrixXd,MatrixXd> Wd12t(Wd1t,Wd2t);
+	  Wd.transpose() >> Wd12t;
+	  L = Wd1t.lu().inverse() * Ld ;
+	}
+
+	// if( sizeM>0 )
+	//   {
+	//     MatrixXd Mx( sizeL,sizeM );
+	//     StackMatrix<SubMatrixXd,MatrixXd> Mw(Mr,Mx);
+	//     Wd >> Mw;
+	//   }
+	// VectorXd Wre;
+	// if( isWIdenty )
+	//   { applyDampingTranspose(e); }
+	// else
+	//   {
+        //     VectorXd Wre = Wr.transpose()*e;
+	//     VectorXd WetaWre = Wre;
+	//     applyDampingTranspose(WetaWre);
+	//     /* e = Wr*Wr'*e + W0*W0'*e
+	//      * => W0*W0'e = e - Wr*Wr'*e
+	//      * e := Wr*Weta*Wr'*e + W0*W0'*e = Wr*Weta*Wr'*e + e - Wr*Wr'*e
+	//      */
+	//     e += Wr*WetaWre - Wr*Wre;
+	//   }
       }
     isFreezed =true;
     sotDEBUG(55) << "# Out } " << name << endl;
@@ -1118,6 +1127,7 @@ namespace soth
 
   /* --- INDIRECT ----------------------------------------------------------- */
 
+
   /* Compute J' (Ju-e) in Y base:
    * Ytrho = -Y'J'(Ju-e) = [ M L ]' ( W'e - [M L] Ytu ).
    * If damped, J~[J;damp*I] => Ytrho = Ytrho - damp^2*Ytu.
@@ -1128,66 +1138,88 @@ namespace soth
     assert( isInit );
     assert(Ytu.size() == int(nc) );
 
-    if( sizeN()==0 )
-      {
-	sotDEBUG(5) << "sizeN==0, rho=0." << std::endl;
-	Ytrho.setZero();
-	lambda.setZero();
-	isLagrangeCpt =true;
-	//return;
-      }
-    else if( isWIdenty )
-      {
-	assert( sizeL==0 );
-	VectorXd MnYtu = M*Ytu.head(sizeM) - e;
-	sotDEBUG(5) << "Ju = " << (MATLAB)MnYtu << endl;
-
-	if( inLambda )
+    if( inLambda )
+      { /* Lagrang of the last stage. */
+	if( sizeN()==0 )
+	  {
+	    sotDEBUG(5) << "sizeN==0, rho=0." << std::endl;
+	    lambda.setZero();
+	  }
+	else if( isWIdenty )
 	  {
 	    /* Compute lambda = e-W*MLYtu by the way. */
+	    sotDEBUG(5) << "L is void, [ M L 0 ] = [ M 0 ] ." << std::endl;
+	    assert( sizeL==0 );
+	    VectorXd MnYtu = M*Ytu.head(sizeM) - e;
 	    lambda.noalias() = MnYtu;
-	    isLagrangeCpt =true;
 	  }
+	else
+	  {
+	    /* Compute lambda = e-W*MLYtu by the way. */
+	    sotDEBUG(5) << "Accounting for W." << std::endl;
+	    assert(! isWIdenty );
+	    //TODO : manage temporary memory ?
+	    Block<SubMatrixXd> Mn = M.topRows(sizeN());
+	    SubMatrixXd::ColsBlockXpr Wn = W.leftCols(sizeN());
+	    VectorXd MnYtu = Mn*Ytu.head(sizeM) - Wn.transpose()*e;
+	    lambda.noalias() = Wn*MnYtu;
+	  }
+	isLagrangeCpt =true;
+      }
 
-	/* rho = Mn' ( en - Mn zbar ) */
-	Ytrho.head(sizeM).noalias() = - M.transpose()*MnYtu;
-	Ytrho.tail(nc-sizeM).setZero();
-	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
+    if( sizeM==0&&sizeL==0 ) { /* Nothing to do */ }
+    else if( sizeM==0 )
+      {
+	assert( sizeL>0 );
+ 	VectorBlock<VectorXd> z = Ytu.head(sizeL);
+
+	VectorXd MLz = VectorXd::Zero( sizeA() );
+	MLz.tail( sizeL ) = L*z;
+	if( isWIdenty ) MLz -= e;
+	else            MLz -= W.transpose()*e;
+
+	Ytrho.head(sizeL).noalias() = -L.transpose()*MLz.tail(sizeL);
+     }
+    else if( sizeL==0 )
+      {
+	VectorBlock<VectorXd> zbar = Ytu.head(sizeM);
+	VectorXd MLz = M*zbar;
+	if( isWIdenty ) MLz -= e;
+	else            MLz -= W.transpose()*e;
+	Ytrho.head(sizeM)         .noalias() = -M.transpose()*MLz;
       }
     else
       {
-	assert(! isWIdenty );
+	assert( sizeM>0 && sizeL>0 );
+	VectorBlock<VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
 
-	//TODO : manage temporary memory ?
-	Block<SubMatrixXd> Mn = M.topRows(sizeN());
-	SubMatrixXd::ColsBlockXpr Wn = W.leftCols(sizeN());
-	VectorXd MnYtu = Mn*Ytu.head(sizeM) - Wn.transpose()*e;
+	VectorXd MLz = M*zbar;
+	if( isWIdenty ) MLz -= e;
+	else            MLz -= W.transpose()*e;
+	MLz.tail(sizeL) += L*z;
 
-	sotDEBUG(25) << "Mn = " << (MATLAB)Mn << endl;
-	sotDEBUG(25) << "Wn = " << (MATLAB)Wn << endl;
-	sotDEBUG(5) << "WtJu = " << (MATLAB)MnYtu << endl;
-
-	if( inLambda )
-	  {
-	    /* Compute lambda = e-W*MLYtu by the way. */
-	    lambda.noalias() = Wn*MnYtu;
-	    isLagrangeCpt =true;
-	  }
-
-	/* rho = Mn' ( en - Mn zbar ) */
-	Ytrho.head(sizeM).noalias() = - Mn.transpose()*MnYtu;
-	Ytrho.tail(nc-sizeM).setZero();
-	sotDEBUG(5) << "rho = " << (MATLAB)Ytrho << endl;
+	Ytrho.head(sizeM)         .noalias() = -M.transpose()*MLz;
+	Ytrho.segment(sizeM,sizeL).noalias() = -L.transpose()*MLz.tail(sizeL);
       }
+    sotDEBUG(5) << "rho = " << Ytrho << endl;
 
-    // if( isDampCpt )
-    //   {
-    // 	/* rho = Mn' ( en - Mn zbar ) - eta^2 zbar */
-    // 	// TODO: + ou - ???
-    // 	Ytrho.head(sizeM).noalias() -= (dampingFactor*dampingFactor)*Ytu.head(sizeM);
-    // 	sotDEBUG(5) << "rhod = " << Ytrho << endl;
-    //   }
+    if( isDampCpt )
+      {
+	const double & eta = dampingFactor;
+	VectorBlock<VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
 
+     	if( sizeM>0 )
+	  {
+	    for( int i=0;i<(int)sizeM;++i )
+	      {
+		if(! M.col(i).isZero(EPSILON) )
+		  Ytrho[i] -= eta*eta*zbar[i];
+	      }
+	  }
+     	if( sizeL>0 ) Ytrho.segment(sizeM,sizeL).noalias() -= eta*eta*z;
+
+     	sotDEBUG(5) << "rhod = " << Ytrho << endl;
+      }
   }
 
 
@@ -1271,7 +1303,8 @@ namespace soth
             sotDEBUG(5) << "Violation at " <<name <<" "
                         << ((btype1==Bound::BOUND_INF)?"-":"+")<<i << std::endl;
 
-            Bound::bound_t btype0 = b.check(val0,EPSILON);
+            //Bound::bound_t btype0 = b.check(val0,EPSILON);
+            Bound::bound_t btype0 = b.check(val0);
             if( btype0==Bound::BOUND_NONE )
               {
                 // assert( ( b.checkSaturation(val0,EPSILON)!=btype1 )
