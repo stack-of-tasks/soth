@@ -469,7 +469,7 @@ int main (int argc, char** argv)
     }
   hcod.setNameByOrder("stage_");
 
-  const double dampingFactor = 0.01;
+  const double dampingFactor = 0.0;
   hcod.setDamping(dampingFactor);
   hcod.stage(0).damping(0);
   hcod.setInitialActiveSet();
