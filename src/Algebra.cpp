@@ -32,8 +32,9 @@ using namespace soth;
 template< typename bubTemplateMatrix >
 void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
       {
-	std::ostringstream os; os << "[ ";
-	std::ostringstream ostmp;
+	std::ostringstream os; os.precision(MATLAB::precision);
+	os << "[ ";
+	std::ostringstream ostmp; ostmp.precision(MATLAB::precision);
 	for( unsigned int i=0;i<m1.rows();++i )
 	  {
 	    for( unsigned int j=0;j<m1.cols();++j )
@@ -63,6 +64,7 @@ void initMATLABFromBubMatrix( MATLAB& matlab, const bubTemplateMatrix& m1)
 namespace soth
 {
   bool MATLAB::fullPrec=false;
+  unsigned int MATLAB::precision=6;
 
   MATLAB::MATLAB( const double & x )
     {
