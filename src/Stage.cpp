@@ -103,7 +103,7 @@ namespace soth
       {
 	if( bounds[i].getType() != Bound::BOUND_TWIN ) continue;
 	activeSet.activeRow( i,Bound::BOUND_TWIN );
-     }
+      }
   }
 
   void Stage::
@@ -690,14 +690,19 @@ namespace soth
     RowML JupY = ML_.row(wcolup);
     JupY = sign*J.row(cst.row); Y.applyThisOnTheLeft(JupY);
     sotDEBUG(5) << "JupY = " << (MATLAB)JupY << endl;
+    sotDEBUG(5) << "JupY = " << JupY << endl;
 
     /* Determine the rank on the new line. */
     double norm2=0; unsigned int rankJ=sizeM;
     for( Index i=nc-1;i>=int(sizeM);--i )
       {
-	norm2+=JupY(i)*JupY(i);
+	norm2=JupY(i)*JupY(i); // TODO: should be +=
 	if( norm2>EPSILON*EPSILON )
-	  { rankJ=i+1; break; }
+	  {
+	    sotDEBUG(45) << "Oversize value is x"<<i<<" = " << JupY(i)<<std::endl;
+	    rankJ=i+1;
+	    break;
+	  }
       }
     sotDEBUG(5) << "rankUp = " << rankJ << endl;
 
@@ -1633,6 +1638,7 @@ namespace soth
   }
 
 
+  //double Stage::EPSILON = 1e-8; // TODO: should be 1e-8
   double Stage::EPSILON = 1e-8;
 
 }; // namespace soth
