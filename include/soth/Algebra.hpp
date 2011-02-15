@@ -14,7 +14,7 @@ namespace soth
   //  USING_PART_OF_NAMESPACE_EIGEN;
   using namespace Eigen;
 
-}; // namespace soth
+} // namespace soth
 
 
 
@@ -52,10 +52,11 @@ namespace soth
 
 
     static bool fullPrec;
+    static unsigned int precision;
     std::string str;
   };
 
-}; // namespace soth
+} // namespace soth
 
 
 // --- HEAVY CODE ---
@@ -79,8 +80,9 @@ namespace soth
   template< typename VectorGen >
     void MATLAB::initVector( const VectorGen & m1 )
     {
-      std::ostringstream os; os << "[ ";
-      std::ostringstream ostmp;
+      std::ostringstream os; os.precision(MATLAB::precision);
+      os << "[ ";
+      std::ostringstream ostmp; ostmp.precision(MATLAB::precision);
       for(int i=0;i<m1.size();++i )
 	{
 	  if( m1[i]<0 ) ostmp << "-"; else ostmp << " ";
@@ -122,10 +124,10 @@ namespace soth
   template< typename Derived >
     void MATLAB::initMatrix( const MatrixBase<Derived> & m1 )
     {
-      std::ostringstream os;
+      std::ostringstream os; os.precision(MATLAB::precision);
       if( fullPrec ) { os << "[...\n" << m1 << "];"; str=os.str(); return; }
       os << "...\n[ ";
-      std::ostringstream ostmp;
+      std::ostringstream ostmp; ostmp.precision(MATLAB::precision);
       for(int i=0;i<m1.rows();++i )
 	{
 	  for(int j=0;j<m1.cols();++j )
@@ -149,7 +151,7 @@ namespace soth
     }
 
 
-}; // namespace soth
+} // namespace soth
 
 
 

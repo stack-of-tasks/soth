@@ -184,7 +184,7 @@ inline void sotTDEBUGF( const char* format,...) { return; }
 
 
 
-}; //namespace soth;
+} //namespace soth;
 
 #endif /* #ifdef __SOTH_DEBUG_HH */
 

@@ -109,7 +109,7 @@ namespace soth
 
 
 
-}; // namespace soth
+} // namespace soth
 
 
 #endif // #ifndef __SOTH_HCOD__

@@ -78,7 +78,7 @@ namespace soth
 
   };
 
-}; // namespace soth
+} // namespace soth
 
 
 #endif // #ifndef __SOTH_BASIC_STAGE__

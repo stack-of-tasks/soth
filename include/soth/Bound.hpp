@@ -69,6 +69,6 @@ namespace soth
   std::ostream& operator<< (std::ostream& os, const VectorBound& t);
   std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
 
-}; // namespace soth
+} // namespace soth
 
 #endif // #ifndef __SOTH_BOUND__
