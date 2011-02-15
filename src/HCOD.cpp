@@ -426,8 +426,9 @@ namespace soth
 
   void HCOD::activeSearch( VectorXd & u )
   {
-    // if( isDebugOnce ) {  sotDebugTrace::openFile(); isDebugOnce = false; }
+    // if( isDebugOnce ) {  sotDebugTrace::openFile();  isDebugOnce = false; }
     // else { if(sotDEBUGFLOW.outputbuffer.good()) sotDebugTrace::closeFile(); }
+    if(sotDEBUGFLOW.outputbuffer.good()) { sotDebugTrace::closeFile();sotDebugTrace::openFile(); }
     sotDEBUGIN(15);
     /*
      * foreach stage: stage.initCOD(Ir_init)
