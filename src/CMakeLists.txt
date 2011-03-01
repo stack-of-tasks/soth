@@ -20,12 +20,49 @@ SET(${PROJECT_NAME}_SRC
     BasicStage.cpp
 )
 
+SET(${PROJECT_NAME}_HEADERS
+     src/ActiveSet.hpp
+     src/Algebra.hpp
+     src/Allocator.hpp
+     src/BaseY.hpp
+     src/BasicStage.hpp
+     src/Bound.hpp
+     src/debug.hpp
+     src/DestructiveColPivQR.hpp
+     src/Givens.hpp
+     src/HCOD.hpp
+     src/COD.hpp
+     src/solvers.hpp
+     src/Stage.hpp
+     src/SubMatrix.hpp
+)
+
+# ----------------------------------------------------
+# --- INCLUDE ----------------------------------------
+# ----------------------------------------------------
+
+MAKE_DIRECTORY("${${PROJECT_NAME}_BINARY_DIR}/include/soth")
+
+FOREACH(header ${${PROJECT_NAME}_HEADERS})
+  GET_FILENAME_COMPONENT(headerName ${header} NAME)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+                  ${${PROJECT_NAME}_SOURCE_DIR}/${header}
+		  ${${PROJECT_NAME}_BINARY_DIR}/include/${PROJECT_NAME}/${headerName})
+ENDFOREACH(header)
+
+# Install procedure for the header files
+#----------------------------------------------------
+INSTALL(FILES ${${PROJECT_NAME}_HEADERS}
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
+        PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE
+)
 
 # ----------------------------------------------------
 # --- LIBS -------------------------------------------
 # ----------------------------------------------------
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+#INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 
 ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
@@ -47,3 +84,5 @@ SET_TARGET_PROPERTIES(${PROJECT_NAME_LIB}
 
 INSTALL(TARGETS ${LIBRARY_NAME}
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+
