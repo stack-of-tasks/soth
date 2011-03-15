@@ -21,20 +21,20 @@ SET(${PROJECT_NAME}_SRC
 )
 
 SET(${PROJECT_NAME}_HEADERS
-     src/ActiveSet.hpp
-     src/Algebra.hpp
-     src/Allocator.hpp
-     src/BaseY.hpp
-     src/BasicStage.hpp
-     src/Bound.hpp
-     src/debug.hpp
-     src/DestructiveColPivQR.hpp
-     src/Givens.hpp
-     src/HCOD.hpp
-     src/COD.hpp
-     src/solvers.hpp
-     src/Stage.hpp
-     src/SubMatrix.hpp
+     ActiveSet.hpp
+     Algebra.hpp
+     Allocator.hpp
+     BaseY.hpp
+     BasicStage.hpp
+     Bound.hpp
+     debug.hpp
+     DestructiveColPivQR.hpp
+     Givens.hpp
+     HCOD.hpp
+     COD.hpp
+     solvers.hpp
+     Stage.hpp
+     SubMatrix.hpp
 )
 
 # ----------------------------------------------------
@@ -46,7 +46,7 @@ MAKE_DIRECTORY("${${PROJECT_NAME}_BINARY_DIR}/include/soth")
 FOREACH(header ${${PROJECT_NAME}_HEADERS})
   GET_FILENAME_COMPONENT(headerName ${header} NAME)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-                  ${${PROJECT_NAME}_SOURCE_DIR}/${header}
+                  ${${PROJECT_NAME}_SOURCE_DIR}/src/${header}
 		  ${${PROJECT_NAME}_BINARY_DIR}/include/${PROJECT_NAME}/${headerName})
 ENDFOREACH(header)
 
