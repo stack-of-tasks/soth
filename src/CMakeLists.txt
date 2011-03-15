@@ -48,14 +48,15 @@ FOREACH(header ${${PROJECT_NAME}_HEADERS})
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
                   ${${PROJECT_NAME}_SOURCE_DIR}/src/${header}
 		  ${${PROJECT_NAME}_BINARY_DIR}/include/${PROJECT_NAME}/${headerName})
+  INSTALL(FILES ${${PROJECT_NAME}_SOURCE_DIR}/${header}
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
+        PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE
+)
+
 ENDFOREACH(header)
 
 # Install procedure for the header files
 #----------------------------------------------------
-INSTALL(FILES ${${PROJECT_NAME}_HEADERS}
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
-        PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE
-)
 
 # ----------------------------------------------------
 # --- LIBS -------------------------------------------
