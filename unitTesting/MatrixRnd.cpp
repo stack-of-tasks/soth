@@ -1,5 +1,9 @@
 #include "MatrixRnd.hpp"
 
+#ifdef WIN32
+inline double round( double d )
+{	return floor( d + 0.5 );	}
+#endif /* WIN32 */
 
 namespace soth
 {
