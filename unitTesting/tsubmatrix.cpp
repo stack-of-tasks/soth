@@ -2,6 +2,7 @@
 #include "soth/SubMatrix.hpp"
 #include <iostream>
 #include <string>
+#include <ctime>
 
 using namespace Eigen;
 

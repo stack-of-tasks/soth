@@ -8,8 +8,13 @@
 #include "soth/COD.hpp"
 #include "MatrixRnd.hpp"
 #include "RandomGenerator.hpp"
+
+#ifndef WIN32
 #include <sys/time.h>
+#endif // WIN32
+
 #include <iostream>
+#include "gettimeofday.hpp"
 
 using namespace soth;
 using std::endl;

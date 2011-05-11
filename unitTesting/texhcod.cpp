@@ -8,8 +8,13 @@
 #include "soth/HCOD.hpp"
 #include "soth/debug.hpp"
 #include "MatrixRnd.hpp"
+
+#ifndef WIN32
 #include <sys/time.h>
+#endif // WIN32
+
 #include <iomanip>
+#include "gettimeofday.hpp"
 
 using namespace soth;
 

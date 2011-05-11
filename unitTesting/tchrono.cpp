@@ -6,10 +6,15 @@
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
 #include "MatrixRnd.hpp"
+
+#ifndef WIN32
 #include <sys/time.h>
+#endif // WIN32
+
 #include <Eigen/SVD>
 #include "RandomGenerator.hpp"
 #include "soth/DestructiveColPivQR.hpp"
+#include "gettimeofday.hpp"
 
 using namespace soth;
 using std::endl;
