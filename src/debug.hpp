@@ -42,6 +42,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdarg.h>
+#include "soth/api.hpp"
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -68,7 +69,7 @@ namespace soth
 		    outputbuffer << tmpbuffer.str() << charbuffer <<std::endl; \
 		} while(0)
 
-class sotDebugTrace
+class SOTH_EXPORT sotDebugTrace
 {
  public:
     static const int SIZE = 512;
@@ -109,8 +110,8 @@ class sotDebugTrace
 };
 
 
-extern sotDebugTrace sotDEBUGFLOW;
-extern sotDebugTrace sotERRORFLOW;
+SOTH_EXPORT extern sotDebugTrace sotDEBUGFLOW;
+SOTH_EXPORT extern sotDebugTrace sotERRORFLOW;
 
 #ifdef SOTH_DEBUG
 #define sotPREDEBUG  "% " << __FILE__ << ": " <<__FUNCTION__  \

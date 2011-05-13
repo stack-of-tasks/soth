@@ -2,6 +2,7 @@
 #define __SOTH_BASEY__
 
 
+#include "soth/api.hpp"
 #include "soth/Algebra.hpp"
 #include <Eigen/Householder>
 #include "soth/Givens.hpp"
@@ -9,7 +10,7 @@
 namespace soth
 {
 
-  class BaseY
+  class SOTH_EXPORT BaseY
   {
   protected:
     typedef MatrixXd::Index Index;

@@ -1,6 +1,7 @@
 #ifndef __SOTH_HCOD__
 #define __SOTH_HCOD__
 
+#include "soth/api.hpp"
 #include "soth/Stage.hpp"
 #include "soth/BaseY.hpp"
 #include <boost/smart_ptr.hpp>
@@ -9,7 +10,7 @@ namespace soth
 {
 
 
-  class HCOD
+  class SOTH_EXPORT HCOD
   {
   protected:
     typedef boost::shared_ptr<soth::Stage> stage_ptr_t;

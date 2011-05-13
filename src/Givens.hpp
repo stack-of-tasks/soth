@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Jacobi>
+#include <soth/api.hpp>
 #include <soth/SubMatrix.hpp>
 #include <soth/Algebra.hpp>
 #include <vector>
@@ -23,8 +24,8 @@ namespace soth
     typedef JacobiRotation<double> NestedType;
 
   public:
-    Givens();
-    Givens(double a, double b, int i, int j, double* z=0);
+    SOTH_EXPORT Givens();
+    SOTH_EXPORT Givens(double a, double b, int i, int j, double* z=0);
 
     template<typename VectorBase>
     Givens(const VectorBase & v, int i, int j);
@@ -32,7 +33,7 @@ namespace soth
     Givens(VectorBase & v, int i, int j, bool apply = false);
 
   public:
-    void makeGivens(double a, double b, int i, int j, double* z=0);
+    SOTH_EXPORT void makeGivens(double a, double b, int i, int j, double* z=0);
 
     /* Givens to the right, ie such that G'*v (:= G.applyTransposeOnTheRight(v) )
      * is nullified. */
@@ -167,7 +168,7 @@ namespace soth
   class GivensSequence
   {
   public:
-    GivensSequence& push(const Givens& g);
+    SOTH_EXPORT GivensSequence& push(const Givens& g);
     void clear() { G.clear(); }
     void reserve( unsigned int ncsquare ) { G.reserve(ncsquare); }
 

@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 
+#include "soth/api.hpp"
 #include "soth/BasicStage.hpp"
 #include "soth/SubMatrix.hpp"
 #include "soth/solvers.hpp"
@@ -23,7 +24,7 @@ namespace soth
   /* --- STAGE -------------------------------------------------------------- */
   /* --- STAGE -------------------------------------------------------------- */
 
-  class Stage
+  class SOTH_EXPORT Stage
     :public BasicStage
   {
   public:

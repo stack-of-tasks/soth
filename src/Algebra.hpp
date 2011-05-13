@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <iostream>
-
+#include "soth/api.hpp"
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -29,9 +29,9 @@ namespace soth
 
   struct MATLAB
   {
-    friend std::ostream & operator << (std::ostream & os, const MATLAB & m );
+    SOTH_EXPORT friend std::ostream & operator << (std::ostream & os, const MATLAB & m );
 
-    MATLAB( const double& x );
+    SOTH_EXPORT MATLAB( const double& x );
     template< typename Derived >
     MATLAB( const MatrixBase<Derived> & m1 ) { genericInit(m1); }
     template< typename Derived >
@@ -46,13 +46,13 @@ namespace soth
     void initMatrix( const MatrixBase<Derived> & m1 );
     template< typename VectorGen >
     void initVector( const VectorGen & v );
-    inline void initMatrixNull( void );
-    inline void initMatrixColNull( unsigned int size );
-    inline void initMatrixRowNull( unsigned int size );
+    SOTH_EXPORT inline void initMatrixNull( void );
+    SOTH_EXPORT inline void initMatrixColNull( unsigned int size );
+    SOTH_EXPORT inline void initMatrixRowNull( unsigned int size );
 
 
-    static bool fullPrec;
-    static unsigned int precision;
+    SOTH_EXPORT static bool fullPrec;
+    SOTH_EXPORT static unsigned int precision;
     std::string str;
   };
 

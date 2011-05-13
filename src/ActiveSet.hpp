@@ -1,6 +1,7 @@
 #ifndef __SOTH_ASET__
 #define __SOTH_ASET__
 
+#include "soth/api.hpp"
 #include "soth/Algebra.hpp"
 #include "soth/Bound.hpp"
 #include <vector>
@@ -20,7 +21,7 @@ namespace soth
    * is stored in WMLY will need to inverse the W.indirectRow map, which is not
    * done in the class.
    */
-  class ActiveSet
+  class SOTH_EXPORT ActiveSet
   {
   public: /* --- Construction --- */
     ActiveSet( unsigned int nr );
@@ -88,7 +89,7 @@ namespace soth
 
   public:
     inline operator VectorXi (void) const {  return getIndirection(); }
-    friend std::ostream& operator<< ( std::ostream & os,const ActiveSet& as );
+    SOTH_EXPORT friend std::ostream& operator<< ( std::ostream & os,const ActiveSet& as );
   };
 
 

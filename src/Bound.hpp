@@ -5,9 +5,11 @@
 #include <iostream>
 #include <vector>
 
+#include <soth/api.hpp>
+
 namespace soth
 {
-  class Bound
+  class SOTH_EXPORT Bound
   {
   public:
     enum bound_t
@@ -49,7 +51,7 @@ namespace soth
     Bound& operator= ( const Bound& clone );
     Bound& operator= ( const double & val);
     Bound& operator= ( const std::pair<double,double> & val);
-    friend std::ostream& operator<< (std::ostream& os, const Bound& );
+    SOTH_EXPORT friend std::ostream& operator<< (std::ostream& os, const Bound& );
 
   }; // Class Bound
 
@@ -66,8 +68,8 @@ namespace soth
   extern const ConstraintRef  CONSTRAINT_VOID;
   typedef std::vector<ConstraintRef> cstref_vector_t;
 
-  std::ostream& operator<< (std::ostream& os, const VectorBound& t);
-  std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
+  SOTH_EXPORT std::ostream& operator<< (std::ostream& os, const VectorBound& t);
+  SOTH_EXPORT std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
 
 } // namespace soth
 

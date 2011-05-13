@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <list>
 #include <string>
+#include "soth/api.hpp"
 #include "soth/Bound.hpp"
 #include "soth/Algebra.hpp"
 
@@ -17,7 +18,7 @@ namespace soth
   class BaseY;
 
   /* --- STAGE -------------------------------------------------------------- */
-  class BasicStage : boost::noncopyable
+  class SOTH_EXPORT BasicStage : boost::noncopyable
   {
   private:
     VectorBound boundsInternal;

@@ -4,10 +4,11 @@
 
 #include <list>
 #include <iostream>
+#include <soth/api.hpp>
 
 namespace soth
 {
-  class AllocatorML
+  class SOTH_EXPORT AllocatorML
   {
     typedef std::list<unsigned int> resource_t;
     typedef resource_t::iterator resource_iter_t;
@@ -24,7 +25,7 @@ namespace soth
     void put( const unsigned int & token );
     void disp( std::ostream & os ) const;
 
-    friend std::ostream& operator<<( std::ostream & os, const AllocatorML & aml );
+    SOTH_EXPORT friend std::ostream& operator<<( std::ostream & os, const AllocatorML & aml );
   };
 
 } // namespace soth

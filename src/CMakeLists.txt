@@ -5,7 +5,6 @@
 #
 
 SET(LIBRARY_NAME ${PROJECT_NAME})
-ADD_DEFINITIONS("-DEIGEN2_SUPPORT")
 IF(WIN32)
 	ADD_DEFINITIONS("-DNOMINMAX")
 ENDIF(WIN32)
@@ -44,10 +43,6 @@ SET(${PROJECT_NAME}_HEADERS
      SubMatrix.hpp
 )
 
-IF(WIN32)
-  LIST(REMOVE_ITEM ${PROJECT_NAME}_SRC    HCOD.cpp    Stage.cpp)
-ENDIF(WIN32)
-
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
 # ----------------------------------------------------
@@ -79,7 +74,10 @@ INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
   ${${PROJECT_NAME}_SRC})
+
+IF(NOT WIN32)
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_SIGNALS_LIBRARY})
+ENDIF(NOT WIN32)
 
 SET_TARGET_PROPERTIES(${LIBRARY_NAME}
   PROPERTIES
