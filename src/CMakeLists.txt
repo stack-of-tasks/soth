@@ -27,6 +27,7 @@ SET(${PROJECT_NAME}_SRC
 )
 
 SET(${PROJECT_NAME}_HEADERS
+     api.hpp
      ActiveSet.hpp
      Algebra.hpp
      Allocator.hpp
