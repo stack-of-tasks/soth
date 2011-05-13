@@ -118,4 +118,6 @@ foreach (exec ${executable_list})
 	  COMPILE_FLAGS "${_cf}"
 	  LINK_FLAGS "${_lf}"
 	)
+	
+	ADD_TEST(${exec} ${exec})
 endforeach(exec)
