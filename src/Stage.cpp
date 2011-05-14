@@ -813,7 +813,8 @@ namespace soth
 	// W.row(last).setZero();
 	// W.col(last).setZero();
 	// W(last,last) = 1.0;
-	const Index & wrowup = W.getRowIndices(sizeA()-1);
+	const SubMatrixXd & const_W = W;
+	const Index & wrowup = const_W.getRowIndices(sizeA()-1);
 	W_.row( wrowup ) .setZero();
 	W_.col( wcolup ) .setZero();
 	W_(wrowup,wcolup ) = 1.0;
