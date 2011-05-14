@@ -23,6 +23,13 @@ SET(CMAKE_VERBOSE_MAKEFILE true)
 
 SETUP_PROJECT()
 
+# Handle OS specificities 
+INCLUDE(CheckIncludeFiles)
+CHECK_INCLUDE_FILES("sys/time.h" SYS_TIME_H)
+IF(SYS_TIME_H)
+ADD_DEFINITIONS("-DHAVE_SYS_TIME_H")
+ENDIF(SYS_TIME_H)
+
 PKG_CONFIG_APPEND_LIBS("soth")
 
 #
@@ -45,7 +52,6 @@ ENDMACRO(LIST2STRING)
 
 
 # --- EIGEN ----------------------------------------------------------
-set(EIGEN3_INCLUDE_DIR "C:/Users/Keith/Libraries/Eigen/include/eigen3")
 FIND_PACKAGE(Eigen3)
 IF(EIGEN3_FOUND)
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
