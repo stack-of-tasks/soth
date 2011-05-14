@@ -69,7 +69,7 @@ ENDIF(EIGEN3_FOUND)
 # --- BOOST HEADER ---------------------------------------------------
 # Search for dependencies.
 # Boost
-SET(BOOST_COMPONENTS signals)
+SET(BOOST_COMPONENTS program_options signals)
 SEARCH_FOR_BOOST()
 
 # ADD_SUBDIRECTORY(doc)
