@@ -1432,7 +1432,7 @@ namespace soth
   unsigned int Stage::rowSize( const Index r )
   {
     if( r<sizeN() ) return sizeM;
-    else return std::min( sizeM+r-sizeN()+1,nc );
+    else return std::min( (unsigned int)(sizeM+r-sizeN()+1),nc );
  }
 
   /* --- TEST RECOMPOSE ----------------------------------------------------- */

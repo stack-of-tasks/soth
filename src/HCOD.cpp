@@ -370,7 +370,7 @@ namespace soth
     assert( stageRef<=stages.size() );
     double lambdamax = Stage::EPSILON; unsigned int row;
 
-    const stage_iter_t refend = stages.begin()+std::min(stages.size(),stageRef+1);
+    const stage_iter_t refend = stages.begin()+ std::min((unsigned)(stages.size()),stageRef+1);
     stage_iter_t stageDown =  refend;
     for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
@@ -390,7 +390,7 @@ namespace soth
   {
     assert( stageRef<=stages.size() );
     double lambdamax = Stage::EPSILON; unsigned int row;
-    const stage_iter_t refend = stages.begin()+std::min(stages.size(),stageRef+1);
+    const stage_iter_t refend = stages.begin()+std::min((unsigned)(stages.size()),stageRef+1);
     stage_iter_t stageDown = refend;
     for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
@@ -557,7 +557,7 @@ namespace soth
       verifL.setZero();
 
     /* verif += sum Ji' li. */
-    const unsigned int nbstage = std::min(stages.size()-1,stageRef);
+    const unsigned int nbstage = std::min((unsigned int)(stages.size()-1),stageRef);
     for( unsigned int i=0;i<=nbstage;++i )
       {
 	const Stage & s = *stages[i];
