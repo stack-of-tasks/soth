@@ -41,7 +41,7 @@ namespace soth
   std::ostream& operator<< (std::ostream& os,const Now& now )
   { return os << now.sec <<"' " << now.usec;  }
 
-};
+}
 
 
 

@@ -1641,4 +1641,4 @@ namespace soth
   //double Stage::EPSILON = 1e-8; // TODO: should be 1e-8
   double Stage::EPSILON = 1e-8;
 
-}; // namespace soth
+} // namespace soth

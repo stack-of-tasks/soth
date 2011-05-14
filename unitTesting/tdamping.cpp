@@ -373,7 +373,7 @@ namespace DummyActiveSet
 
     compareSolvers( Jref,bref,aset,bset,urefnorm,erefnorm,true );
   }
-};
+}
 
 
 

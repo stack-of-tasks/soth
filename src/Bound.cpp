@@ -229,4 +229,4 @@ namespace soth
   const ConstraintRef CONSTRAINT_VOID;//(-1,Bound::BOUND_NONE);
 
 
-}; // namespace soth
+} // namespace soth

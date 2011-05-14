@@ -65,7 +65,7 @@ namespace soth
   // };
   // std::map< std::string,ChronoContext >
 
-};
+}
 
 
 

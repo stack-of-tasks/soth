@@ -636,5 +636,5 @@ namespace soth
 
 
 
-}; // namespace soth
+} // namespace soth
 

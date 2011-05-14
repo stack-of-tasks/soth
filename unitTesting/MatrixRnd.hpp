@@ -73,4 +73,4 @@ namespace soth
   int randu( int bmin,int bmax );
 
 
-}; // namespace soth.
+} // namespace soth.

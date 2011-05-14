@@ -69,6 +69,6 @@ namespace soth
   void writeProblemToFile( const std::string name,
 			   const std::vector<Eigen::MatrixXd> &J,
 			   const std::vector<soth::VectorBound> &b );
-};
+}
 
 #endif // #ifndef __SOTH_RANDOM_GENERATOR__
