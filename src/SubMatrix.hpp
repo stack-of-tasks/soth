@@ -24,22 +24,24 @@ namespace Eigen
   template<typename MatrixType, int PermutationType, bool IsSub>
   class SubMatrix;
 
-  template<typename MatrixType, int PermutationType, bool IsSub>
-  struct ei_traits<SubMatrix<MatrixType, PermutationType, IsSub> >
-    : ei_traits<MatrixType>
-  {
-    typedef typename ei_nested<MatrixType>::type MatrixTypeNested;
-    typedef typename ei_unref<MatrixTypeNested>::type _MatrixTypeNested;
-    typedef typename MatrixType::StorageKind StorageKind;
-    enum {
-      RowsAtCompileTime = (PermutationType==ColPermutation) ? (MatrixType::RowsAtCompileTime) : Dynamic,
-      ColsAtCompileTime = (PermutationType==RowPermutation) ? (MatrixType::ColsAtCompileTime) : Dynamic,
-      MaxRowsAtCompileTime = (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic),
-      MaxColsAtCompileTime = (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic),
-      Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
-      CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+  namespace internal {
+    template<typename MatrixType, int PermutationType, bool IsSub>
+    struct traits<SubMatrix<MatrixType, PermutationType, IsSub> >
+      : traits<MatrixType>
+    {
+      typedef typename nested<MatrixType>::type MatrixTypeNested;
+      typedef typename remove_reference<MatrixTypeNested>::type _MatrixTypeNested;
+      typedef typename MatrixType::StorageKind StorageKind;
+      enum {
+	RowsAtCompileTime = (PermutationType==ColPermutation) ? (MatrixType::RowsAtCompileTime) : Dynamic,
+	ColsAtCompileTime = (PermutationType==RowPermutation) ? (MatrixType::ColsAtCompileTime) : Dynamic,
+	MaxRowsAtCompileTime = (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic),
+	MaxColsAtCompileTime = (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic),
+	Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
+	CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+      };
     };
-  };
+  }
 
 
   /* --- HELPERS ------------------------------------------------------------ */
@@ -184,8 +186,8 @@ namespace Eigen
    /* --- Kernel implementation --- */
     Index rowIndex(Index i) const
     {
-      ei_assert( inIdxRange(i) );
-      ei_assert( inMRange(rowIndices[i]) );
+      eigen_assert( inIdxRange(i) );
+      eigen_assert( inMRange(rowIndices[i]) );
       return rowIndices[i];
     }
     Index rows() const {return rowIndices.size();}
@@ -198,26 +200,26 @@ namespace Eigen
     /* --- Basic setters --- */
     void setRowIndices(const RowIndices& indices)
     {
-      //ei_assert(!IsSub || indices.size() < m_matrix.rows());
+      //eigen_assert(!IsSub || indices.size() < m_matrix.rows());
       rowIndices = indices;
     }
     void setRowRange(Index start, Index end)
     {
-      ei_assert( 0<=start ); ei_assert( inMRange(std::max(0,end-1)) );
-      ei_assert( start<=end );
+      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max(0,end-1)) );
+      eigen_assert( start<=end );
       rowIndices = ei_range_helper<RowIndices>::generate(start, end);
     }
     void permuteRows(Index i, Index j)
     {
-      ei_assert(i>=0 && i<rows());
-      ei_assert(j>=0 && j<rows());
+      eigen_assert(i>=0 && i<rows());
+      eigen_assert(j>=0 && j<rows());
       Index tmp = rowIndices[i];
       rowIndices[i] = rowIndices[j];
       rowIndices[j] = tmp;
     }
     void pushRowFront(Index index)
     {
-      ei_assert( inMRange(index) );
+      eigen_assert( inMRange(index) );
       const Index s = rows();
       rowIndices.conservativeResize(s+1);
       /* Cannot use block for this operation. */
@@ -226,7 +228,7 @@ namespace Eigen
     }
     void pushRowBack(Index index)
     {
-      ei_assert( inMRange(index) );
+      eigen_assert( inMRange(index) );
       const Index s = rows();
       rowIndices.conservativeResize(s+1);
       rowIndices[s] = index;
@@ -326,8 +328,8 @@ namespace Eigen
     /* --- Kernel implementation --- */
     Index colIndex(Index i) const
     {
-      ei_assert( inIdxRange(i) );
-      ei_assert( inMRange(colIndices[i]) );
+      eigen_assert( inIdxRange(i) );
+      eigen_assert( inMRange(colIndices[i]) );
       return colIndices[i];
     }
     Index cols() const {return colIndices.size();}
@@ -340,26 +342,26 @@ namespace Eigen
     /* --- Basic setters --- */
     void setColIndices(const ColIndices& indices)
     {
-      /* TODO ei_assert extrema of indices. */
+      /* TODO eigen_assert extrema of indices. */
       colIndices = indices;
     }
     void setColRange(Index start, Index end)
     {
-      ei_assert( 0<=start ); ei_assert( inMRange(std::max(0,end-1)) );
-      ei_assert( start<=end );
+      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max(0,end-1)) );
+      eigen_assert( start<=end );
       colIndices = ei_range_helper<ColIndices>::generate(start, end);
     }
     void permuteCols(Index i, Index j)
     {
-      ei_assert(i>=0 && i<cols());
-      ei_assert(j>=0 && j<cols());
+      eigen_assert(i>=0 && i<cols());
+      eigen_assert(j>=0 && j<cols());
       Index tmp = colIndices[i];
       colIndices[i] = colIndices[j];
       colIndices[j] = tmp;
     }
     void pushColFront(Index index)
     {
-      ei_assert( inMRange(index) );
+      eigen_assert( inMRange(index) );
       const Index s = cols();
       colIndices.conservativeResize(s+1);
       for (Index i=s; i>0; --i) {colIndices[i]=colIndices[i-1];}
@@ -367,7 +369,7 @@ namespace Eigen
     }
     void pushColBack(Index index)
     {
-      ei_assert( inMRange(index) );
+      eigen_assert( inMRange(index) );
       const Index s = cols();
       colIndices.conservativeResize(s+1);
       colIndices[s] = index;
@@ -612,8 +614,8 @@ namespace Eigen
 
   typedef SubMatrix<MatrixXd> SubMatrixXd;
   typedef SubMatrix<VectorXd,RowPermutation> SubVectorXd;
-  typedef SubMatrixXd const_SubMatrixXd;
-  typedef SubVectorXd const_SubVectorXd;
+  typedef const SubMatrixXd const_SubMatrixXd;
+  typedef const SubVectorXd const_SubVectorXd;
 
 
   /* --- STACK -------------------------------------------------------------- */
@@ -622,22 +624,25 @@ namespace Eigen
   template<typename MatrixType1,typename MatrixType2>
   class StackMatrix;
 
-  template<typename MatrixType1,typename MatrixType2>
-  struct ei_traits< StackMatrix<MatrixType1,MatrixType2> >
-    : ei_traits<MatrixType1>
+  namespace internal
   {
-    typedef typename ei_nested<MatrixType1>::type MatrixTypeNested;
-    typedef typename ei_unref<MatrixTypeNested>::type _MatrixTypeNested;
-    typedef typename MatrixType1::StorageKind StorageKind;
-    enum {
-      RowsAtCompileTime = MatrixType1::RowsAtCompileTime,
-      ColsAtCompileTime = MatrixType1::ColsAtCompileTime,
-      MaxRowsAtCompileTime = MatrixType1::MaxRowsAtCompileTime,
-      MaxColsAtCompileTime = MatrixType1::MaxColsAtCompileTime,
-      Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
-      CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+    template<typename MatrixType1,typename MatrixType2>
+    struct traits< StackMatrix<MatrixType1,MatrixType2> >
+      : traits<MatrixType1>
+    {
+      typedef typename nested<MatrixType1>::type MatrixTypeNested;
+      typedef typename remove_reference<MatrixTypeNested>::type _MatrixTypeNested;
+      typedef typename MatrixType1::StorageKind StorageKind;
+      enum {
+	RowsAtCompileTime = MatrixType1::RowsAtCompileTime,
+	ColsAtCompileTime = MatrixType1::ColsAtCompileTime,
+	MaxRowsAtCompileTime = MatrixType1::MaxRowsAtCompileTime,
+	MaxColsAtCompileTime = MatrixType1::MaxColsAtCompileTime,
+	Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
+	CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+      };
     };
-  };
+  }
 
 
 
@@ -665,6 +670,8 @@ namespace Eigen
 
     inline Index cols() const { assert( m1.cols() == m2.cols() ); return m1.cols(); }
     inline Index rows() const { return m1.rows() + m2.rows(); }
+    inline Index innerStride() const {  return 1;}
+    //inline void innerStride() const { }
 
     inline Scalar& coeffRef(Index row, Index col)
     {
