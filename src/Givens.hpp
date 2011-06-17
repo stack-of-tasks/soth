@@ -20,7 +20,7 @@ namespace soth
   class Givens
   {
   public:
-    typedef PlanarRotation<double> NestedType;
+    typedef JacobiRotation<double> NestedType;
 
   public:
     Givens();
@@ -94,8 +94,8 @@ namespace soth
 	{
 	  double & m_1 = v1(i), & m_2 = v2(i);
 	  const double x1=m_1, x2=m_2;
-	  m_1 =  G.c() * x1 + ei_conj(G.s()) * x2;
-	  m_2 = -G.s() * x1 + ei_conj(G.c()) * x2;
+	  m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
+	  m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
 	}
     }
     // [ v1;v2 ] := G'*[v1;v2] -- [v2 v2] := [v1 v2]*G
@@ -109,8 +109,8 @@ namespace soth
 	{
 	  double & m_1 = v1(c), & m_2 = v2(c);
 	  const double x1=m_1, x2=m_2;
-	  m_1 =  Gt.c() * x1 + ei_conj(Gt.s()) * x2;
-	  m_2 = -Gt.s() * x1 + ei_conj(Gt.c()) * x2;
+	  m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
+	  m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
 	}
     }
 
@@ -276,7 +276,11 @@ namespace soth
   void Givens::
   applyThisOnTheLeft(MatrixBase<Derived> & M) const
   {
-    M.applyOnTheRight(i, j, G);
+    //original solution is not working because "innerstride" is not define in general
+    // M.applyOnTheRight(i, j, G);
+    typename Derived::ColXpr x(M.col(i));
+    typename Derived::ColXpr y(M.col(j));
+    applyRotation(x,y,G.adjoint());
   }
 
   // M := M*G.
@@ -295,7 +299,11 @@ namespace soth
   void Givens::
   applyTransposeOnTheLeft(MatrixBase<Derived> & M) const
   {
-    M.applyOnTheRight(i, j, G.adjoint());
+    //original solution is not working because "innerstride" is not define in general
+    // M.applyOnTheRight(i, j, G.adjoint());
+    typename Derived::ColXpr x(M.col(i));
+    typename Derived::ColXpr y(M.col(j));
+    applyRotation(x,y,G);
   }
 
   // M := G*M.
@@ -303,16 +311,48 @@ namespace soth
   void Givens::
   applyThisOnTheRight(MatrixBase<Derived> & M) const
   {
-    M.applyOnTheLeft(i, j, G);
+    //original solution is not working because "innerstride" is not define in general
+    // M.applyOnTheLeft(i, j, G);
+    typename Derived::RowXpr x(M.row(i));
+    typename Derived::RowXpr y(M.row(j));
+    applyRotation(x,y,G);
+
   }
+
 
   // M := G'*M.
   template<typename Derived>
   void Givens::
   applyTransposeOnTheRight(MatrixBase<Derived> & M) const
   {
-    M.applyOnTheLeft(i, j, G.adjoint());
+    //original solution is not working because "innerstride" is not define in general
+    // M.applyOnTheLeft(i, j, G.adjoint());
+
+    typename Derived::RowXpr x(M.row(i));
+    typename Derived::RowXpr y(M.row(j));
+    applyRotation(x,y,G.adjoint());
   }
+
+
+  template<typename Derived,typename Rot>
+  static void applyRotation( MatrixBase<Derived> & x,MatrixBase<Derived> & y, Rot j)
+  {
+    // TODO:
+    //   - Depending on the value of has_direct_access<Derived>::ret, use the jacobi solution
+    // instead of the iterative patch below.
+    //   - correct the bug in internal::apply_rotation_in_the_plane.
+    eigen_assert( x.size() == y.size() );
+    typename Derived::Index size = x.size();
+    double c=j.c(), s=j.s();
+    for(typename Derived::Index a=0; a<size; ++a)
+      {
+	typename Derived::Scalar xa = x[a];
+	typename Derived::Scalar ya = y[a];
+	x[a] =  c * xa + s * ya;
+	y[a] = -s * xa + c * ya;
+      }
+  }
+
 
   /* --- Multiplication single sub matrix ----------------------------------- */
   // M := M*G.
@@ -327,8 +367,8 @@ namespace soth
 	double & m_1 = M(r,i), & m_2 = M(r,j);
 	const double x1=m_1, x2=m_2;
 	// M*G == G'*M' -> apply the transpose of G.
-	m_1 =  Gt.c() * x1 + ei_conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + ei_conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
+	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
       }
   }
 
@@ -343,8 +383,8 @@ namespace soth
       {
 	double & m_1 = M(r,i), & m_2 = M(r,j);
 	const double x1=m_1, x2=m_2;
-	m_1 =  G.c() * x1 + ei_conj(G.s()) * x2;
-	m_2 = -G.s() * x1 + ei_conj(G.c()) * x2;
+	m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
+	m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
       }
   }
 
@@ -359,8 +399,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  Gt.c() * x1 + ei_conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + ei_conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
+	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
       }
   }
   // M := G*M.
@@ -374,8 +414,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  G.c() * x1 + ei_conj(G.s()) * x2;
-	m_2 = -G.s() * x1 + ei_conj(G.c()) * x2;
+	m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
+	m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
       }
   }
 
@@ -404,8 +444,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  Gt.c() * x1 + ei_conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + ei_conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
+	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
       }
   }
 
