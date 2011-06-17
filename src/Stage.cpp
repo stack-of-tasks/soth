@@ -151,7 +151,7 @@ namespace soth
 
     freeML.resetTop(sizeA());
 
-    SubMatrix<VectorBoundRef,RowPermutation>
+    const SubMatrix<VectorBoundRef,RowPermutation>
       ba( const_cast<VectorBoundRef&>(bounds),&activeCst );
     for( unsigned int r=0;r<sizeA();++r )
       {
@@ -838,7 +838,7 @@ namespace soth
   /* --- DIRECT ------------------------------------------------------------- */
   /* Zu=Linv*(Ui'*ei-Mi*Yu(1:rai_1,1)); */
   void Stage::
-  computeSolution( const VectorXd& Ytu ) const
+  computeSolution( VectorXd& Ytu ) const
   {
     assert( isInit );
     if (sizeL==0)
@@ -1176,7 +1176,7 @@ namespace soth
     else if( sizeM==0 )
       {
 	assert( sizeL>0 );
- 	VectorBlock<VectorXd> z = Ytu.head(sizeL);
+ 	VectorBlock<const VectorXd> z = Ytu.head(sizeL);
 
 	VectorXd MLz = VectorXd::Zero( sizeA() );
 	MLz.tail( sizeL ) = L*z;
@@ -1187,7 +1187,7 @@ namespace soth
      }
     else if( sizeL==0 )
       {
-	VectorBlock<VectorXd> zbar = Ytu.head(sizeM);
+	VectorBlock<const VectorXd> zbar = Ytu.head(sizeM);
 	VectorXd MLz = M*zbar;
 	if( isWIdenty ) MLz -= e;
 	else            MLz -= W.transpose()*e;
@@ -1196,7 +1196,7 @@ namespace soth
     else
       {
 	assert( sizeM>0 && sizeL>0 );
-	VectorBlock<VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
+	VectorBlock<const VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
 
 	VectorXd MLz = M*zbar;
 	if( isWIdenty ) MLz -= e;
@@ -1211,7 +1211,7 @@ namespace soth
     if( isDampCpt )
       {
 	const double & eta = dampingFactor;
-	VectorBlock<VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
+	VectorBlock<const VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
 
      	if( sizeM>0 )
 	  {

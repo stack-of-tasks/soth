@@ -133,7 +133,7 @@ namespace soth
     /* --- SOLVE ------------------------------------------------------------ */
   public:
     /* Solve in the Y space. The solution has then to be multiply by Y: u = Y*Yu. */
-    void computeSolution( const VectorXd& Ytu ) const;
+    void computeSolution( VectorXd& Ytu ) const;
 
     void damp( void );
     template< typename VectorDerived >
