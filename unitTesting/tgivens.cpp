@@ -1,7 +1,12 @@
+#define SOTH_DEBUG
+#define SOTH_DEBUG_MODE 50
+
+#include "soth/debug.hpp"
+
+
 #include <iostream>
 #include "soth/Givens.hpp"
 #include "soth/Algebra.hpp"
-#include "soth/debug.hpp"
 
 using namespace Eigen;
 using namespace soth;
@@ -16,7 +21,9 @@ void testSimpleGivens()
 
   sotDEBUG(1) << "Nullify col 0 ...";
   Givens G1(M.col(0), 2, 3);
+  sotDEBUG(1) << "G1 = " << G1.G.c() <<"," <<G1.G.s() << endl;
   G1.applyTransposeOnTheRight(M);
+  //G1.applyTransposeOnTheLeft(M);
   sotDEBUG(1) << "G1'*M = " << (MATLAB)M << endl;
 
   Givens G2(M(1,0), M(2,0), 1, 2);
@@ -36,11 +43,11 @@ void testSimpleGivens()
     sotDEBUG(1) << "G1:3'*M*Prod(G)" << (MATLAB)M << endl;
   }
 
-  cout << "Checking the application of cols of MatrixXd ... " << std::flush;
+  cout << "Checking the application on the cols of MatrixXd ... " << std::flush;
   assert( M.col(0).tail( M.rows()-1 ).norm() < 1e-6 );
   assert( std::abs(M.col(0).norm()-n0) < 1e-6 );
   cout << " ... OK! " << endl;
-  cout << "Checking the application of cols of MatrixXd ... " << std::flush;
+  cout << "Checking the application on the rows of MatrixXd ... " << std::flush;
   assert( M.row(0).tail( M.rows()-2 ).norm() < 1e-6 );
   assert( std::abs( M.row(0).tail(M.cols()-1).norm()-n1) < 1e-6 );
   cout << " ... OK! " << endl;
@@ -83,11 +90,11 @@ void testSubMatrixGivens()
     sotDEBUG(1) << "G1:3'*M*Prod(G)" << (MATLAB)M << endl;
   }
 
-  cout << "Checking the application of rows of submatrix ... " << std::flush;
+  cout << "Checking the application on the cols of a submatrix ... " << std::flush;
   assert( M.col(0).tail( M.rows()-1 ).norm() < 1e-6 );
   assert( std::abs(M.col(0).norm()-n0) < 1e-6 );
   cout << " ... OK! " << endl;
-  cout << "Checking the application of cols of submatrix ... " << std::flush;
+  cout << "Checking the application on the rows of a submatrix ... " << std::flush;
   assert( M.row(0).tail( M.rows()-2 ).norm() < 1e-6 );
   assert( std::abs( M.row(0).tail(M.cols()-1).norm()-n1) < 1e-6 );
   cout << " ... OK! " << endl;
@@ -137,6 +144,7 @@ void testSequenceSub()
 
 int main()
 {
+  sotDebugTrace::openFile();
   testSimpleGivens();
   testSubMatrixGivens();
   testSequenceSub();
