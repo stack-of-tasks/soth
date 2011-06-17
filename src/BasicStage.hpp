@@ -22,8 +22,8 @@ namespace soth
   private:
     VectorBound boundsInternal;
 
-    typedef Map<MatrixXd> MapXd;
-    typedef Map<VectorBound> MapBound;
+    typedef Map<const MatrixXd> MapXd;
+    typedef Map<const VectorBound> MapBound;
 
     MapXd Jmap;
     MapBound boundsMap;
