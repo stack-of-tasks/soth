@@ -15,6 +15,8 @@ namespace soth
     typedef MatrixXd::Index Index;
     typedef Diagonal<MatrixXd,0> HCoeffsType;
     typedef HouseholderSequence<MatrixXd,HCoeffsType> HouseholderSequenceType;
+    typedef Diagonal<const MatrixXd,0> HCoeffsType_const;
+    typedef HouseholderSequence<const MatrixXd,HCoeffsType_const> HouseholderSequenceType_const;
 
   protected:public:
     bool isExplicit;
@@ -42,9 +44,13 @@ namespace soth
     void increaseRank(Index r)    {      rank += r;    }
     inline Index getRank(void) const { return rank; }
 
-    HouseholderSequenceType getHouseholderSequence() const
+    HouseholderSequenceType_const getHouseholderSequence() const
     {
-      return HouseholderSequenceType(householderEssential, householderEssential.diagonal(), false, rank, 0);
+      HouseholderSequenceType_const res
+	= HouseholderSequenceType_const(householderEssential,householderEssential.diagonal());
+      //,trans=false,actualVectors=rank,shift=0
+      res.setLength(rank);
+      return res;
     }
 
     /* --- Multiplier --- */
