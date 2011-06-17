@@ -9,7 +9,7 @@ namespace Eigen
   * MP = QR with R*P' directly stored in the input matrix M and the householder vectors essential parts stored in the
   * column of a different matrix given by the user.
   */
-template<typename _MatrixType, typename _HouseholderStorageType= typename ei_plain_matrix_type<_MatrixType>::type>
+template<typename _MatrixType, typename _HouseholderStorageType= typename internal::plain_matrix_type<_MatrixType>::type>
 class DestructiveColPivQR
 {
   public:
@@ -27,12 +27,12 @@ class DestructiveColPivQR
     typedef typename MatrixType::Index Index;
     //typedef Matrix<Scalar, RowsAtCompileTime, RowsAtCompileTime, Options, MaxRowsAtCompileTime, MaxRowsAtCompileTime> MatrixQType;
     typedef _HouseholderStorageType  MatrixQType;
-    //typedef typename ei_plain_diag_type<MatrixType>::type HCoeffsType;
+    //typedef typename internal::plain_diag_type<MatrixType>::type HCoeffsType;
     typedef Diagonal<MatrixQType,0> HCoeffsType;
     typedef PermutationMatrix<ColsAtCompileTime, MaxColsAtCompileTime> PermutationType;
-    typedef typename ei_plain_row_type<MatrixType, Index>::type IntRowVectorType;
-    typedef typename ei_plain_row_type<MatrixType>::type RowVectorType;
-    typedef typename ei_plain_row_type<MatrixType, RealScalar>::type RealRowVectorType;
+    typedef typename internal::plain_row_type<MatrixType, Index>::type IntRowVectorType;
+    typedef typename internal::plain_row_type<MatrixType>::type RowVectorType;
+    typedef typename internal::plain_row_type<MatrixType, RealScalar>::type RealRowVectorType;
     typedef typename HouseholderSequence<MatrixQType,HCoeffsType>::ConjugateReturnType HouseholderSequenceType;
 
 
@@ -50,7 +50,7 @@ class DestructiveColPivQR
         m_usePrescribedEpsilon((epsilon==0.)? false : true),
         m_prescribedEpsilon(epsilon)
     {
-      ei_assert(epsilon >= 0.);
+      eigen_assert(epsilon >= 0.);
       compute();
     }
 
@@ -60,7 +60,7 @@ class DestructiveColPivQR
       */
     const MatrixType& matrixR() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return m_r;
     }
 
@@ -74,7 +74,7 @@ class DestructiveColPivQR
 
     const PermutationType& colsPermutation() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return m_colsPermutation;
     }
 
@@ -115,7 +115,7 @@ class DestructiveColPivQR
       */
     inline Index rank() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return m_nonzero_pivots;
     }
 
@@ -127,7 +127,7 @@ class DestructiveColPivQR
       */
     inline Index dimensionOfKernel() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return cols() - rank();
     }
 
@@ -140,7 +140,7 @@ class DestructiveColPivQR
       */
     inline bool isInjective() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return rank() == cols();
     }
 
@@ -153,7 +153,7 @@ class DestructiveColPivQR
       */
     inline bool isSurjective() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return rank() == rows();
     }
 
@@ -165,7 +165,7 @@ class DestructiveColPivQR
       */
     inline bool isInvertible() const
     {
-      ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+      eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
       return isInjective() && isSurjective();
     }
 
@@ -192,7 +192,7 @@ class DestructiveColPivQR
       */
     DestructiveColPivQR& setEpsilon(const RealScalar& epsilon)
     {
-      ei_assert(epsilon > 0.);
+      eigen_assert(epsilon > 0.);
       m_usePrescribedEpsilon = true;
       m_prescribedEpsilon = epsilon;
       return *this;
@@ -233,7 +233,7 @@ class DestructiveColPivQR
       */
     inline Index nonzeroPivots() const
     {
-      ei_assert(m_isInitialized && "LU is not initialized.");
+      eigen_assert(m_isInitialized && "LU is not initialized.");
       return m_nonzero_pivots;
     }
 
@@ -260,16 +260,16 @@ class DestructiveColPivQR
 template<typename MatrixType, typename HouseholderStrorageType>
 typename MatrixType::RealScalar DestructiveColPivQR<MatrixType, HouseholderStrorageType>::absDeterminant() const
 {
-  ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
-  ei_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
-  return ei_abs(m_r.diagonal().prod());
+  eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+  eigen_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
+  return internal::abs(m_r.diagonal().prod());
 }
 
 template<typename MatrixType, typename HouseholderStrorageType>
 typename MatrixType::RealScalar DestructiveColPivQR<MatrixType, HouseholderStrorageType>::logAbsDeterminant() const
 {
-  ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
-  ei_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
+  eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+  eigen_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
   return m_r.diagonal().cwiseAbs().array().log().sum();
 }
 
@@ -301,11 +301,11 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   for(Index k = 0; k < cols; ++k)
     m_colSqNorms.coeffRef(k) = m_r.col(k).squaredNorm();
 
-  //RealScalar threshold_helper = m_colSqNorms.maxCoeff() * ei_abs2(epsilon()) /rows;
+  //RealScalar threshold_helper = m_colSqNorms.maxCoeff() * internal::abs2(epsilon()) /rows;
   // The threshold should be decided wrt. to the norm of ML, while this class only consider
   // the norm of L -> TODO: add an initialization of threshold by EPS*norm(L) ... is it really
   // necessary, 'cos it is time consuming.
-  RealScalar threshold_helper = ei_abs2(epsilon());
+  RealScalar threshold_helper = internal::abs2(epsilon());
 
   m_nonzero_pivots = size; // the generic case is that in which all pivots are nonzero (invertible case)
   m_maxpivot = RealScalar(0);
@@ -362,7 +362,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     m_r.col(m_colsIntTranspositions[k]).tail(rows-k-1).setZero();
 
     // remember the maximum absolute value of diagonal coefficients
-    if(ei_abs(beta) > m_maxpivot) m_maxpivot = ei_abs(beta);
+    if(internal::abs(beta) > m_maxpivot) m_maxpivot = internal::abs(beta);
 
     // apply the householder transformation
     for (Index l = k+1; l<cols; ++l)
@@ -398,8 +398,10 @@ template<typename MatrixType, typename HouseholderStrorageType>
 typename DestructiveColPivQR<MatrixType, HouseholderStrorageType>::HouseholderSequenceType DestructiveColPivQR<MatrixType, HouseholderStrorageType>
   ::householderQ() const
 {
-  ei_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
-  return HouseholderSequenceType(m_q, m_hCoeffs.conjugate(), false, m_nonzero_pivots, 0);
+  eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
+  HouseholderSequenceType hh(m_q, m_hCoeffs.conjugate()); //, false, m_nonzero_pivots, 0);
+  hh.setLength(m_nonzero_pivots);
+  return hh;
 }
 
 } //namespace Eigen
