@@ -205,7 +205,7 @@ namespace Eigen
     }
     void setRowRange(Index start, Index end)
     {
-      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max(0,end-1)) );
+      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max<long>(0,end-1)) );
       eigen_assert( start<=end );
       rowIndices = ei_range_helper<RowIndices>::generate(start, end);
     }
@@ -347,7 +347,7 @@ namespace Eigen
     }
     void setColRange(Index start, Index end)
     {
-      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max(0,end-1)) );
+      eigen_assert( 0<=start ); eigen_assert( inMRange(std::max<long>(0,end-1)) );
       eigen_assert( start<=end );
       colIndices = ei_range_helper<ColIndices>::generate(start, end);
     }
