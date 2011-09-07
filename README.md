@@ -22,7 +22,7 @@ The matrix abstract layer depends on several packages which
 have to be available on your machine.
 
  - Libraries:
-   - eigen3-beta (version 2.91.0)
+   - eigen3
  - System tools:
    - CMake (>=2.6)
    - pkg-config
