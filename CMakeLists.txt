@@ -7,6 +7,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/cpack.cmake)
+INCLUDE(cmake/eigen.cmake)
 
 SET(PROJECT_NAME soth)
 SET(PROJECT_DESCRIPTION "...")
@@ -22,6 +23,7 @@ SET(PROJECT_VERSION 0.0.1)
 SET(CMAKE_VERBOSE_MAKEFILE true)
 
 SETUP_PROJECT()
+SEARCH_FOR_EIGEN()
 
 # Handle OS specificities 
 INCLUDE(CheckIncludeFiles)
@@ -50,22 +52,6 @@ MACRO(LIST2STRING _VAR_ARG _LIST_ARG)
   ENDFOREACH(_ITEM)
 ENDMACRO(LIST2STRING)
 
-
-# --- EIGEN ----------------------------------------------------------
-FIND_PACKAGE(Eigen3)
-IF(EIGEN3_FOUND)
-  INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
-  PKG_CONFIG_APPEND_CFLAGS(-I${EIGEN3_INCLUDE_DIR})
-  IF(WIN32)
-	PKG_CONFIG_APPEND_CFLAGS("-DNOMINMAX")
-  ENDIF(WIN32)
-
-ELSE()
-  MESSAGE(
-    FATAL_ERROR "Failed to detect Eigen3\n"
-  )
-ENDIF(EIGEN3_FOUND)
-
 # --- BOOST HEADER ---------------------------------------------------
 # Search for dependencies.
 # Boost
@@ -74,6 +60,8 @@ SEARCH_FOR_BOOST()
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
+
+PKG_CONFIG_APPEND_CFLAGS(${_Eigen_CFLAGS})
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
