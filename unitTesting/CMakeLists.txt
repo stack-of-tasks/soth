@@ -12,6 +12,11 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
+# Static library that will avoid useless recompilation.
+add_library(utils STATIC
+  gettimeofday.cpp MatrixRnd.cpp  RandomGenerator.cpp
+)
+
 # --- tsubmatrix ---
 SET(EXECUTABLE_NAME tsubmatrix)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
@@ -33,7 +38,9 @@ LIST (APPEND executable_list ${EXECUTABLE_NAME})
 # --- tstage ---
 SET(EXECUTABLE_NAME tstage)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  tstage.cpp RandomGenerator.cpp MatrixRnd.cpp)
+  tstage.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- tdestructiveQR ---
@@ -45,13 +52,17 @@ LIST (APPEND executable_list ${EXECUTABLE_NAME})
 # --- thcod ---
 SET(EXECUTABLE_NAME thcod)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  thcod.cpp MatrixRnd.cpp RandomGenerator.cpp)
+  thcod.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- texhcod ---
 SET(EXECUTABLE_NAME texhcod)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  texhcod.cpp MatrixRnd.cpp  gettimeofday.cpp)
+  texhcod.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- tgivens ---
@@ -63,13 +74,17 @@ LIST (APPEND executable_list ${EXECUTABLE_NAME})
 # --- tasearch ---
 SET(EXECUTABLE_NAME tasearch)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  tasearch.cpp MatrixRnd.cpp RandomGenerator.cpp)
+  tasearch.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- trandom ---
 SET(EXECUTABLE_NAME trandom)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  trandom.cpp MatrixRnd.cpp RandomGenerator.cpp gettimeofday.cpp)
+  trandom.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 IF(NOT WIN32)
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} ${Boost_PROGRAM_OPTIONS_LIBRARY})
@@ -78,7 +93,9 @@ ENDIF(NOT WIN32)
 # --- tdamping ---
 SET(EXECUTABLE_NAME tdamping)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  tdamping.cpp MatrixRnd.cpp RandomGenerator.cpp gettimeofday.cpp)
+  tdamping.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 IF(NOT WIN32)
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} ${Boost_PROGRAM_OPTIONS_LIBRARY})
@@ -87,19 +104,25 @@ ENDIF(NOT WIN32)
 # --- tchrono ---
 SET(EXECUTABLE_NAME tchrono)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  tchrono.cpp MatrixRnd.cpp RandomGenerator.cpp gettimeofday.cpp)
+  tchrono.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- tcompatibility ---
 SET(EXECUTABLE_NAME tcompatibility)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  tcompatibility.cpp MatrixRnd.cpp RandomGenerator.cpp gettimeofday.cpp)
+  tcompatibility.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- ttrack ---
 SET(EXECUTABLE_NAME ttrack)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  ttrack.cpp MatrixRnd.cpp RandomGenerator.cpp gettimeofday.cpp)
+  ttrack.cpp)
+ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
 LIST (APPEND executable_list ${EXECUTABLE_NAME})
 
 # --- tmanu ---
