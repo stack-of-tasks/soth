@@ -11,16 +11,13 @@ INCLUDE(cmake/eigen.cmake)
 
 SET(PROJECT_NAME soth)
 SET(PROJECT_DESCRIPTION "...")
-SET(PROJECT_URL "")
+SET(PROJECT_URL "http://github.com/laas/soth")
 
 # Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
+SET(CMAKE_VERBOSE_MAKEFILE true)
 
 project(${PROJECT_NAME})
-
-SET(PROJECT_VERSION 0.0.1)
-
-SET(CMAKE_VERBOSE_MAKEFILE true)
 
 SETUP_PROJECT()
 SEARCH_FOR_EIGEN()
@@ -32,26 +29,6 @@ IF(SYS_TIME_H)
 ADD_DEFINITIONS("-DHAVE_SYS_TIME_H")
 ENDIF(SYS_TIME_H)
 
-PKG_CONFIG_APPEND_LIBS("soth")
-
-#
-# Look for dependencies
-#
-SET(CMAKE_MODULE_PATH ${${PROJECT_NAME}_SOURCE_DIR}/CMakeModules)
-
-# --- UTILS ---------------------------------------------------------
-MACRO(LIST2STRING _VAR_ARG _LIST_ARG)
-  SET(${_VAR_ARG})
-  SET(_FIRST_STEP 1)
-  FOREACH(_ITEM ${ARGV})
-     IF(_FIRST_STEP)
-	SET(_FIRST_STEP 0)
-     ELSE(_FIRST_STEP)
-           SET (${_VAR_ARG} "${${_VAR_ARG}} ${_ITEM}")
-     ENDIF(_FIRST_STEP)
-  ENDFOREACH(_ITEM)
-ENDMACRO(LIST2STRING)
-
 # --- BOOST HEADER ---------------------------------------------------
 # Search for dependencies.
 # Boost
@@ -62,6 +39,8 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
 
 PKG_CONFIG_APPEND_CFLAGS(${_Eigen_CFLAGS})
+PKG_CONFIG_APPEND_LIBS("soth")
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
+

@@ -134,13 +134,5 @@ LIST (APPEND executable_list ${EXECUTABLE_NAME})
 foreach (exec ${executable_list})
 	ADD_DEPENDENCIES(${exec} ${PROJECT_NAME})
 	TARGET_LINK_LIBRARIES(${exec} ${PROJECT_NAME})
-	LIST2STRING(_cf "${${PROJECT_NAME}_src_CXXFLAGS}")
-	LIST2STRING(_lf "${${PROJECT_NAME}_src_LDFLAGS}")
-	SET_TARGET_PROPERTIES(${exec}
-	  PROPERTIES
-	  COMPILE_FLAGS "${_cf}"
-	  LINK_FLAGS "${_lf}"
-	)
-	
 	ADD_TEST(${exec} ${exec})
 endforeach(exec)
