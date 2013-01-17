@@ -96,6 +96,7 @@ namespace soth
     void setInitialActiveSet( void );
     void setInitialActiveSet( const cstref_vector_t & initialGuess,
 			      bool checkTwin=false );
+    cstref_vector_t getOptimalActiveSet( void );
 
     void reset( void );
     /* Return the rank of the current COD = previousRank+size(L).

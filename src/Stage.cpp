@@ -109,8 +109,13 @@ namespace soth
   void Stage::
   setInitialActiveSet( const cstref_vector_t & initialGuess, bool checkTwin )
   {
+    sotDEBUGIN(5);
+    activeSet.reset();
+
+    sotDEBUG(15) << name << " = " << initialGuess.size() << std::endl;
     for( unsigned int i=0;i<initialGuess.size();++i )
       {
+	sotDEBUG(1) << "Activate " << initialGuess[i] << std::endl;
 	activeSet.activeRow( initialGuess[i] );
       }
 
@@ -123,8 +128,20 @@ namespace soth
 	      activeSet.activeRow( i,Bound::BOUND_TWIN );
 	  }
       }
+
+    sotDEBUGOUT(5);
   }
 
+  cstref_vector_t Stage::
+  getOptimalActiveSet()
+  {
+    cstref_vector_t res(sizeA());
+    for( unsigned int i=0;i<sizeA();++i )
+      {
+	res[i] = ConstraintRef(activeSet.whichConstraint(i),activeSet.whichBoundInv(i));
+      }
+    return res;
+  }
 
 
   /* Compute ML=J(initIr,:)*Y. */
@@ -646,6 +663,7 @@ namespace soth
   unsigned int Stage::
   update( const ConstraintRef & cst,GivensSequence & Yup )
   {
+    //usleep(1000*0.01);
     sotDEBUG(5) << " --- UPDATE ----------------------------" << std::endl;
     notifior(name,cst,"update");
     assert( isInit ); isLagrangeCpt=false; isOptimumCpt=false; isDampCpt=false;
@@ -1319,6 +1337,7 @@ namespace soth
                 const double & bval = b.getBound(btype1);
                 double btau = (bval-val0)/(val1-val0);
                 assert(btau>=0); assert(btau<1);
+		sotDEBUG(25) << "tau="<<btau<<endl;
                 if( btau<taumax )
                   {
                     sotDEBUG(1) << "Max violation (tau="<<btau<<") at "<<name <<" "
