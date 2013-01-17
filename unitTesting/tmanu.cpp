@@ -27,6 +27,10 @@ using std::cerr;
 
 #include <boost/program_options.hpp>
 
+/* Solve an optimisation problem to check if the column <index> of A is linked
+* to the rest of A and B, under the constraint of positivity of A
+* coefficients. Return true if the column is linked, false otherwise. */
+
 template< typename D >
 bool checkColumn( const Eigen::MatrixBase<D>& A,
 		  const Eigen::MatrixBase<D>& B,
