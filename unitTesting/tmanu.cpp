@@ -5,7 +5,6 @@
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "soth/COD.hpp"
 
 #ifndef WIN32
 #include <sys/time.h>
