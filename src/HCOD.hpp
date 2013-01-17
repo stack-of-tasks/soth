@@ -34,8 +34,10 @@ namespace soth
     inline const Stage& operator[] ( unsigned int i ) const { return stage(i); }
 
     void setInitialActiveSet();
-    //void setInitialActiveSet( const VectorXi& Ir0,unsigned int i );
-    //const VectorXi& getInitialActiveSet( unsigned int i );
+    void setInitialActiveSet( const cstref_vector_t& Ir0,unsigned int k );
+    cstref_vector_t getOptimalActiveSet( unsigned int k );
+    std::vector<cstref_vector_t>   getOptimalActiveSet();
+    void setInitialActiveSet( const  std::vector<cstref_vector_t> & Ir);
 
     void useDamp( bool c ) { withDamp = c ; }
     bool useDamp() const { return withDamp; }
@@ -89,10 +91,11 @@ namespace soth
     { return testLagrangeMultipliers(stageRef,&os); }
 
     void setNameByOrder( const std::string root = ""  );
-    void notifiorRegistration( const Stage::listener_function_t & f );
+    void notifiorRegistration( const Stage::listener_function_t & f,
+			       int stageRank = -1 );
 
     bool isDebugOnce;
-    void debugOnce(void) { isDebugOnce = true; }
+    void debugOnce(std::string filename="",bool keepOpen = false);
 
   protected:
     HCOD( void ) : Y(0) {};

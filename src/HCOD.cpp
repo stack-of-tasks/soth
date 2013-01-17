@@ -4,6 +4,8 @@
 #include "soth/COD.hpp"  // DEBUG
 #include "soth/HCOD.hpp"
 #include <boost/foreach.hpp>
+#include <sys/time.h>
+#include <fstream>
 
 namespace soth
 {
@@ -20,7 +22,7 @@ namespace soth
     ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
   {
 # ifndef NDEBUG
-    sotDebugTrace::openFile();
+    //sotDebugTrace::openFile();
 #endif
 
     stages.reserve(nbStage);
@@ -83,6 +85,39 @@ namespace soth
       }
   }
 
+  void HCOD::
+  setInitialActiveSet( const cstref_vector_t& Ir0,unsigned int k )
+  {
+    sotDEBUG(5) << "Ir["<<k<<"]"<<std::endl;
+    stage(k).setInitialActiveSet(Ir0,true);
+  }
+
+  cstref_vector_t HCOD::
+  getOptimalActiveSet( unsigned int k )
+  {
+    return stage(k).getOptimalActiveSet();
+  }
+
+  std::vector<cstref_vector_t> HCOD::
+  getOptimalActiveSet()
+  {
+    std::vector<cstref_vector_t> res(stages.size());
+    for( int k=0;k<stages.size();k++ )
+      res[k] = getOptimalActiveSet(k);
+    return res;
+  }
+
+  void HCOD::
+  setInitialActiveSet( const  std::vector<cstref_vector_t> & Ir0)
+  {
+    sotDEBUGIN(5);
+    assert(Ir0.size() == stages.size() );
+
+    for( int k=0;k<stages.size();k++ )
+      setInitialActiveSet(Ir0[k],k);
+    sotDEBUGOUT(5);
+  }
+
   int HCOD::sizeA() const
   {
     int s=0;
@@ -108,13 +143,15 @@ namespace soth
       }
   }
   void HCOD::
-  notifiorRegistration( const Stage::listener_function_t & f )
+  notifiorRegistration( const Stage::listener_function_t & f, int stageRank )
   {
 #ifndef WITHOUT_NOTIFIOR
-    for (size_t i=0; i<stages.size(); ++i)
-      {
-	stages[i]->notifior.connect(f);
-      }
+    if( stageRank ==-1 )
+      for (size_t i=0; i<stages.size(); ++i)
+	{
+	  stages[i]->notifior.connect(f);
+	}
+    else  stages[stageRank]->notifior.connect(f);
 #endif
   }
 
@@ -404,6 +441,20 @@ namespace soth
   /* --- ACTIVE SEARCH ------------------------------------------------------ */
   /* --- ACTIVE SEARCH ------------------------------------------------------ */
   /* --- ACTIVE SEARCH ------------------------------------------------------ */
+  void HCOD::
+  debugOnce(std::string filename,bool keepOpen)
+  {
+    if (filename.length()==0)
+      sotDebugTrace::openFile();
+    else
+      {
+	std::cout <<filename<<std::endl;
+	soth::sotDebugTrace::openFile(filename.c_str());
+      }
+
+    isDebugOnce = ! keepOpen; 
+    sotDEBUG(15) << "Test trace"<<std::endl;
+  }
 
 
     /* TODO:
@@ -428,7 +479,7 @@ namespace soth
   {
     // if( isDebugOnce ) {  sotDebugTrace::openFile();  isDebugOnce = false; }
     // else { if(sotDEBUGFLOW.outputbuffer.good()) sotDebugTrace::closeFile(); }
-    if(sotDEBUGFLOW.outputbuffer.good()) { sotDebugTrace::closeFile();sotDebugTrace::openFile(); }
+    //if(sotDEBUGFLOW.outputbuffer.good()) { sotDebugTrace::closeFile();sotDebugTrace::openFile(); }
     sotDEBUGIN(15);
     /*
      * foreach stage: stage.initCOD(Ir_init)
@@ -453,14 +504,19 @@ namespace soth
 	   && "new version of Eigen might have change the "
 	   "order of arguments in LinSpaced, please correct");
 
+    /*struct timeval t0,t1,t2;double time1,time2;
+    gettimeofday(&t0,NULL);*/
     initialize();
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+    /*gettimeofday(&t1,NULL);
+    time1 = ((t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6);*/
 
     int iter = 0;
     unsigned int stageMinimal = 0;
     do
       {
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
+	//if( iter>1 ) { break; }
 
 	if( sotDEBUG_ENABLE(15) )  show( sotDEBUGFLOW );
 	assert( testRecomposition(&std::cerr) );
@@ -496,10 +552,17 @@ namespace soth
 		  stages[i]->freezeSlacks(false);
 		if( stageMinimal<nbStages() )
 		  stages[stageMinimal]->freezeSlacks(true);
+
 	      }
 	  }
+
+	if( iter>1000 ) throw 666;
     } while(stageMinimal<=nbStages());
     sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
+    /*gettimeofday(&t2,NULL);
+    time2 = ((t2.tv_sec-t1.tv_sec)+(t2.tv_usec-t1.tv_usec)/1.0e6);
+    std::ofstream fup("/tmp/haset.dat",std::ios::app);
+    fup << time1<<"\t"<<time2<<"\t"<<iter<<"\t";*/
 
     u=solution;
     sotDEBUG(5) << "uf =" << (MATLAB)u << std::endl;
