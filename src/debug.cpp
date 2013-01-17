@@ -35,6 +35,7 @@
 #include "soth/debug.hpp"
 #include <fstream>
 #include <ios>
+#include <cstdlib>
 
 namespace soth
 {
