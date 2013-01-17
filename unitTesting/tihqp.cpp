@@ -34,7 +34,7 @@ struct NotificationToCout
 {
   void operator() (std::string stage,soth::ConstraintRef cst, std::string event)
   {
-    std::cout << "At " << stage << ", " << cst << ": " << event << std::endl;
+    sotDEBUG(0) << "At " << stage << ", " << cst << ": " << event << std::endl;
     count ++;
   }
   static int count;
@@ -46,24 +46,22 @@ int NotificationToCout::count = 0;
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-void cascadeqp( std::vector<Eigen::MatrixXd> J,
+int cascadeqp( std::vector<Eigen::MatrixXd> J,
 		std::vector<soth::VectorBound> b,
 		unsigned int NB_STAGE,
 		unsigned int NC )
 {
-  sotDEBUG(15) << "x = " << (MATLAB)solution << endl;
-
   HCOD hsolver(NC,NB_STAGE); VectorXd solution(NC);
   NotificationToCout coutListen;
   std::vector<cstref_vector_t> Ir0;
 
   for( unsigned int i=0;i<NB_STAGE;++i )
     {
-      cout << "Stage " << i << endl;
+      sotDEBUG(15) << "Stage " << i << endl;
       hsolver.pushBackStage(J[i],b[i]);
       hsolver.notifiorRegistration(coutListen,i);
       hsolver.setNameByOrder("level");
-      hsolver.reset();
+      /*hsolver.reset();
       if(i==0) hsolver.setInitialActiveSet();
       else
 	{
@@ -79,14 +77,17 @@ void cascadeqp( std::vector<Eigen::MatrixXd> J,
 	    }
 	  hsolver.setInitialActiveSet(Ir0);
 	}
+      */
+      hsolver.stage(i).setInitialActiveSet();
       hsolver.activeSearch(solution);
-      cout << "x"<<i << " = " << (MATLAB)solution << endl;
-      Ir0 = hsolver.getInitialActiveSet();
+      sotDEBUG(45) << "x"<<i << " = " << (MATLAB)solution << endl;
+      Ir0 = hsolver.getOptimalActiveSet();
     }
   sotDEBUG(1) << "Update Cascade QP = " << coutListen.count << endl;
+  return coutListen.count;
 }
 
-void hqp( std::vector<Eigen::MatrixXd> J,
+int hqp( std::vector<Eigen::MatrixXd> J,
 	  std::vector<soth::VectorBound> b,
 	  unsigned int NB_STAGE,
 	  unsigned int NC )
@@ -97,15 +98,21 @@ void hqp( std::vector<Eigen::MatrixXd> J,
       hsolver.pushBackStage(J[i],b[i]);
       hsolver.setNameByOrder("level");
     }
+  const double dampingFactor = 0.0;
+  hsolver.setDamping(dampingFactor);
+  hsolver.stage(0).damping(0);
+  hsolver.setInitialActiveSet();
 
   NotificationToCout coutListen;
   hsolver.notifiorRegistration(coutListen);
-  hsolver.reset();
+  //hsolver.reset();
   hsolver.setInitialActiveSet();
   hsolver.activeSearch(solution);
+
   sotDEBUG(15) << "x = " << (MATLAB)solution << endl;
 
   sotDEBUG(1) << "Update HQP = " << coutListen.count << endl;
+  return coutListen.count;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -138,7 +145,7 @@ int main (int argc, char** argv)
       ("size,S",po::value<int>()->default_value(20),
        "size of the problem to try")
       ("method,m",po::value<int>()->default_value(0),
-       "0 = SICILIANO COD, 1 = COD Z, 2 = HCOD")
+       "0 = HQP, 1 = Cascade, 2 = both")
       ("phase,p",po::value<int>(),
        "Phase of the algo 1 = Decompo, 2 = inversion, 3 = projection")
       ;
@@ -175,7 +182,7 @@ int main (int argc, char** argv)
   RANKFREE +=  6,  3,  3,  6;
   RANKLINKED+= 2,  2,  2,  0;
 
-  std::cout << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
+  sotDEBUG(5) << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
   for(int k=0;k<NB_STAGE;k++)
     { sotDEBUG(20) << RANKFREE[k] <<" " <<RANKLINKED[k]<< " " <<NR[k] << endl;}
 
@@ -194,63 +201,12 @@ int main (int argc, char** argv)
     //sotDebugTrace::openFile();
 #endif
 
-  int upgradeCascade = 0;
-  {
-     HCOD hsolver(NC,NB_STAGE); VectorXd solution(NC);
-    NotificationToCout coutListen;
-    std::vector<cstref_vector_t> Ir0;
-
-    for( unsigned int i=0;i<NB_STAGE;++i )
-      {
-	cout << "Stage " << i << endl;
-	hsolver.pushBackStage(J[i],b[i]);
-	hsolver.notifiorRegistration(coutListen,i);
-	hsolver.setNameByOrder("level");
-	hsolver.reset();
-	if(i==0) hsolver.setInitialActiveSet();
-	else
-	  {
-	    sotDEBUG(1) << "Init Ir0" << endl;
-	    Ir0.push_back(cstref_vector_t());
-	    for( int ii=0;ii<i;++ii )
-	      {
-		sotDEBUG(15) << "ii = " << Ir0[ii].size() << endl;
-		for( int cst=0;cst<Ir0[ii].size();++cst )
-		  {
-		    sotDEBUG(15) << ii << Ir0[ii][cst] << endl;
-		  }
-	      }
-	    hsolver.setInitialActiveSet(Ir0);
-	  }
-	hsolver.activeSearch(solution);
-	cout << "x"<<i << " = " << (MATLAB)solution << endl;
-	Ir0 = hsolver.getInitialActiveSet();
-      }
-    upgradeCascade = coutListen.count;
-  }
-
-  {
-    HCOD hsolver(NC,NB_STAGE); VectorXd solution(NC);
-    for( unsigned int i=0;i<NB_STAGE;++i )
-      {
-	hsolver.pushBackStage(J[i],b[i]);
-	hsolver.setNameByOrder("level");
-      }
-    NotificationToCout coutListen;
-    hsolver.notifiorRegistration(coutListen);
-    hsolver.reset();
-    hsolver.setInitialActiveSet();
-    hsolver.activeSearch(solution);
-    cout << "x = " << (MATLAB)solution << endl;
-
-    cout << endl << endl << "Cascade = " << upgradeCascade
-	 << "   HQP = " << coutListen.count << endl;
-  }
-
-
+  hqp(J,b,NB_STAGE,NC);
+  cascadeqp(J,b,NB_STAGE,NC);
+  
   
 # ifndef NDEBUG
-  //exit(0);
+  exit(0);
 #endif
 
   /* --------------------------------------------------------------------- */
@@ -261,9 +217,9 @@ int main (int argc, char** argv)
   std::ostringstream iss;
   cout <<optionMap["size"].as<int>()<<endl;
   cout<<optionMap["method"].as<int>()<<endl;
-  iss <<"/tmp/ihqp_";
-    //<<optionMap["size"].as<int>()<<"_"
-    //<<optionMap["method"].as<int>()<<".dat";
+  iss <<"/tmp/ihqp_"
+      <<optionMap["size"].as<int>()<<"_"
+      <<optionMap["method"].as<int>()<<".dat";
   std::ofstream datfile(iss.str().c_str());
 
   for( int shoot=0;shoot<1000;shoot++ )
@@ -273,22 +229,37 @@ int main (int argc, char** argv)
       std::cout << "s"<<seed << ":" << std::flush;
 
       generateFixedSizeRandomProfile(optionMap["size"].as<int>(),
-				     1.5,0.8,0.5,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+				     1,0.8,1,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+      //1.5,0.8,0.5,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
+      //generateRandomProfile(NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
       generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
 
-      gettimeofday(&t0,NULL);
-
-      switch(optionMap["method"].as<int>())
+      try
 	{
-	case 0:
-	  break;
-	}
+	  gettimeofday(&t0,NULL);
 
-      gettimeofday(&t1,NULL);
-      double time = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
-      totalTime += time;
+	  switch(optionMap["method"].as<int>())
+	    {
+	    case 0:
+	      datfile << hqp(J,b,NB_STAGE,NC);
+	      break;
+	    case 1:
+	      datfile << cascadeqp(J,b,NB_STAGE,NC);
+	      break;
+	    case 2:
+	      cout << "\t" << NB_STAGE;
+	      cout << "\t\tHQP:\t" << hqp(J,b,NB_STAGE,NC);
+	      cout << "\t\tCasQP:\t" << cascadeqp(J,b,NB_STAGE,NC) << endl;
+	      break;
+	    }
+	  
+	  gettimeofday(&t1,NULL);
+	  double time = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
+	  totalTime += time;
       
-      datfile << NB_STAGE << "        \t " << time <<  "\t" << seed << std::endl;
+	  datfile <<  "\t" << NB_STAGE << "\t" << time <<  "\t" << seed << std::endl;
+	}
+      catch( ... ) { cout << "Unsolved problem" << endl; }
     }
   std::cout << totalTime << std::endl;
 
