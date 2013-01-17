@@ -1,6 +1,8 @@
+#define SOTH_DEBUG
+#define SOTH_DEBUG_MODE 45
+#include "soth/debug.hpp"
 #include "RandomGenerator.hpp"
 #include "MatrixRnd.hpp"
-#include "soth/debug.hpp"
 #include <fstream>
 
 #ifdef WIN32
@@ -433,4 +435,94 @@ namespace soth
     writeProblemToFile( name,J,b,NB_STAGE,NR,NC);
   }
 
+  /* Input: size = number of cols, rowPercent = row number / col number,
+   * rankPercent = rank / col number,
+   * selfDeficiencyPercent = rankdef [A1 .. Ap] / sum rankdef(Ai)
+   */
+  void generateFixedSizeRandomProfile(const unsigned int size,
+				    const double rowPercent,
+				    const double rankPercent,
+				    const double selfDeficiencyPercent,
+				    unsigned int & nbStage,
+				    std::vector<unsigned int>& rankfree,
+				    std::vector<unsigned int>& ranklinked,
+				    std::vector<unsigned int>& nr,
+				    unsigned int & nc )
+  {
+    nc = size;
+    nbStage = randu(1,1+nc/4);
+    rankfree.resize( nbStage );
+    ranklinked.resize( nbStage );
+    nr.resize( nbStage );
+
+    sotDEBUG(5) << "nc = " << nc << endl;
+    sotDEBUG(5) << "nbStage = " << nbStage << endl;
+
+    const int TOTALRANKS = int(round(size*rankPercent));
+    const int TOTALROWS = int(round(size*rowPercent));
+    const int TOTALSELFDEF = int(round((nc-TOTALRANKS)*selfDeficiencyPercent));
+
+    VectorXd rowDistrib(nbStage);
+    soth::MatrixRnd::randomize( rowDistrib,0,1 );
+    rowDistrib /= rowDistrib.sum();
+    sotDEBUG(25) << rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
+    rowDistrib *= TOTALROWS-nbStage;
+    rowDistrib.array() += 1;
+
+    VectorXd rankDistrib(nbStage); soth::MatrixRnd::randomize( rankDistrib,0,1 );
+    double vrk = (rankDistrib.cwiseProduct((rowDistrib.array()-1).matrix())).sum();
+    sotDEBUG(20) << "vrk = " << vrk << " / " << TOTALRANKS << std::endl;
+    if(vrk>TOTALRANKS-nbStage)
+      {
+	rankDistrib *= (TOTALRANKS-nbStage)/vrk;
+      }
+    else
+      {
+	VectorXd defDistrib = 1-rankDistrib.array();
+	defDistrib *= (TOTALROWS-TOTALRANKS)/(TOTALROWS-nbStage-vrk);
+	rankDistrib = 1-defDistrib.array();
+     }
+    sotDEBUG(15) << "percent = " << (MATLAB)rankDistrib << std::endl;
+    rankDistrib = rankDistrib.cwiseProduct( (rowDistrib.array()-1).matrix() );
+    rankDistrib.array() += 1;
+    sotDEBUG(25) << rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
+
+    sotDEBUG(15) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
+    sotDEBUG(15) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
+    rankDistrib = rankDistrib.unaryExpr(&round);
+    rowDistrib = rowDistrib.unaryExpr(&round);
+
+   VectorXd selfdefDistrib(nbStage); soth::MatrixRnd::randomize( selfdefDistrib,0,1 );
+    double vsd = selfdefDistrib.cwiseProduct(rowDistrib-rankDistrib).sum();
+    sotDEBUG(20) << "vsd = " << vsd << " / " << TOTALSELFDEF << std::endl;
+    if(vsd>TOTALSELFDEF)
+      {
+	selfdefDistrib *= TOTALSELFDEF/vsd;
+      }
+    else
+      {
+	VectorXd algdefDistrib = 1-selfdefDistrib.array();
+	algdefDistrib *= (TOTALROWS-TOTALRANKS-TOTALSELFDEF)/(TOTALROWS-TOTALRANKS-vsd);
+	selfdefDistrib = 1-algdefDistrib.array();
+     }
+    sotDEBUG(15) << "percent = " << (MATLAB)selfdefDistrib << std::endl;
+    selfdefDistrib = selfdefDistrib.cwiseProduct(rowDistrib-rankDistrib);
+    sotDEBUG(25) << selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
+
+    sotDEBUG(15) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
+
+    selfdefDistrib = selfdefDistrib.unaryExpr(&round);
+    sotDEBUG(5) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
+    sotDEBUG(5) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
+    sotDEBUG(5) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
+  
+    for( unsigned int i=0;i<nbStage;++i )
+      {
+	nr[i] = int(rowDistrib[i]);
+	rankfree[i] = int(rankDistrib[i]);
+	ranklinked[i] = int(rowDistrib[i]-rankDistrib[i]-selfdefDistrib[i]);
+	sotDEBUG(10) << i << ":\t" << nr[i] <<"\t"<<rankfree[i] <<"\t"
+		     <<"+"<<ranklinked[i]<<"=" << ranklinked[i]+rankfree[i] <<std::endl;
+      } 
+  }
 }

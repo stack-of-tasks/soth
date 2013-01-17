@@ -38,6 +38,20 @@ namespace soth
 			     std::vector<unsigned int>& nr,
 			     unsigned int & nc );
 
+  /* Input: size = number of cols, rowPercent = row number / col number,
+   * rankPercent = rank / col number,
+   * selfDeficiencyPercent = rankdef [A1 .. Ap] / sum rankdef(Ai)
+   */
+  void generateFixedSizeRandomProfile(const unsigned int size,
+				      const double rowPercent,
+				      const double rankPercent,
+				      const double selfDeficiencyPercent,
+				      unsigned int & nbStage,
+				      std::vector<unsigned int>& rankfree,
+				      std::vector<unsigned int>& ranklinked,
+				      std::vector<unsigned int>& nr,
+				      unsigned int & nc );
+
   void randomProblem( std::vector<Eigen::MatrixXd> &J,
 		      std::vector<soth::VectorBound> &b );
 
