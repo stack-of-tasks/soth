@@ -236,6 +236,10 @@ namespace soth
   /* --- HEAVY CODE --------------------------------------------------------- */
   /* --- HEAVY CODE --------------------------------------------------------- */
 
+  template<typename Derived,typename Rot>
+  static void applyRotation( MatrixBase<Derived> & x,MatrixBase<Derived> & y, Rot j);
+
+
   /* --- Construction single ------------------------------------------------ */
   template<typename VectorBase>
   inline Givens::Givens(const VectorBase & v, int i, int j)
