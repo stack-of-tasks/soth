@@ -1,6 +1,9 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Generate a .txt file with a random problem. The key of the randomizer is
+ * given by command line.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

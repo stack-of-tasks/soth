@@ -1,3 +1,10 @@
+/* -------------------------------------------------------------------------- *
+ * 
+ * Exhaustive asserted test of the submatrix class.
+ * 
+ * -------------------------------------------------------------------------- */
+
+
 #include <Eigen/Core>
 #include "soth/SubMatrix.hpp"
 #include <iostream>

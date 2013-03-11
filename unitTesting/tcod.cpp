@@ -1,3 +1,9 @@
+/* -------------------------------------------------------------------------- *
+ * 
+ * Unittest of the COD class, with time comparison with the Jacobi class. Could
+ * be asserted.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

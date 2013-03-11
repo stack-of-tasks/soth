@@ -1,6 +1,10 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Test of the damping strategy. To be checked and rewritten. Not compiled
+ * anymore.
+ * 
+ * -------------------------------------------------------------------------- */
+
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

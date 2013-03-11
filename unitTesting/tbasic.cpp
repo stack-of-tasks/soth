@@ -1,6 +1,10 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Unittest of the BasicStage class.
+ * 
+ * -------------------------------------------------------------------------- */
+
+
 //#define SOTH_DEBUG
 //#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

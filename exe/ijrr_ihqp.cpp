@@ -1,6 +1,9 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * IJRR 2013 tests: compare the cost of the HQP with the QP cascade of Kanoun
+ * and DeLassa.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

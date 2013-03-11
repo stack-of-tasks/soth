@@ -95,9 +95,9 @@ class SOTH_EXPORT sotDebugTrace
     inline void traceTemplate( const char* format,...)
 	{ SOT_COMMON_TRACES; tmpbuffer.str("");  }
 
-    inline sotDebugTrace& pre( const std::ostream& dummy ) { return *this; }
-    inline sotDebugTrace& pre( const std::ostream& dummy,int level )
-	{ traceLevel = level; return *this; }
+    inline sotDebugTrace& pre( const std::ostream&  ) { return *this; }
+    inline sotDebugTrace& pre( const std::ostream& ,int  level)
+    { traceLevel = level; return *this; }
 /*     inline sotDebugTrace& preTemplate( const std::ostream& dummy,int level )  */
 /* 	{ traceLevelTemplate = level; return *this; } */
 
@@ -161,14 +161,14 @@ class sotDEBUGPRIORclass
 #  define sotDEBUGMUTE(level) if( 1 ) ; else std::cout
 #  define sotERROR sotERRORFLOW.outputbuffer << sotPREERROR
 #define sotDEBUGPRIOR(a) do {} while(0)
-inline void sotDEBUGF( const int level,const char* format,...) { return; }
-inline void sotDEBUGF( const char* format,...) { return; }
-inline void sotERRORF( const int level,const char* format,...) { return; }
-inline void sotERRORF( const char* format,...) { return; }
+inline void sotDEBUGF( const int ,const char* ,...) { return; }
+inline void sotDEBUGF( const char* ,...) { return; }
+inline void sotERRORF( const int ,const char* ,...) { return; }
+inline void sotERRORF( const char* ,...) { return; }
 // TEMPLATE
 #  define sotTDEBUG(level) if( 1 ) ; else std::cout
-inline void sotTDEBUGF( const int level,const char* format,...) { return; }
-inline void sotTDEBUGF( const char* format,...) { return; }
+inline void sotTDEBUGF( const int ,const char* ,...) { return; }
+inline void sotTDEBUGF( const char* ,...) { return; }
 #define sotDEBUG_ENABLE(level) false
 #define sotTDEBUG_ENABLE(level) false
 
