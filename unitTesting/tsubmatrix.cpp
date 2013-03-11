@@ -330,7 +330,7 @@ void testStack()
 }
 
 
-int main(int argc, char**argv)
+int main(int , char**)
 {
   //testPermutedBasic();
   //testSubVector();

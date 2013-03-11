@@ -29,8 +29,9 @@ int main ( void )
 
     MatrixXd Xhi = MatrixXd::Random(NR,RANK);
     MatrixXd R = MatrixXd::Random(RANK,NC);
+    MatrixXd A; A = Xhi*R;
 
-    MatrixXd A = Xhi*R;
+
     COD Acod; Acod.compute(A);
 
 # ifndef NDEBUG

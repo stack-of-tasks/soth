@@ -74,28 +74,28 @@ namespace Eigen
   struct ei_submatrix_index_helper<MatrixType, RowPermutation, rowsAtCompileTime, colsAtCompileTime>
   {
     typedef typename MatrixType::Index Index;
-    static Index index(Index row, Index col) {return row;}
+    static Index index(Index row, Index /*col*/) {return row;}
   };
 
   template<typename MatrixType, int rowsAtCompileTime, int colsAtCompileTime>
   struct ei_submatrix_index_helper<MatrixType, ColPermutation, rowsAtCompileTime, colsAtCompileTime>
   {
     typedef typename MatrixType::Index Index;
-    static Index index(Index row, Index col) {return col;}
+    static Index index(Index /*row*/, Index col) {return col;}
   };
 
   template<typename MatrixType, int colsAtCompileTime>
   struct ei_submatrix_index_helper<MatrixType, RowAndColPermutation, 1, colsAtCompileTime>
   {
     typedef typename MatrixType::Index Index;
-    static Index index(Index row, Index col) {return col;}
+    static Index index(Index /*row*/, Index col) {return col;}
   };
 
   template<typename MatrixType, int rowsAtCompileTime>
   struct ei_submatrix_index_helper<MatrixType, RowPermutation, rowsAtCompileTime, 1>
   {
     typedef typename MatrixType::Index Index;
-    static Index index(Index row, Index col) {return row;}
+    static Index index(Index row, Index /*col*/) {return row;}
   };
 
   /* --- CONTAINTER --------------------------------------------------------- */
@@ -146,9 +146,12 @@ namespace Eigen
     typedef VectorXi RowIndices;
 
   protected:
-    NoRowSelectionImpl(const MatrixType& m, bool defaultPermutation ) : m_contain(m) {}
-    NoRowSelectionImpl(const MatrixType& m, const RowIndices indices) : m_contain(m) {}
-    NoRowSelectionImpl(const MatrixType& m, RowIndices* indices) : m_contain(m) {}
+    NoRowSelectionImpl(const MatrixType& m, bool /*defaultPermutation*/ )
+      : m_contain(m) {}
+    NoRowSelectionImpl(const MatrixType& m, const RowIndices indices)
+      : m_contain(m) {}
+    NoRowSelectionImpl(const MatrixType& m, RowIndices* indices)
+      : m_contain(m) {}
     MatrixContainer<MatrixType> m_contain;
 
   public:
@@ -286,11 +289,14 @@ namespace Eigen
   public:
     typedef typename MatrixType::Index Index;
     typedef VectorXi ColIndices;
-
+    
   protected:
-    NoColSelectionImpl(const MatrixType& m, bool defaultPermutation) : m_contain(m){}
-    NoColSelectionImpl(const MatrixType& m, const ColIndices & indices) : m_contain(m){}
-    NoColSelectionImpl(const MatrixType& m, ColIndices* indices) : m_contain(m){}
+    NoColSelectionImpl(const MatrixType& m, bool /*defaultPermutation*/)
+      : m_contain(m){}
+    NoColSelectionImpl(const MatrixType& m, const ColIndices & /* indices*/)
+      : m_contain(m){}
+    NoColSelectionImpl(const MatrixType& m, ColIndices* /*indices*/ )
+      : m_contain(m){}
     MatrixContainer<MatrixType> m_contain;
 
   public:

@@ -9,7 +9,7 @@
 #include "MatrixRnd.hpp"
 #include "RandomGenerator.hpp"
 
-int main (int argc, char** argv)
+int main (int , char** )
 {
   soth::sotDebugTrace::openFile();
   const int NB_STAGE = 3;

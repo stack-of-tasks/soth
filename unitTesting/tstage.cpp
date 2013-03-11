@@ -14,7 +14,7 @@
 #include "RandomGenerator.hpp"
 
 
-int main (int argc, char** argv)
+int main (int , char** )
 {
   // const int NB_STAGE = 5;
   // const int RANK[] = { 3, 5, 3, 5, 3 };

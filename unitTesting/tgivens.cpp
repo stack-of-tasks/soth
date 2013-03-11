@@ -23,7 +23,7 @@ void testSimpleGivens()
   using std::endl; using std::cout;
 
   MatrixXd M = MatrixXd::Random(4,6);
-  const double n0 = M.col(0).norm();
+  const double n0 = M.col(0).norm(); UNUSED(n0);
   sotDEBUG(1) << "M = " << (MATLAB)M << endl;
 
   sotDEBUG(1) << "Nullify col 0 ...";
@@ -41,7 +41,7 @@ void testSimpleGivens()
   G3.transpose() >> M;
   sotDEBUG(1) << "G3'*G2'*G1'*M = " << (MATLAB)M << endl;
 
-  const double n1 = M.row(0).tail( M.cols()-1).norm();
+  const double n1 = M.row(0).tail( M.cols()-1).norm(); UNUSED(n1);
   sotDEBUG(1) << endl << "Nullify row 0 ..." << endl;
   for (int i=M.cols()-1; i>1; --i)
   {
@@ -73,7 +73,7 @@ void testSubMatrixGivens()
   SubMatrix<MatrixXd> M(A,idxr,idxc);
   sotDEBUG(1) << "M = " << (MATLAB)M << endl;
 
-  const double n0 = M.col(0).norm();
+  const double n0 = M.col(0).norm(); UNUSED(n0);
 
   sotDEBUG(1) << "Nullify col 0 ..." << endl;
   Givens G1(M.col(0), 2, 3);
@@ -88,7 +88,7 @@ void testSubMatrixGivens()
   G3.applyTransposeOnTheRight(M);
   sotDEBUG(1) << "G3'*G2'*G1'*M = " << (MATLAB)M << endl;
 
-  const double n1 = M.row(0).tail( M.cols()-1).norm();
+  const double n1 = M.row(0).tail( M.cols()-1).norm(); UNUSED(n1);
   sotDEBUG(1) << endl << "Nullify row 0 ..." << endl;
   for (int i=M.cols()-1; i>1; --i)
   {

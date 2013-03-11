@@ -107,7 +107,7 @@ namespace soth
     return J.row(cst);
   }
 
-  const Bound & BasicStage::
+  Bound BasicStage::
   getBoundRow( const unsigned int & cst  ) const
   {
     return bounds[cst];

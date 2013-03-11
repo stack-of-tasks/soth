@@ -10,7 +10,7 @@
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "soth/COD.hpp"
+//#include "soth/COD.hpp"
 #include "MatrixRnd.hpp"
 #include "RandomGenerator.hpp"
 
@@ -59,52 +59,50 @@ namespace DummyActiveSet
 
 
   VectorXd SOT_Solver( std::vector<Eigen::MatrixXd> J,
-		       std::vector<VectorXd> e,
-		       double damping = 0.0)
+		       std::vector<VectorXd> /*e*/,
+		       double /*damping*/ = 0.0)
   {
-    const unsigned int NC = J[0].cols();
+     const unsigned int NC = J[0].cols();
+     VectorXd u = VectorXd::Zero(NC);
 
-    VectorXd u = VectorXd::Zero(NC);
-    MatrixXd Pa = MatrixXd::Identity(NC,NC);
-    const double EPSILON = Stage::EPSILON;
-    MatrixXd Inc = damping*MatrixXd::Identity(NC,NC);
-
-    for( unsigned int i=0;i<J.size();++i )
-      {
-	if( J[i].rows() == 0 ) continue;
-	MatrixXd JPi = J[i]*Pa;
-	ULV ulv; ulv.compute(JPi,EPSILON);
-
-	if( damping>0 )
-	  {
-	    MatrixXd JPidamped
-	      = soth::StackMatrix<MatrixXd,MatrixXd>( J[i],Inc )*Pa;
-	    sotDEBUG(5) << "JPd"<<i<<" = " << (MATLAB)JPidamped << endl;
-	    ULV ulvd; ulvd.compute(JPidamped,EPSILON);
-
-	    const unsigned int nr = e[i].size();
-	    VectorXd ed(nr+NC);
-	    ed.head(nr) = e[i]-J[i]*u;
-	    ed.tail(NC) = -damping*u;
-	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)ed << endl;
-
-	    u += ulvd.solve( ed );
-	    sotDEBUG(5) << "du"<<i<<" = " << (MATLAB)ulvd.solve( ed ) << endl;
-	  }
-	else
-	  {
-	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)(e[i]-J[i]*u) << endl;
-	    u += ulv.solve( e[i]-J[i]*u );
-	  }
-
-	ulv.decreaseProjector( Pa );
-	sotDEBUG(5) << "P"<<i<<" = " << (MATLAB)Pa << endl;
-	sotDEBUG(5) << "u"<<i<<" = " << (MATLAB)u << endl;
-      }
-
+/*    MatrixXd Pa = MatrixXd::Identity(NC,NC);
+ *    const double EPSILON = Stage::EPSILON;
+ *    MatrixXd Inc = damping*MatrixXd::Identity(NC,NC);
+ *
+ *    for( unsigned int i=0;i<J.size();++i )
+ *      {
+ *	if( J[i].rows() == 0 ) continue;
+ *	MatrixXd JPi = J[i]*Pa;
+ *	ULV ulv; ulv.compute(JPi,EPSILON);
+ *
+ *	if( damping>0 )
+ *	  {
+ *	    MatrixXd JPidamped
+ *	      = soth::StackMatrix<MatrixXd,MatrixXd>( J[i],Inc )*Pa;
+ *	    sotDEBUG(5) << "JPd"<<i<<" = " << (MATLAB)JPidamped << endl;
+ *	    ULV ulvd; ulvd.compute(JPidamped,EPSILON);
+ *
+ *	    const unsigned int nr = e[i].size();
+ *	    VectorXd ed(nr+NC);
+ *	    ed.head(nr) = e[i]-J[i]*u;
+ *	    ed.tail(NC) = -damping*u;
+ *	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)ed << endl;
+ *
+ *	    u += ulvd.solve( ed );
+ *	    sotDEBUG(5) << "du"<<i<<" = " << (MATLAB)ulvd.solve( ed ) << endl;
+ *	  }
+ *	else
+ *	  {
+ *	    sotDEBUG(5) << "et"<<i<<" = " << (MATLAB)(e[i]-J[i]*u) << endl;
+ *	    u += ulv.solve( e[i]-J[i]*u );
+ *	  }
+ *
+ *	ulv.decreaseProjector( Pa );
+ *	sotDEBUG(5) << "P"<<i<<" = " << (MATLAB)Pa << endl;
+ *	sotDEBUG(5) << "u"<<i<<" = " << (MATLAB)u << endl;
+ *      }
+ */
     return u;
-
-
   }
 
   std::vector<double> stageErrors( const std::vector<Eigen::MatrixXd>& Jref,
@@ -116,7 +114,7 @@ namespace DummyActiveSet
       {
 	const MatrixXd& J = Jref[i];
 	const soth::VectorBound& b = bref[i];
-	VectorXd e = J*usot;
+	VectorXd e; e = J*usot;
 	errors[i]=0;
 	for( unsigned int r = 0;int(r)<J.rows();++r )
 	  {
@@ -196,6 +194,8 @@ namespace DummyActiveSet
       }
 
     /* Find the optimum. */
+    /* --- WARNING: the sot solver is broken and wait for a fix with the
+     * --- COD class.*/
     VectorXd usot = SOT_Solver( Jsot,esot,damping );
     sotDEBUG(45) << "usot" <<" = " << (MATLAB)usot << endl;
 
