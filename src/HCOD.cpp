@@ -1,7 +1,7 @@
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 15
 #include "soth/debug.hpp"
-#include "soth/COD.hpp"  // DEBUG
+//#include "soth/COD.hpp"  // DEBUG
 #include "soth/HCOD.hpp"
 #include <boost/foreach.hpp>
 #include <sys/time.h>
@@ -102,7 +102,7 @@ namespace soth
   getOptimalActiveSet()
   {
     std::vector<cstref_vector_t> res(stages.size());
-    for( int k=0;k<stages.size();k++ )
+    for( int k=0;k<(int)stages.size();k++ )
       res[k] = getOptimalActiveSet(k);
     return res;
   }
@@ -113,7 +113,7 @@ namespace soth
     sotDEBUGIN(5);
     assert(Ir0.size() == stages.size() );
 
-    for( int k=0;k<stages.size();k++ )
+    for( int k=0;k<(int)stages.size();k++ )
       setInitialActiveSet(Ir0[k],k);
     sotDEBUGOUT(5);
   }

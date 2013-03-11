@@ -1,6 +1,8 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Time comparisons for IJRR 2013 (sub) paper.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

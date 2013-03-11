@@ -1,9 +1,9 @@
-/*
- *  Copyright
+/* -------------------------------------------------------------------------- *
  *
- * Exhaustive tests of the HCOD, initial decompo, update and downdate.
+ * Exhaustive tests of the HCOD, initial decompo, update and downdate, with
+ * assertion.
  *
- */
+ * -------------------------------------------------------------------------- */
 
 #include "soth/HCOD.hpp"
 #include "soth/debug.hpp"

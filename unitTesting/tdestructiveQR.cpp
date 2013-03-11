@@ -1,3 +1,10 @@
+/* -------------------------------------------------------------------------- *
+ * 
+ * Exhaustive test of the DestructiveColPivQR class. Assertion should be added.
+ * 
+ * -------------------------------------------------------------------------- */
+
+
 #include <Eigen/Core>
 #include <Eigen/Householder>
 #include <Eigen/QR>

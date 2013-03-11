@@ -1,6 +1,9 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Simple test of the Stage class.
+ * No assertion, assert could be added on the final test.
+ * 
+ * -------------------------------------------------------------------------- */
 
 #include "soth/Stage.hpp"
 #include "soth/BaseY.hpp"

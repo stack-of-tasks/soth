@@ -1,6 +1,9 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Chrono test of the active search. Should be properly rewritten.
+ * 
+ * -------------------------------------------------------------------------- */
+
 //#define SOTH_DEBUG
 //#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

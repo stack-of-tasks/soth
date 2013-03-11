@@ -1,6 +1,11 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Complete test of the HCOD solver: giving the command-line arguments, build a
+ * problem, solve it and compare the result to a SVD resolution with an
+ * exhaustive exploration of the active sets.
+ * 
+ * -------------------------------------------------------------------------- */
+
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"

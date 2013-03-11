@@ -1,6 +1,9 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Compute the optimum of a time-varying problem, to test the active-set
+ * initial guess.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
