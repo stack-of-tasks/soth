@@ -122,7 +122,7 @@ namespace soth
 
     const int NR = std::max(2,(int)round((0.+nc)/nbStage*.7));
     const int RANKFREE = std::max(1,(int)round(whiteNoise(NR/2,0.2)));
-    const int RANKLINKED = round(whiteNoise(NR,1))+1;
+    const int RANKLINKED = (int)round(whiteNoise(NR,1))+1;
     sotDEBUG(1) << "mean_NR = " << NR << "; mean_RF = " << RANKFREE << "; mean_RL = " << RANKLINKED << endl;
 
     rankfree.resize( nbStage );

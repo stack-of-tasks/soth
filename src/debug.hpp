@@ -187,6 +187,10 @@ inline void sotTDEBUGF( const char* ,...) { return; }
 
 } //namespace soth;
 
+/*  Prevent unused warning */
+#define UNUSED(x) ((void)x)
+
+
 #endif /* #ifdef __SOTH_DEBUG_HH */
 
 

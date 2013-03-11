@@ -74,7 +74,7 @@ namespace soth
     //std::cout << filename << debugfile.good() << debugfile.is_open() << std::endl;
   }
 
-  void sotDebugTrace::closeFile( const char * filename )
+  void sotDebugTrace::closeFile( const char * /*filename*/ )
   {
     if( debugfile.good()&&debugfile.is_open() ) { debugfile.close(); }
     debugfile.setstate( std::ios::failbit ) ;

@@ -1207,7 +1207,7 @@ namespace soth
     else if( sizeL==0 )
       {
 	VectorBlock<const VectorXd> zbar = Ytu.head(sizeM);
-	VectorXd MLz = M*zbar;
+	VectorXd MLz; MLz = M*zbar;
 	if( isWIdenty ) MLz -= e;
 	else            MLz -= W.transpose()*e;
 	Ytrho.head(sizeM)         .noalias() = -M.transpose()*MLz;
@@ -1217,7 +1217,7 @@ namespace soth
 	assert( sizeM>0 && sizeL>0 );
 	VectorBlock<const VectorXd> zbar = Ytu.head(sizeM), z = Ytu.segment(sizeM,sizeL);
 
-	VectorXd MLz = M*zbar;
+	VectorXd MLz; MLz = M*zbar;
 	if( isWIdenty ) MLz -= e;
 	else            MLz -= W.transpose()*e;
 	MLz.tail(sizeL) += L*z;
@@ -1377,7 +1377,7 @@ namespace soth
 
 
   bool Stage:: // TODO: Ytu could be passed instead of u. TODO! u is not usefull any more.
-  maxLambda( const VectorXd& u, double & lmax,unsigned int& row ) const
+  maxLambda( const VectorXd& /*u*/, double & lmax,unsigned int& row ) const
   {
     /* TODO: unactive the search for TWINS. */
 
@@ -1519,8 +1519,10 @@ namespace soth
 
   /* Check that J*u = Wr*Wr'*e. */
   bool Stage::
-  testSolution( const VectorXd & solution ) const
+  testSolution( const VectorXd & /*solution*/ ) const
   {
+    /* TODO: test solution is broken. Fix it! */
+    
     // VectorXd Ju = Jactive()*solution;
 
     // // SubMatrixXd Wr(W_,W.getRowIndices(),L.getRowIndices());

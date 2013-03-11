@@ -20,7 +20,7 @@ namespace soth
   {
     static const unsigned long long int m = static_cast<unsigned long long int>(MULT);
     const unsigned long long int c = m * current;
-    current = c % SOTH_RND_MAX;
+    current = (unsigned int)c % SOTH_RND_MAX;
     return current;
   }
 
@@ -46,7 +46,7 @@ namespace soth
   int randu( int bmin,int bmax )
   {
     assert( bmin<bmax );
-    return floor((bmax-bmin+1)*Random::rand<double>()+bmin);
+    return (int)floor((bmax-bmin+1)*Random::rand<double>()+bmin);
   }
 
 

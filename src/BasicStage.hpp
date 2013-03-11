@@ -61,7 +61,7 @@ namespace soth
      * not only in the active pool. */
     VectorXd getJrow( const unsigned int & cst  ) const;
     /* Return the bound-values of constraint <cst>.*/
-    const Bound & getBoundRow( const unsigned int & cst  ) const;
+    Bound getBoundRow( const unsigned int & cst  ) const;
 
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;
