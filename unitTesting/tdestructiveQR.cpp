@@ -17,7 +17,7 @@ void testColPivForCod()
 {
   const int n=7;
   const int m=6;
-  MatrixXd M = MatrixXd::Random(m,m-2)*MatrixXd::Random(m-2,n);
+  MatrixXd M; M = MatrixXd::Random(m,m-2)*MatrixXd::Random(m-2,n);
   MatrixXd Y = MatrixXd::Zero(n,n);
 
   std::cout << "initial matrix M: " << std::endl;
