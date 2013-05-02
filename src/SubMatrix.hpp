@@ -559,23 +559,23 @@ namespace Eigen
 
     inline Scalar& coeffRef(Index row, Index col)
     {
-      return MemoryBase::m_matrix.const_cast_derived().coeffRef(rowIndex(row), colIndex(col));
+      return MemoryBase::m_matrix.const_cast_derived().coeffRef(this->rowIndex(row), this->colIndex(col));
     }
 
     inline Scalar& coeffRef(Index index)
     {
       return MemoryBase::m_matrix.const_cast_derived()
-	.coeffRef(ei_submatrix_index_helper<MatrixType, PermutationType>::index(rowIndex(index), colIndex(index)));
+	.coeffRef(ei_submatrix_index_helper<MatrixType, PermutationType>::index(this->rowIndex(index), this->colIndex(index)));
     }
 
     inline const CoeffReturnType coeff(Index row, Index col) const
     {
-      return MemoryBase::m_matrix.coeff(rowIndex(row), colIndex(col));
+      return MemoryBase::m_matrix.coeff(this->rowIndex(row), this->colIndex(col));
     }
     inline const CoeffReturnType coeff(Index index) const
     {
       return MemoryBase::m_matrix.const_cast_derived()
-	.coeffRef(ei_submatrix_index_helper<MatrixType, PermutationType>::index(rowIndex(index), colIndex(index)));
+	.coeffRef(ei_submatrix_index_helper<MatrixType, PermutationType>::index(this->rowIndex(index), this->colIndex(index)));
     }
   };
 
