@@ -24,6 +24,7 @@ SET(${PROJECT_NAME}_SRC
     debug.cpp
     Stage.cpp
     BasicStage.cpp
+    Random.cpp
 )
 
 SET(${PROJECT_NAME}_HEADERS
@@ -41,6 +42,7 @@ SET(${PROJECT_NAME}_HEADERS
      solvers.hpp
      Stage.hpp
      SubMatrix.hpp
+     Random.hpp
 )
 
 # ----------------------------------------------------

@@ -10,7 +10,7 @@
 #include "soth/HCOD.hpp"
 #include "soth/BaseY.hpp"
 #include "soth/BasicStage.hpp"
-#include "MatrixRnd.hpp"
+#include "soth/Random.hpp"
 
 #ifndef WIN32
 #include <sys/time.h>
@@ -84,7 +84,7 @@ void increaseProblem( const double & DELTA,
 	  soth::MatrixRnd::randomize( delta_Jfree );
 	  Jfree[s] += DELTA*delta_Jfree;
 	  Xhifree[s] += DELTA*delta_Xhifree;
-	  J[s] += Xhifree[s]*Jfree[s];
+	  J[s] = Xhifree[s]*Jfree[s];
 	}
       if( RANKLINKED[s]>0 )
 	{

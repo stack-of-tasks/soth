@@ -8,7 +8,7 @@
 //#define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "MatrixRnd.hpp"
+#include "soth/Random.hpp"
 
 #ifndef WIN32
 #include <sys/time.h>

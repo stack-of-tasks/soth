@@ -8,7 +8,7 @@
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "RandomGenerator.hpp"
-#include "MatrixRnd.hpp"
+#include "soth/Random.hpp"
 #include <fstream>
 
 #ifdef WIN32

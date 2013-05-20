@@ -1,11 +1,5 @@
-/* -------------------------------------------------------------------------- *
- * 
- * Random matrix generator.
- * 
- * -------------------------------------------------------------------------- */
-
-
-#include "MatrixRnd.hpp"
+#include "Random.hpp"
+#include <cstdlib>
 
 #ifdef WIN32
 inline double round( double d )
@@ -15,16 +9,22 @@ inline double round( double d )
 namespace soth
 {
   unsigned int Random::current = 33331;
+  const unsigned int  Random::SOTH_RND_MAX = RAND_MAX;
 
   unsigned int Random::next()
   {
-    static const unsigned long long int m = static_cast<unsigned long long int>(MULT);
-    const unsigned long long int c = m * current;
-    current = (unsigned int)c % SOTH_RND_MAX;
-    return current;
+    //static const unsigned long long int m = static_cast<unsigned long long int>(MULT);
+    //const unsigned long long int c = m * current;
+    //current = (unsigned int)c % SOTH_RND_MAX;
+    //return current;
+    return std::rand() % SOTH_RND_MAX;
   }
 
-  void Random::setSeed(unsigned int newSeed) {current = newSeed;}
+  void Random::setSeed(unsigned int newSeed)
+  {
+    srand(newSeed);
+  }
+  //{current = newSeed;}
 
 
   // Simulate a white noise with mean 0 and var 1.

@@ -10,7 +10,7 @@ namespace soth
 {
   class Random
   {
-    static const unsigned int SOTH_RND_MAX = 4278255361U;
+    static const unsigned int SOTH_RND_MAX;// = 4278255361U;
     static const unsigned int MULT = 1884103651;
     static unsigned int current;
 
@@ -31,7 +31,7 @@ namespace soth
   template <> inline unsigned int Random::randMax() {return SOTH_RND_MAX;}
   template <> inline int Random::rand() {return next()>>1;}
   template <> inline int Random::randMax() {return SOTH_RND_MAX>>1;}
-  template <> inline double Random::rand() {return static_cast<double>(next())/SOTH_RND_MAX;}
+  template <> inline double Random::rand() {return static_cast<double>(next())/(SOTH_RND_MAX);}
   template <> inline double Random::randMax() {return 1.;}
 
 

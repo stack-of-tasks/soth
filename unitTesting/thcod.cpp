@@ -6,7 +6,7 @@
 
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "MatrixRnd.hpp"
+#include "soth/Random.hpp"
 #include "RandomGenerator.hpp"
 
 int main (int , char** )
