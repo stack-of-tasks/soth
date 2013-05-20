@@ -7,7 +7,7 @@
 
 #include "soth/HCOD.hpp"
 #include "soth/debug.hpp"
-#include "MatrixRnd.hpp"
+#include "soth/Random.hpp"
 
 #ifndef WIN32
 #include <sys/time.h>

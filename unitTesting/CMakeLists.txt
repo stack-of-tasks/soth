@@ -17,14 +17,6 @@ add_library(utils STATIC
   gettimeofday.cpp RandomGenerator.cpp
 )
 
-# --- trandtrack ---
-SET(EXECUTABLE_NAME trandtrack)
-ADD_EXECUTABLE(${EXECUTABLE_NAME}
-  trandtrack.cpp)
-ADD_DEPENDENCIES(${EXECUTABLE_NAME} utils)
-TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} utils)
-LIST (APPEND executable_list ${EXECUTABLE_NAME})
-
 # --- tsubmatrix ---
 SET(EXECUTABLE_NAME tsubmatrix)
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
