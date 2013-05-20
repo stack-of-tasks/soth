@@ -1,12 +1,14 @@
-/*
- *  Copyright
- */
+/* -------------------------------------------------------------------------- *
+ * 
+ * Time comparisons for IJRR 2013 (sub) paper.
+ * 
+ * -------------------------------------------------------------------------- */
 #define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "MatrixRnd.hpp"
-#include "CODclean.hpp"
+#include "soth/Random.hpp"
+#include "COD.hpp"
 #include "RandomGenerator.hpp"
 
 #ifndef WIN32
@@ -47,7 +49,8 @@ VectorXd svdSolve( JacobiSVD<MatrixXd> & svd,VectorXd & ref, double * rankPtr = 
   //std::cout << "V = " << (MATLAB)V.leftCols(rank) << std::endl;
   //std::cout << "S = " << (MATLAB)(MatrixXd)sinv.asDiagonal() << std::endl;
   
-  VectorXd x = V.leftCols(rank)
+  VectorXd x;
+  x = V.leftCols(rank)
     * sinv.asDiagonal()
     * U.leftCols(rank).transpose()
     * ref;
@@ -65,18 +68,16 @@ void siciliano( const std::vector<Eigen::MatrixXd> &A,
 		std::vector<soth::VectorXd> &b,
 		const unsigned int NB_STAGE,
 		const std::vector<unsigned int> & RANKFREE,
-		const std::vector<unsigned int> & RANKLINKED,
-		const std::vector<unsigned int> & NR,
+		const std::vector<unsigned int> & /*RANKLINKED*/,
+		const std::vector<unsigned int> & /*NR*/,
 		const unsigned int NC )
 {
-  struct timeval t0,t1;
   VectorXd x(NC); x.setZero();
   MatrixXd P(NC,NC); P.setIdentity();
-  double rank=NC; COD Akcod(ComputeFullU | ComputeThinV); 
-  double totalTime = 0;
+  int rank=NC; COD Akcod(ComputeFullU | ComputeThinV); 
   MatrixXd AkP(NC*2,NC);
 
-  for( int k=0;k<NB_STAGE;++k )
+  for( unsigned int k=0;k<NB_STAGE;++k )
     {
       for(int i=0;i<ratioSvd;++i)
 	Akcod.compute(A[k]*P);
@@ -98,19 +99,19 @@ void siciliano( const std::vector<Eigen::MatrixXd> &A,
 }
 
 void hsvd( const std::vector<Eigen::MatrixXd> &A,
-		std::vector<soth::VectorXd> &b,
-		const unsigned int NB_STAGE,
-		const std::vector<unsigned int> & RANKFREE,
-		const std::vector<unsigned int> & RANKLINKED,
-		const std::vector<unsigned int> & NR,
-		const unsigned int NC )
+	   std::vector<soth::VectorXd> &b,
+	   const unsigned int NB_STAGE,
+	   const std::vector<unsigned int> & RANKFREE,
+	   const std::vector<unsigned int> & /*RANKLINKED*/,
+	   const std::vector<unsigned int> & /*NR*/,
+	   const unsigned int NC )
 {
-  struct timeval t0,t1;
   VectorXd x(NC); x.setZero();
   MatrixXd Z(NC,NC); Z.setIdentity(); MatrixXd Ztmp(NC,NC);
   MatrixXd P(NC,NC); P.setIdentity();
-  double rank=NC;      COD Akcod(ComputeFullU);
-  for( int k=0;k<NB_STAGE;++k )
+  int      rank=NC;
+  COD      Akcod(ComputeFullU);
+  for( unsigned int k=0;k<NB_STAGE;++k )
     {
       /*
 	JacobiSVD<MatrixXd> Aksvd(A[k]*Z, ComputeThinU | ComputeThinV);
@@ -143,8 +144,8 @@ void hcod( std::vector<Eigen::MatrixXd> &A,
 	   std::vector<soth::VectorXd> &b,
 	   const unsigned int NB_STAGE,
 	   const std::vector<unsigned int> & RANKFREE,
-	   const std::vector<unsigned int> & RANKLINKED,
-	   const std::vector<unsigned int> & NR,
+	   const std::vector<unsigned int> & /*RANKLINKED*/,
+	   const std::vector<unsigned int> & /*NR*/,
 	   const unsigned int NC )
 {
   VectorXd x(NC); x.setZero();
@@ -156,7 +157,7 @@ void hcod( std::vector<Eigen::MatrixXd> &A,
   std::vector<int> na(NB_STAGE+1);na[0]=NC;
   
 
-  for( int k=0;k<NB_STAGE;++k )
+  for( unsigned int k=0;k<NB_STAGE;++k )
     {
       /*
 	AkZ = Ak Z1 Z2 ... Zk-1
@@ -166,7 +167,7 @@ void hcod( std::vector<Eigen::MatrixXd> &A,
       
       Akcod[k].options(ComputeFullU);
 
-      for(int i=0;i<k;++i)
+      for(unsigned int i=0;i<k;++i)
 	{
 	  //std::cout << "AkZ " << i << "," << k<< std::endl;
 	  MatrixXd::ColsBlockXpr AkZ = A[k].rightCols(na[i]);
@@ -265,7 +266,7 @@ int main (int argc, char** argv)
   /* Decide the size of the problem. */
   generateFixedSizeRandomProfile(optionMap["size"].as<int>(),1.2,0.8,0.5,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
   std::cout << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
-  for(int k=0;k<NB_STAGE;k++)
+  for( int k=0;k<(int)NB_STAGE;k++)
     { sotDEBUG(20) << RANKFREE[k] <<" " <<RANKLINKED[k]<< " " <<NR[k] << endl;}
 
   /* Initialize J and b. */
@@ -305,7 +306,7 @@ int main (int argc, char** argv)
   for( int shoot=0;shoot<1000;shoot++ )
     {
       double seed = Random::rand<int>();// % 704819;
-      soth::Random::setSeed(seed);
+      soth::Random::setSeed((int)seed);
       std::cout << "s"<<seed << ":" << std::flush;
 
       generateFixedSizeRandomProfile(optionMap["size"].as<int>(),
@@ -316,7 +317,7 @@ int main (int argc, char** argv)
 	{
 	  e[i].resize(NR[i]);
 	  soth::MatrixRnd::randomize( e[i] );
-	  for( int r=0;r<NR[i];++r) b[i][r] = e[i][r]; 
+	  for( unsigned int r=0;r<NR[i];++r) b[i][r] = e[i][r]; 
 	}
 
       HCOD hsolver(NC,NB_STAGE);

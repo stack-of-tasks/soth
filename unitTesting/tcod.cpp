@@ -10,7 +10,7 @@
 
 #include <Eigen/SVD>
 #include <iostream>
-#include "CODclean.hpp"
+#include "COD.hpp"
 #include "gettimeofday.hpp"
 
 using namespace std;

@@ -8,8 +8,8 @@
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
-#include "MatrixRnd.hpp"
-#include "CODclean.hpp"
+#include "soth/Random.hpp"
+#include "COD.hpp"
 #include "RandomGenerator.hpp"
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
@@ -186,7 +186,7 @@ int main (int argc, char** argv)
   RANKLINKED+= 2,  2,  2,  0;
 
   sotDEBUG(5) << "NB_STAGE=" << NB_STAGE <<",  NC=" << NC << endl;
-  for(int k=0;k<NB_STAGE;k++)
+  for(unsigned int k=0;k<NB_STAGE;k++)
     { sotDEBUG(20) << RANKFREE[k] <<" " <<RANKLINKED[k]<< " " <<NR[k] << endl;}
 
   /* Initialize J and b. */
@@ -228,7 +228,7 @@ int main (int argc, char** argv)
   for( int shoot=0;shoot<1000;shoot++ )
     {
       double seed = Random::rand<int>();// % 704819;
-      soth::Random::setSeed(seed);
+      soth::Random::setSeed((int)seed);
       std::cout << "s"<<seed << ":" << std::flush;
 
       generateFixedSizeRandomProfile(optionMap["size"].as<int>(),
