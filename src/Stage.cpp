@@ -1,4 +1,4 @@
-#define SOTH_DEBUG
+//#define SOTH_DEBUG
 #define SOTH_DEBUG_MODE 45
 #include "soth/debug.hpp"
 
@@ -133,13 +133,17 @@ namespace soth
   }
 
   cstref_vector_t Stage::
-  getOptimalActiveSet()
+  getOptimalActiveSet( bool withTwin )
   {
     cstref_vector_t res(sizeA());
+    int loop=0;
     for( unsigned int i=0;i<sizeA();++i )
       {
-	res[i] = ConstraintRef(activeSet.whichConstraint(i),activeSet.whichBoundInv(i));
+	if( activeSet.whichBoundInv(i)!=Bound::BOUND_TWIN )
+	  res[loop++]
+	    = ConstraintRef(activeSet.whichConstraint(i),activeSet.whichBoundInv(i));
       }
+    res.resize(loop);
     return res;
   }
 
