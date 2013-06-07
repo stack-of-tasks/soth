@@ -261,10 +261,16 @@ namespace soth
      * J = I.[M L0 0 ].Y, with L0 non-full rank triangular. */
 
     /* A=L'; mQR=QR(A); */
-    Transpose<SubMatrixXd> Lt = L.transpose();
     Block<MatrixXd> subY = Yinit.getNextHouseholderEssential();
+    Block<MatrixXd> Lblock = ML_.block(0,previousRank,sizeA(),nc-previousRank);
+    Transpose< Block<MatrixXd> > Lt = Lblock.transpose();
+    Eigen::DestructiveColPivQR<Transpose< Block<MatrixXd> >,Block<MatrixXd> >
+       mQR(Lt,subY, EPSILON);
+    /*
+    Transpose<SubMatrixXd> Lt = L.transpose();
     Eigen::DestructiveColPivQR<Transpose<SubMatrixXd>,Block<MatrixXd> >
       mQR(Lt,subY, EPSILON);
+    */
     sotDEBUG(45) << "mR = " << (MATLAB) mQR.matrixR() << std::endl;
     sotDEBUG(45) << "mQ = " << (MATLAB)Yinit.getHouseholderEssential() << std::endl;
     sotDEBUG(47) << "ML_ = " << (MATLAB)ML_ << std::endl;
@@ -291,9 +297,9 @@ namespace soth
     conditionalWinit( sizeL==rank );
     while( sizeL>rank )
       {
-	/* Nullify the last line of L, which is of size rank. */
-	sotDEBUG(45) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
-	nullifyLineDeficient( sizeL-1,rank );
+    	/* Nullify the last line of L, which is of size rank. */
+    	sotDEBUG(45) << "Nullify " << sizeL-1 << " / " << rank << std::endl;
+    	nullifyLineDeficient( sizeL-1,rank );
      }
     L.setColRange(sizeM,sizeM+sizeL);
     sotDEBUG(5) << "L = " << (MATLAB)L << std::endl;
