@@ -25,6 +25,7 @@ int main ( void )
 #endif
   {
     //int NR=90,NC=60,RANK=30;
+    //int NR=100,NC=100,RANK=100;
     int NR=20,NC=40,RANK=6;
 
     MatrixXd Xhi = MatrixXd::Random(NR,RANK);
@@ -63,7 +64,7 @@ int main ( void )
 	totalTime += time;
 
 	gettimeofday(&t0,NULL);
-	JacobiSVD<MatrixXd> Asvd(A, ComputeThinU | ComputeThinV);
+	//JacobiSVD<MatrixXd> Asvd(A, ComputeThinU | ComputeThinV);
 	gettimeofday(&t1,NULL);
 
 	double timeSVD = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
