@@ -114,16 +114,7 @@ int main ()
 
 
   MatrixXd A = J[0];
-  typedef SubMatrix<MatrixXd>::RowIndices Indirect;
-  Indirect ar;
-  SubMatrixXd Ar(A,&ar,&ar);
-  Ar.setColRange(0,NC);
-  Ar.setRowRange(0,NC);
-  Transpose<SubMatrixXd> At = Ar.transpose();
   MatrixXd Y(NC,NC);
-
-  std::cout << A.block(0,0,10,10) << std::endl;
-  std::cout << A.block(5,5,3,4) << std::endl;
 
   gettimeofday(&t0,NULL);
   for(int i=0;i<1000;++i)
