@@ -37,6 +37,7 @@ IF(UNIX)
 ENDIF(UNIX)
 
 SETUP_PROJECT()
+PKG_CHECK_MODULES(_Eigen REQUIRED "eigen3 >= 3.2.0")
 SEARCH_FOR_EIGEN()
 
 # Handle OS specificities 

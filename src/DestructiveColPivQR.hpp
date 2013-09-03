@@ -262,7 +262,7 @@ typename MatrixType::RealScalar DestructiveColPivQR<MatrixType, HouseholderStror
 {
   eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
   eigen_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
-  return internal::abs(m_r.diagonal().prod());
+  return std::abs(m_r.diagonal().prod());
 }
 
 template<typename MatrixType, typename HouseholderStrorageType>
@@ -305,7 +305,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   // The threshold should be decided wrt. to the norm of ML, while this class only consider
   // the norm of L -> TODO: add an initialization of threshold by EPS*norm(L) ... is it really
   // necessary, 'cos it is time consuming.
-  RealScalar threshold_helper = internal::abs2(epsilon());
+  RealScalar threshold_helper = numext::abs2(epsilon());
 
   m_nonzero_pivots = size; // the generic case is that in which all pivots are nonzero (invertible case)
   m_maxpivot = RealScalar(0);
@@ -362,7 +362,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     m_r.col(m_colsIntTranspositions[k]).tail(rows-k-1).setZero();
 
     // remember the maximum absolute value of diagonal coefficients
-    if(internal::abs(beta) > m_maxpivot) m_maxpivot = internal::abs(beta);
+    if(std::abs(beta) > m_maxpivot) m_maxpivot = std::abs(beta);
 
     // apply the householder transformation
     for (Index l = k+1; l<cols; ++l)
