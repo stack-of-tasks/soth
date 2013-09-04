@@ -40,6 +40,6 @@ cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"		\
 		  -DCMAKE_EXE_LINKER_FLAGS="--coverage"		\
 		  -DCMAKE_MODULE_LINKER_FLAGS="--coverage"	\
 		  -DCMAKE_INSTALL_PREFIX:STRING="$install_dir"
-make
+make soth
 make test
 make install
