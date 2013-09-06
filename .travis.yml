@@ -1,0 +1,29 @@
+env: 
+  global: 
+    secure: JIUFWD7JojZ6b1mmtbf4/lj5pEYGO403nYuH6yHjQyZYIsKzvZhN2s6rI/HsrenCYVI5nLvZjgTN3uD8uJS06QerQo/RxwPiBKik/MbQeFMjBGuMeZLG7A1ewvo6FXD4n2WZoif6Q5N3jUQxv1uSijcX+tqtCoGlV/0davGcl+M=
+after_success: 
+- coveralls -e _travis/install -e tests
+- git config --global user.name "Travis CI"
+- git config --global user.email "thomas.moulard+travis@gmail.com"
+- git remote set-url origin https://thomas-moulard:${GH_TOKEN}@github.com/stack-of-tasks/soth.git
+- git fetch origin gh-pages:gh-pages
+- cd _travis/build/doc && ../../../cmake/github/update-doxygen-doc.sh
+before_install: 
+- git submodule update --init --recursive
+- sudo apt-get update -qq
+- sudo apt-get install -qq doxygen doxygen-latex libboost-all-dev libeigen3-dev
+- sudo pip install cpp-coveralls --use-mirrors
+script: ./.travis/build
+language: cpp
+branches: 
+  only: 
+  - master
+compiler: 
+- clang
+- gcc
+notifications: 
+  email: 
+  - hpp-source@laas.fr
+matrix: 
+  allow_failures: 
+  - compiler: clang
