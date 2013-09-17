@@ -13,7 +13,7 @@
 #endif // WIN32
 
 #include <iostream>
-#include "gettimeofday.hpp"
+#include "../unitTesting/gettimeofday.hpp"
 #include <vector>
 
 using namespace soth;

@@ -9,8 +9,8 @@
 #include "soth/debug.hpp"
 #include "soth/HCOD.hpp"
 #include "soth/Random.hpp"
-#include "COD.hpp"
-#include "RandomGenerator.hpp"
+#include "../unitTesting/COD.hpp"
+#include "../unitTesting/RandomGenerator.hpp"
 #include "soth/DestructiveColPivQR.hpp"
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
@@ -22,7 +22,7 @@ using namespace boost::assign; // bring 'operator+=()' into scope
 
 #include <iostream>
 #include <sstream>
-#include "gettimeofday.hpp"
+#include "../unitTesting/gettimeofday.hpp"
 
 using namespace soth;
 using std::endl;
