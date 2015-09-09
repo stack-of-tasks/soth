@@ -95,8 +95,9 @@ namespace soth
 	{
 	  double & m_1 = v1(i), & m_2 = v2(i);
 	  const double x1=m_1, x2=m_2;
-	  m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
-	  m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
+
+	  m_1 =  G.c() * x1 + G.s() * x2;
+	  m_2 = -G.s() * x1 + G.c() * x2;
 	}
     }
     // [ v1;v2 ] := G'*[v1;v2] -- [v2 v2] := [v1 v2]*G
@@ -110,8 +111,8 @@ namespace soth
 	{
 	  double & m_1 = v1(c), & m_2 = v2(c);
 	  const double x1=m_1, x2=m_2;
-	  m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
-	  m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
+	  m_1 =  Gt.c() * x1 + Gt.s() * x2;
+	  m_2 = -Gt.s() * x1 + Gt.c() * x2;
 	}
     }
 
@@ -372,8 +373,8 @@ namespace soth
 	double & m_1 = M(r,i), & m_2 = M(r,j);
 	const double x1=m_1, x2=m_2;
 	// M*G == G'*M' -> apply the transpose of G.
-	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + Gt.s() * x2;
+	m_2 = -Gt.s() * x1 + Gt.c() * x2;
       }
   }
 
@@ -388,8 +389,8 @@ namespace soth
       {
 	double & m_1 = M(r,i), & m_2 = M(r,j);
 	const double x1=m_1, x2=m_2;
-	m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
-	m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
+	m_1 =  G.c() * x1 + G.s() * x2;
+	m_2 = -G.s() * x1 + G.c() * x2;
       }
   }
 
@@ -404,8 +405,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + Gt.s() * x2;
+	m_2 = -Gt.s() * x1 + Gt.c() * x2;
       }
   }
   // M := G*M.
@@ -419,8 +420,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  G.c() * x1 + internal::conj(G.s()) * x2;
-	m_2 = -G.s() * x1 + internal::conj(G.c()) * x2;
+	m_1 =  G.c() * x1 + G.s() * x2;
+	m_2 = -G.s() * x1 + G.c() * x2;
       }
   }
 
@@ -449,8 +450,8 @@ namespace soth
       {
 	double & m_1 = M(i,c), & m_2 = M(j,c);
 	const double x1=m_1, x2=m_2;
-	m_1 =  Gt.c() * x1 + internal::conj(Gt.s()) * x2;
-	m_2 = -Gt.s() * x1 + internal::conj(Gt.c()) * x2;
+	m_1 =  Gt.c() * x1 + Gt.s() * x2;
+	m_2 = -Gt.s() * x1 + Gt.c() * x2;
       }
   }
 
