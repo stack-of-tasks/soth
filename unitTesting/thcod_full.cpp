@@ -104,7 +104,7 @@ clearIteralively( soth::HCOD& hcod )
 
 
 
-int main (int argc, char** argv)
+int main (int , char** )
 {
   bool exitOk=true;
   const int executeAll = 1;
@@ -118,7 +118,7 @@ int main (int argc, char** argv)
   {
     struct timeval tv;
     gettimeofday(&tv,NULL);
-    int seed = tv.tv_usec % 7919;
+    int seed = (int)(tv.tv_usec % 7919);
     std::cout << "seed = " << seed << std::endl;
     soth::Random::setSeed(seed);
   }
@@ -265,7 +265,10 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
-    int rank=hcod.rank();
+    #ifndef NDEBUG  
+    int rank=hcod.rank(); 
+    #endif
+
     for( int i=0;i<NB_STAGE;++i )
       {
 	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
@@ -299,10 +302,15 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
+    #ifndef NDEBUG
     int rank=hcod.rank();
+    #endif
+
     for( int i=0;i<NB_STAGE;++i )
       {
-	const int rankStage = hcod[i].rank();
+	#ifndef NDEBUG
+        const int rankStage = (int) hcod[i].rank();
+	#endif
 	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==rank );
@@ -349,11 +357,15 @@ int main (int argc, char** argv)
 
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-
+    
+    #ifndef NDEBUG
     int rank=hcod.rank();
+    #endif
     for( int i=0;i<NB_STAGE-1;++i )
       {
-	const int rankStage = hcod[i].rank();
+        #ifndef NDEBUG
+        const int rankStage = (int)hcod[i].rank();
+        #endif
 	hcod.update( i,ConstraintRef(2,soth::Bound::BOUND_INF) );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==rank );
@@ -389,8 +401,10 @@ int main (int argc, char** argv)
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
 
+    #ifndef NDEBUG
     const int rank=hcod.rank();
-    const int rankStage = hcod[LS].rank();
+    const int rankStage = (int)hcod[LS].rank();
+    #endif
     assert(rank==NC);
     hcod.update( LS,ConstraintRef(LR,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
@@ -424,9 +438,10 @@ int main (int argc, char** argv)
 
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-
-    const int rank=hcod.rank();
-    const int rankStage = hcod[LS].rank();
+    #ifndef NDEBUG
+    const int rank=(int)hcod.rank();
+    const int rankStage = (int)hcod[LS].rank();
+    #endif
     assert(rank==NC);
     hcod.update( LS,ConstraintRef(LR,soth::Bound::BOUND_INF) );
     exitOk&=hcod.testRecomposition(&std::cout);
@@ -603,11 +618,14 @@ int main (int argc, char** argv)
 
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-
+    #ifndef NDEBUG
     int rank=hcod.rank();
+    #endif
     for( int i=0;i<NB_STAGE;++i )
       {
-	const int rankStage = hcod[i].rank();
+        #ifndef NDEBUG
+	const int rankStage = (int)hcod[i].rank();
+        #endif
  	hcod.downdate( i,1 );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==--rank );
@@ -639,11 +657,14 @@ int main (int argc, char** argv)
 
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
-
+    #ifndef NDEBUG
     int rank=hcod.rank();
+    #endif
     for( int i=0;i<NB_STAGE;++i )
       {
-	const int rankStage = hcod[i].rank();
+        #ifndef NDEBUG
+	const int rankStage = (int)hcod[i].rank();
+	#endif
  	hcod.downdate( i,1 );
 	exitOk&=hcod.testRecomposition(&std::cout);
 	assert( hcod.rank()==rank );
@@ -690,13 +711,13 @@ int main (int argc, char** argv)
     assert( hcod[0].gete()(hcod[0].where(2),0) == 3 );
     assert( exitOk );
 
-    hcod.downdate( 0,hcod[0].where(NR[0]-1) );
+    hcod.downdate( 0,(unsigned int)hcod[0].where(NR[0]-1) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==7 );       assert( hcod[0].rank()==2 );
     assert( hcod[1].rank()==3 );    assert( hcod[2].rank()==2 );
     assert( exitOk );
 
-    hcod.downdate( 1,hcod[1].where(NR[1]-1) );
+    hcod.downdate( 1,(unsigned int)hcod[1].where(NR[1]-1) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert( hcod.rank()==7 );       assert( hcod[0].rank()==2 );
     assert( hcod[1].rank()==2 );    assert( hcod[2].rank()==3 );
@@ -774,7 +795,7 @@ int main (int argc, char** argv)
     assert(hcod.rank()==5);          assert( hcod[0].rank()==3 );
     assert( hcod[1].rank()==1 );    assert( hcod[2].rank()==1 );
 
-    hcod.downdate( 2,hcod[2].where(2) );
+    hcod.downdate( 2,(unsigned int)hcod[2].where(2) );
     exitOk&=hcod.testRecomposition(&std::cout);
     assert(hcod.rank()==4);          assert( hcod[0].rank()==3 );
     assert( hcod[1].rank()==1 );    assert( hcod[2].rank()==0 );
@@ -817,7 +838,7 @@ int main (int argc, char** argv)
     assert(hcod.rank()==7);          assert( hcod[0].rank()==3 );
     assert( hcod[1].rank()==1 );    assert( hcod[2].rank()==3 );
 
-    hcod.downdate( 1,hcod[1].where(NR[1]-1) );
+    hcod.downdate( 1,(unsigned int)hcod[1].where(NR[1]-1) );
     assert(hcod.rank()==6);          assert( hcod[0].rank()==3 );
     assert( hcod[1].rank()==0 );    assert( hcod[2].rank()==3 );
 

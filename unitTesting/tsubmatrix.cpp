@@ -17,7 +17,7 @@ void testPermutedBasic()
 {
   MatrixXi m(4,5);
   Map<MatrixXi> map(m.data(), m.size(), 1);
-  map = VectorXi::LinSpaced(m.size(), 0, m.size()-1);
+  map = VectorXi::LinSpaced(m.size(), 0, (int) m.size()-1);
   std::cout << "original matrix:" << std::endl << std::endl;
   std::cout << m << std::endl;
 
@@ -144,7 +144,7 @@ void testDoublePerm()
 
   MatrixXi m(4,5);
   Map<MatrixXi> map(m.data(), m.size(), 1);
-  map = VectorXi::LinSpaced(m.size(), 0, m.size()-1);
+  map = VectorXi::LinSpaced((int) m.size(), 0,(int)(m.size()-1));
   std::cout << "original matrix:" << std::endl << std::endl;
   std::cout << m << std::endl;
 
@@ -192,7 +192,7 @@ void speedTest()
       dummy += C1(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    total = static_cast<double>((stop-start)/(CLOCKS_PER_SEC*N)*1000);
     std::cout << "normal mult    : " << total  << "ms" << std::endl;
 
     dummy = 0;
@@ -203,7 +203,7 @@ void speedTest()
       dummy += C2(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    total = static_cast<double>((stop-start)/(CLOCKS_PER_SEC*N)*1000);
     std::cout << "Perm*Normal    : " << total  << "ms" << std::endl;
 
     dummy = 0;
@@ -214,7 +214,7 @@ void speedTest()
       dummy += C3(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    total = static_cast<double>((stop-start)/(CLOCKS_PER_SEC*N)*1000);
     std::cout << "RowPerm*Normal : " << total  << "ms" << std::endl;
 
     dummy = 0;
@@ -225,7 +225,7 @@ void speedTest()
       dummy += C4(0,0);
     }
     stop = clock();
-    total = static_cast<double>(stop-start)/(CLOCKS_PER_SEC*N)*1000;
+    total = static_cast<double>((stop-start)/(CLOCKS_PER_SEC*N)*1000);
     std::cout << "ColPerm*Normal : " << total  << "ms" << std::endl;
 
     std::cout << std::endl;
@@ -237,7 +237,7 @@ void testCol()
   VectorXi row(3); row << 2,3,0;
   MatrixXi m(4,5);
   Map<MatrixXi> map(m.data(), m.size(), 1);
-  map = VectorXi::LinSpaced(m.size(), 0, m.size()-1);
+  map = VectorXi::LinSpaced((int)m.size(), 0, (int)(m.size()-1));
 
   MatrixXi::ColXpr m1 = m.col(1);
   SubMatrix< MatrixXi::ColXpr,RowPermutation > m1i( m1,row );
@@ -257,12 +257,12 @@ void testStack()
 {
   MatrixXi m1(4,5);
   Map<MatrixXi> map1(m1.data(), m1.size(), 1);
-  map1 = VectorXi::LinSpaced(m1.size(), 0, m1.size()-1);
+  map1 = VectorXi::LinSpaced((int)m1.size(), 0, (int)(m1.size()-1));
   std::cout << "m1 = " << m1 << std::endl;
 
   MatrixXi m2(2,5);
   Map<MatrixXi> map2(m2.data(), m2.size(), 1);
-  map2 = VectorXi::LinSpaced(m2.size(), 0, m2.size()-1);
+  map2 = VectorXi::LinSpaced((int)m2.size(), 0, (int)(m2.size()-1));
   std::cout << "m2 = " << m2 << std::endl;
 
   StackMatrix<MatrixXi,MatrixXi> m12(m1,m2);
@@ -299,12 +299,12 @@ void testStack()
 
   VectorXd v1(4);
   Map<VectorXd> mapv1(v1.data(), v1.size(), 1);
-  mapv1 = VectorXd::LinSpaced(v1.size(), 0, v1.size()-1);
+  mapv1 = VectorXd::LinSpaced((int)v1.size(), 0, (int)(v1.size()-1));
   std::cout << "v1 = " << v1 << std::endl;
 
   VectorXd v2(2);
   Map<VectorXd> mapv2(v2.data(), v2.size(), 1);
-  mapv2 = VectorXd::LinSpaced(v2.size(), 0, v2.size()-1);
+  mapv2 = VectorXd::LinSpaced(v2.size(), 0, (int)(v2.size()-1));
   std::cout << "v2 = " << v2 << std::endl;
 
   SubVectorXd v1i( v1,row1 );

@@ -65,7 +65,7 @@ namespace soth
   activeRow( unsigned int ref, Bound::bound_t type )
   {
     const unsigned int row = getAFreeRow();
-    assert( (row>=0)&&(row<size()) );
+    assert( row<size() );
     active( ref,type,row );
     return row;
   }

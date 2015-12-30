@@ -20,7 +20,7 @@ void testBasicStage()
 {
   MatrixXd m1(5,4);
   Map<MatrixXd> map1(m1.data(), m1.size(), 1);
-  map1 = VectorXd::LinSpaced(m1.size(), 0, m1.size()-1);
+  map1 = VectorXd::LinSpaced((long int)m1.size(), 0.0, (double)m1.size()-1);
   std::cout << "m1 = " << m1 << endl;
 
   VectorBound b1(5);

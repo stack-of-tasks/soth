@@ -66,8 +66,8 @@ namespace soth
   template< typename Derived >
   void MATLAB::genericInit( const MatrixBase<Derived> & m1 )
   {
-    if( m1.rows()==0 ) initMatrixRowNull( m1.cols() );
-    else if( m1.cols()==0 ) initMatrixColNull( m1.rows() );
+    if( m1.rows()==0 ) initMatrixRowNull( (unsigned int)m1.cols() );
+    else if( m1.cols()==0 ) initMatrixColNull( (unsigned int)m1.rows() );
     else if( m1.IsVectorAtCompileTime)
       {
 	if( m1.cols()==1 ) initVector( m1.col(0) );
@@ -91,7 +91,7 @@ namespace soth
 	  if( m1.size()!=i+1 )
 	    {
 	      ostmp << ",";
-	      const int size = ostmp.str().length();
+	      const int size = (int)ostmp.str().length();
 	      for( unsigned int i=size;i<8;++i) ostmp<<" ";
 	      ostmp << "\t";
 	    }
@@ -138,7 +138,7 @@ namespace soth
 	      if( m1.cols()!=j+1 )
 		{
 		  ostmp << ",";
-		  const int size = ostmp.str().length();
+		  const int size = (int)ostmp.str().length();
 		  for( unsigned int i=size;i<8;++i) ostmp<<" ";
 		  ostmp << "\t";
 		}

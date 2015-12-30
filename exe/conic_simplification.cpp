@@ -37,7 +37,7 @@ bool checkColumn( const Eigen::MatrixBase<D>& A,
 		  const Eigen::MatrixBase<D>& B,
 		  const int index, int sign = +1 )
 {
-  const int NC = A.rows(),NA=A.cols(),NB=B.cols(), NX = NA+NB;
+  const int NC = (int)A.rows(),NA=(int)A.cols(),NB=(int)B.cols(), NX = (int)(NA+NB);
 
   std::vector<Eigen::MatrixXd> J(3);
   std::vector<soth::VectorBound> b(3);
@@ -98,7 +98,7 @@ int checkAndModify( SubMatrix<MatrixXd,ColPermutation> &A,
     }
   if( checkColumn(A,B,index,-1) )
     {
-      int ref = A.removeCol(index);
+      int ref = (int)A.removeCol(index);
       B.pushColFront(ref);
       cout << "transfert ... "<< endl;
       return 0;
@@ -116,7 +116,7 @@ bool checkOut( const MatrixXd &X,
   /* shoot ab = rand, with a>0 and target=AB*ab
    * solve X*x=target, with x>0. */
 
-  const int NC = A.rows(),NA=A.cols(),NB=B.cols(), NX = X.cols();
+  const int NC = (int)A.rows(), NA=(int)A.cols(),NB=(int)B.cols(), NX = (int)X.cols();
   VectorXd ab = VectorXd::Random(NA+NB); ab.head(NA)+= VectorXd::Ones(NA); ab.head(NA)/=2;
   VectorXd target = A*ab.head(NA)+B*ab.tail(NB);
   cout << "ab = " << (MATLAB)ab << endl;
@@ -162,7 +162,7 @@ bool checkIn( const MatrixXd &X,
   /* shoot x = rand>0, and target=X*x
    * solve Aa+Bb = x, with a>0. */
 
-  const int NC = A.rows(),NA=A.cols(),NB=B.cols(), NX = X.cols();
+  const int NC = (int)A.rows(),NA=(int)A.cols(),NB=(int)B.cols(), NX =(int) X.cols();
   VectorXd x = VectorXd::Random(NX); x+= VectorXd::Ones(NX); x/=2;
   VectorXd target = X*x;
   cout << "x = " << (MATLAB)x << endl;
@@ -201,7 +201,7 @@ bool checkIn( const MatrixXd &X,
 
 
 
-int main (int argc, char** argv)
+int main (int , char** )
 {
 # ifndef NDEBUG
   sotDebugTrace::openFile();

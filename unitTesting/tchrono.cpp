@@ -37,7 +37,8 @@ namespace soth
   };
   double operator-( const Now& t1, const Now& t0 )
   {
-    return (t1.sec-t0.sec)*1000.0 + (t1.usec-t0.usec+0.0)/1000.0;
+    return ((double)(t1.sec-t0.sec))*1000.0 + 
+      ((double)(t1.usec-t0.usec)+0.0)/1000.0;
   }
   std::ostream& operator<< (std::ostream& os,const Now& now )
   { return os << now.sec <<"' " << now.usec;  }
@@ -95,7 +96,7 @@ int main (int argc, char** argv)
       /* Initialize the seed. */
       struct timeval tv;
       gettimeofday(&tv,NULL);
-      int seed = tv.tv_usec % 7919; //= 7594;
+      int seed = (int)(tv.tv_usec % 7919); //= 7594;
       if( argc == 2 )
 	{  seed = atoi(argv[1]);  }
       std::cout << "seed = " << seed << std::endl;

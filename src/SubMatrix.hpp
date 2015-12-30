@@ -56,11 +56,11 @@ namespace Eigen
     {
       Index size = high-low;
       if (size>1)
-	return VectorType::LinSpaced(size, low, high-1);
+	return VectorType::LinSpaced((int)size, (int)low, (int)high-1);
       else if (size==0)
 	return VectorType();
       else
-	return VectorType::Constant(1,low);
+	return VectorType::Constant(1,(int)low);
     }
   };
 
@@ -218,7 +218,7 @@ namespace Eigen
       eigen_assert(j>=0 && j<rows());
       Index tmp = rowIndices[i];
       rowIndices[i] = rowIndices[j];
-      rowIndices[j] = tmp;
+      rowIndices[j] = (int) tmp;
     }
     void pushRowFront(Index index)
     {
@@ -227,14 +227,14 @@ namespace Eigen
       rowIndices.conservativeResize(s+1);
       /* Cannot use block for this operation. */
       for (Index i=s; i>0; --i) {rowIndices[i]=rowIndices[i-1];}
-      rowIndices[0] = index;
+      rowIndices[0] = (int)index;
     }
     void pushRowBack(Index index)
     {
       eigen_assert( inMRange(index) );
       const Index s = rows();
       rowIndices.conservativeResize(s+1);
-      rowIndices[s] = index;
+      rowIndices[s] = (int)index;
     }
     Index removeRow(Index index)
     {
@@ -363,7 +363,7 @@ namespace Eigen
       eigen_assert(j>=0 && j<cols());
       Index tmp = colIndices[i];
       colIndices[i] = colIndices[j];
-      colIndices[j] = tmp;
+      colIndices[j] = (int)tmp;
     }
     void pushColFront(Index index)
     {
@@ -371,14 +371,14 @@ namespace Eigen
       const Index s = cols();
       colIndices.conservativeResize(s+1);
       for (Index i=s; i>0; --i) {colIndices[i]=colIndices[i-1];}
-      colIndices[0] = index;
+      colIndices[0] = (int)index;
     }
     void pushColBack(Index index)
     {
       eigen_assert( inMRange(index) );
       const Index s = cols();
       colIndices.conservativeResize(s+1);
-      colIndices[s] = index;
+      colIndices[s] = (int) index;
     }
     Index removeCol(Index index)
     {

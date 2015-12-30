@@ -43,7 +43,7 @@ void testSimpleGivens()
 
   const double n1 = M.row(0).tail( M.cols()-1).norm(); UNUSED(n1);
   sotDEBUG(1) << endl << "Nullify row 0 ..." << endl;
-  for (int i=M.cols()-1; i>1; --i)
+  for (int i=(int)M.cols()-1; i>1; --i)
   {
     //Givens G(M.row(0), i-1, i);
     M<<Givens(M.row(0), i-1, i);
@@ -90,7 +90,7 @@ void testSubMatrixGivens()
 
   const double n1 = M.row(0).tail( M.cols()-1).norm(); UNUSED(n1);
   sotDEBUG(1) << endl << "Nullify row 0 ..." << endl;
-  for (int i=M.cols()-1; i>1; --i)
+  for (int i=(int)M.cols()-1; i>1; --i)
   {
     M<<Givens(M.row(0), i-1, i);
     //Givens (M.row(0), i-1, i).applyThisOnTheLeft(M);
@@ -134,7 +134,7 @@ void testSequenceSub()
   U.push(G3);
 
   Givens Gr;
-  for (int i=M.cols()-1; i>1; --i)
+  for (int i=(int)M.cols()-1; i>1; --i)
   {
     Gr.makeGivens(M.row(0), i-1, i); Gr.applyThisOnTheLeft(M);
     V.push(Gr);

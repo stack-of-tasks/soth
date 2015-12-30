@@ -5,6 +5,18 @@
 namespace Eigen
 {
 
+#if EIGEN_VERSION_AT_LEAST(3,2,0)
+
+#define  LOCAL_ABS(x) std::abs(x)
+#define  LOCAL_ABS2(x) numext::abs2(x)
+
+#else
+
+#define  LOCAL_ABS(x) internal::abs(x)
+#define  LOCAL_ABS2(x) internal::abs2(x)
+
+#endif
+
 /** This class is a modification of Eigen's ColPivHouseholdeQR to perform a rank-revealing QR with column pivoting
   * MP = QR with R*P' directly stored in the input matrix M and the householder vectors essential parts stored in the
   * column of a different matrix given by the user.
@@ -41,14 +53,14 @@ class DestructiveColPivQR
         m_q(householderEssentialStorage),
         //m_hCoeffs(std::min(matrix.rows(),matrix.cols())),
         m_hCoeffs(householderEssentialStorage.diagonal()),
-        m_colsPermutation(matrix.cols()),
-        m_colsTranspositions(matrix.cols()),
-        m_colsIntTranspositions(matrix.cols()),
-        m_temp(matrix.cols()),
-        m_colSqNorms(matrix.cols()),
+        m_colsPermutation((int)matrix.cols()),
+        m_colsTranspositions((int)matrix.cols()),
+        m_colsIntTranspositions((int)matrix.cols()),
+        m_temp((int)matrix.cols()),
+        m_colSqNorms((int)matrix.cols()),
         m_isInitialized(false),
         m_usePrescribedEpsilon((epsilon==0.)? false : true),
-        m_prescribedEpsilon(epsilon)
+      m_prescribedEpsilon(epsilon)
     {
       eigen_assert(epsilon >= 0.);
       compute();
@@ -262,7 +274,7 @@ typename MatrixType::RealScalar DestructiveColPivQR<MatrixType, HouseholderStror
 {
   eigen_assert(m_isInitialized && "DestructiveColPivQR is not initialized.");
   eigen_assert(m_r.rows() == m_r.cols() && "You can't take the determinant of a non-square matrix!");
-  return internal::abs(m_r.diagonal().prod());
+  return LOCAL_ABS(m_r.diagonal().prod());
 }
 
 template<typename MatrixType, typename HouseholderStrorageType>
@@ -305,8 +317,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
   // The threshold should be decided wrt. to the norm of ML, while this class only consider
   // the norm of L -> TODO: add an initialization of threshold by EPS*norm(L) ... is it really
   // necessary, 'cos it is time consuming.
-  RealScalar threshold_helper = internal::abs2(epsilon());
-
+  RealScalar threshold_helper = LOCAL_ABS2(epsilon());
   m_nonzero_pivots = size; // the generic case is that in which all pivots are nonzero (invertible case)
   m_maxpivot = RealScalar(0);
 
@@ -362,7 +373,7 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     m_r.col(m_colsIntTranspositions[k]).tail(rows-k-1).setZero();
 
     // remember the maximum absolute value of diagonal coefficients
-    if(internal::abs(beta) > m_maxpivot) m_maxpivot = internal::abs(beta);
+    if(LOCAL_ABS(beta) > m_maxpivot) m_maxpivot = LOCAL_ABS(beta);
 
     // apply the householder transformation
     for (Index l = k+1; l<cols; ++l)
@@ -383,9 +394,9 @@ DestructiveColPivQR<MatrixType, HouseholderStrorageType>& DestructiveColPivQR<Ma
     //std::cout << "norms=" << std::endl << m_colSqNorms << std::endl;
   }
 
-  m_colsPermutation.setIdentity(cols);
+  m_colsPermutation.setIdentity((int)cols);
   for(Index k = 0; k < m_nonzero_pivots; ++k)
-    m_colsPermutation.applyTranspositionOnTheRight(k, m_colsTranspositions.coeff(k));
+    m_colsPermutation.applyTranspositionOnTheRight((int)k, (int)m_colsTranspositions.coeff(k));
 
   m_det_pq = (number_of_transpositions%2) ? -1 : 1;
   m_isInitialized = true;

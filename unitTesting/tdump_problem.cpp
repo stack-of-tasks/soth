@@ -48,7 +48,7 @@ int main (int argc, char** argv)
     struct timeval tv;
     gettimeofday(&tv,NULL);
 
-    int seed = tv.tv_usec % 7919; //= 7594;
+    int seed = (int)(tv.tv_usec % 7919); //= 7594;
     if( argc == 2 )
       {  seed = atoi(argv[1]);  }
     std::cout << "seed = " << seed << std::endl;
