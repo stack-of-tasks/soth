@@ -243,7 +243,7 @@ namespace soth
     inline unsigned int nbConstraints( void ) const { return nr; }
     inline unsigned int sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
-    inline int sizeN( void ) const { assert((int)sizeA()-sizeL>=0);return sizeA()-sizeL; }
+    inline int sizeN( void ) const { assert((int)(sizeA()-sizeL)>=0);return sizeA()-sizeL; }
     inline Index rank() const {return sizeL;}
 
     inline int getSizeM() const { return sizeM; }

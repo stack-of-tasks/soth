@@ -47,7 +47,7 @@ namespace soth
     //sizes
     int sizeA() const;
     int rank() const;
-    unsigned int nbStages() const { return stages.size(); }
+    unsigned int nbStages() const { return (unsigned int)stages.size(); }
 
     /* --- Decomposition --- */
   public:

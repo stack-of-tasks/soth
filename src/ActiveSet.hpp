@@ -44,7 +44,7 @@ namespace soth
   public: /* --- Accessors --- */
     /* Return the number of active constraint. */
     inline unsigned int   nbActive( void ) const { return nba; }
-    inline unsigned int   size( void ) const { return cstMap.size(); }
+    inline unsigned int   size( void ) const { return (unsigned int)cstMap.size(); }
     bool                  isFreezed( unsigned int ref ) const;
     bool                  isActive( unsigned int ref ) const;
     bool                  wasActive( unsigned int ref,const Bound::bound_t type ) const;

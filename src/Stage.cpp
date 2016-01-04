@@ -133,7 +133,7 @@ namespace soth
   }
 
   cstref_vector_t Stage::
-  getOptimalActiveSet( bool withTwin )
+  getOptimalActiveSet( bool  )
   {
     cstref_vector_t res(sizeA());
     int loop=0;
@@ -235,7 +235,7 @@ namespace soth
     /* Compute ML=J(initIr,:)*Y. */
     computeInitialJY();
     assert( Yinit.getRank() >= 0 && Yinit.getRank()<=(int)nc );
-    const unsigned int previousRank = Y.getRank();
+    const unsigned int previousRank = (unsigned int)Y.getRank();
 
     isWIdenty = true;
 
@@ -292,7 +292,7 @@ namespace soth
      * sizeL = mQR.rank();
      */
     assert( mQR.rank()>=0 && mQR.rank()<=int(sizeL) );
-    const unsigned int rank = mQR.rank();
+    const unsigned int rank = (unsigned int)mQR.rank();
 
     conditionalWinit( sizeL==rank );
     while( sizeL>rank )
@@ -344,13 +344,13 @@ namespace soth
     const Index r = (in_r<0)?row-1:in_r;
     for( Index i=r-1;i>=0;--i )               // PSEUDOZEROS
       {
-	Givens G1(L.col(i),i,row);
+	Givens G1(L.col(i),(int)i,(int)row);
 
 	G1.applyTransposeOnTheRight(Mr);
-	G1.applyTransposeOnTheRight(L,r);
+	G1.applyTransposeOnTheRight(L,(int)r);
 	G1.applyThisOnTheLeft(Wr);
       }
-    removeARowFromL( row );
+    removeARowFromL((unsigned int)row );
 
     sotDEBUG(15) << "W = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(15) << "L = " << (MATLAB)L << std::endl;
@@ -387,7 +387,8 @@ namespace soth
       {
 	if( std::abs(lambda[i])>EPSILON )
 	  {
-	    const unsigned int cstref = activeSet.mapInv(i);
+	    const unsigned int cstref = (unsigned int)
+	      activeSet.mapInv((unsigned int)i);
 	    if(! activeSet.isFreezed(cstref) )
 	      {
 		activeSet.freeze(cstref);
@@ -529,7 +530,7 @@ namespace soth
     sotDEBUG(5) << "W0 = " << MATLAB(W,isWIdenty) << std::endl;
     sotDEBUG(5) << "M0 = " << (MATLAB)M << std::endl;
     sotDEBUG(5) << "L0 = " << (MATLAB)L << std::endl;
-    L.pushColFront( M.popColBack() );
+    L.pushColFront( (int) M.popColBack() );
     sizeM--;
 
     /* Check if one of the M's grown. */
@@ -544,7 +545,7 @@ namespace soth
 	    Block<MatrixXd> ML(ML_,0,0,nr,sizeM+1);
 	    for( Index j=i+1;j<sizeN();++j )  // PSEUDOZERO
 	      {
-		Givens G1( Ln,i,j );
+		Givens G1( Ln,(int)i,(int)j );
 		G1.transpose() >> M;
 		G1.transpose() >> Ln;
 		W << G1;
@@ -631,7 +632,7 @@ namespace soth
     const int rowRankInL = col-sizeN();
 
     activeSet.unactiveRow(row);
-    const unsigned int wcoldown = W.removeCol(col);
+    const unsigned int wcoldown = (unsigned int)W.removeCol(col);
     if( rowRankInL>=0 ) { L.removeRow(rowRankInL); sizeL--; }
     freeML.put(wcoldown);
 
@@ -711,7 +712,7 @@ namespace soth
 
     /* Choose the first available row in ML. */
     const unsigned int wcolup = freeML.get();
-    assert( (wcolup >= 0)&&(wcolup<nr) );
+    assert( wcolup<nr );
     sotDEBUG(5) << " wc=" << wcolup << endl;
 
     /* Add a line to ML. */
@@ -728,7 +729,7 @@ namespace soth
 	if( norm2>EPSILON*EPSILON )
 	  {
 	    sotDEBUG(45) << "Oversize value is x"<<i<<" = " << JupY(i)<<std::endl;
-	    rankJ=i+1;
+	    rankJ=(unsigned int)i+1;
 	    break;
 	  }
       }
@@ -738,7 +739,7 @@ namespace soth
       { /* Rank increase: remove the tail of JuY. */
 	for( Index i=rankJ-1;i>int(sizeM+sizeL);--i )
 	  {
-	    Givens G1(JupY,i-1,i,true);
+	    Givens G1(JupY,(int)i-1,(int)i,true);
 	    Yup.push(G1);
 	  }
 	addARow(wcolup);
@@ -1394,7 +1395,8 @@ namespace soth
     bool res=false;
     EI_FOREACH( i,lambda )
       {
-	const unsigned int cstref = activeSet.mapInv(i);
+	const unsigned int cstref = (unsigned int)
+	  activeSet.mapInv((unsigned int)i);
 	Bound::bound_t btype = activeSet.whichBound(cstref);
 
 	if( activeSet.isFreezed(cstref) ) continue;
@@ -1403,7 +1405,8 @@ namespace soth
 	  case Bound::BOUND_TWIN:
 	    break; // Nothing to do.
 	  case Bound::BOUND_SUP:
-	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
+	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which((unsigned int)i) 
+			<< ": l=" << lambda(i,0) << endl;
 	    if( -lambda[i]>lmax )
 	      {
 		// double Ju = J.row(cstref)*u;
@@ -1411,12 +1414,13 @@ namespace soth
 		  {
 		    res=true;
 		    lmax=-lambda[i];
-		    row=i;
+		    row=(unsigned int)i;
 		  }
 	      }
 	    break;
 	  case Bound::BOUND_INF:
-	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which(i) << ": l=" << lambda(i,0) << endl;
+	    sotDEBUG(5) << name<<": row"<<i<<", cst"<<which((unsigned int)i) 
+			<< ": l=" << lambda(i,0) << endl;
 	    if( -lambda[i]>lmax ) // TODO: change the sign of the bound-inf cst.
 	      {
 		// double Ju = J.row(cstref)*u;
@@ -1424,7 +1428,7 @@ namespace soth
 		  {
 		    res=true;
 		    lmax=-lambda[i];
-		    row=i;
+		    row=(unsigned int)i;
 		  }
 	      }
 	    break;

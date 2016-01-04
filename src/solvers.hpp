@@ -22,7 +22,7 @@ namespace soth
     assert(lhs.rows() == lhs.cols());
     assert(lhs.rows() > 0);
     assert(rhs.size() == lhs.rows());
-    const int n = lhs.rows();
+    const int n = (int)lhs.rows();
     for (int i=0; i<n-1; ++i)
     {
       rhs[i] /= lhs(i,i);
@@ -47,7 +47,7 @@ namespace soth
     assert(lhs.rows() == lhs.cols());
     assert(lhs.rows() > 0);
     assert(rhs.size() == lhs.rows());
-    const int n = lhs.rows();
+    const int n = (int)lhs.rows();
     for (int i=n-1; i>0; --i)
     {
       rhs[i] /= lhs(i,i);

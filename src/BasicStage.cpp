@@ -54,7 +54,7 @@ namespace soth
     ,boundsMap( inbounds.data(),inbounds.size(),1)
 
     ,J( Jmap ), bounds( boundsMap )
-    ,nr( inJ.rows() ), nc( inJ.cols() )
+    ,nr( (unsigned int)inJ.rows() ), nc( (unsigned int)inJ.cols() )
 
     ,Y(inY)
   {

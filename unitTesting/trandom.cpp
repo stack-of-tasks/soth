@@ -61,7 +61,7 @@ namespace DummyActiveSet
 		       std::vector<VectorXd> /*e*/,
 		       double /*damping*/ = 0.0)
   {
-     const unsigned int NC = J[0].cols();
+    const unsigned int NC = (unsigned int)J[0].cols();
      VectorXd u = VectorXd::Zero(NC);
 
 /*    MatrixXd Pa = MatrixXd::Identity(NC,NC);
@@ -170,7 +170,7 @@ namespace DummyActiveSet
 		       const double damping = 0.0 )
   {
     /* Build the SOT problem. */
-    const unsigned int NC = Jref[0].cols();
+    const unsigned int NC = (unsigned int)Jref[0].cols();
     std::vector<Eigen::MatrixXd> Jsot(Jref.size());
     std::vector<VectorXd> esot(Jref.size());
     for( unsigned int i=0;i<Jref.size();++i )
@@ -178,7 +178,7 @@ namespace DummyActiveSet
 	MatrixXd& J = Jsot[i]; VectorXd& e= esot[i];
 	const std::vector<int> & Aset = active[i];
 	const std::vector<Bound::bound_t> & Bset = bounds[i];
-	const unsigned int NR = Aset.size();
+	const unsigned int NR = (unsigned int)Aset.size();
 
 	J.resize(NR,NC); e.resize(NR);
 	for( unsigned int r=0;r<NR;++r )
@@ -311,7 +311,7 @@ namespace DummyActiveSet
     int nbConstraint = 0; nr.resize(bref.size());
     for( unsigned int i=0;i<bref.size();++i )
       {
-	nr[i]=bref[i].size();
+	nr[i]=(int)bref[i].size();
 	for( int r = 0;r<bref[i].size();++r )
 	  if(bref[i][r].getType() != Bound::BOUND_TWIN)
 	    nbConstraint ++;
@@ -450,7 +450,7 @@ int main (int argc, char** argv)
       /* Initialize the seed. */
       struct timeval tv;
       gettimeofday(&tv,NULL);
-      int seed = tv.tv_usec % 7919; //= 7594;
+      int seed = int(tv.tv_usec % 7919); //= 7594;
       if( optionMap.count("seed") ) { seed = optionMap["seed"].as<int>(); }
       std::cout << "seed = " << seed << std::endl;
       soth::Random::setSeed(seed);

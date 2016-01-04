@@ -55,7 +55,7 @@ int main ()
   std::vector<soth::VectorBound> b;
 
   soth::Random::setSeed(704819);
-  const int size = 100; 
+  //  const int size = 100; 
 
   //generateFixedSizeRandomProfile(size,
   //                               1,0.99,0.99,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
@@ -79,7 +79,7 @@ int main ()
     {
       RANKFREE += 6,3,7,2,5,5,44,6,2,4,5,3,7,1,50;
       RANKLINKED.resize(RANKFREE.size(),0);
-      NB_STAGE = RANKFREE.size();
+      NB_STAGE = (unsigned int)RANKFREE.size();
       NR = RANKFREE;
       NC = 150;
     }
@@ -87,7 +87,7 @@ int main ()
   std::cout << "nVar \t= " << NC << std::endl;
   std::cout << "nLevels \t= " << NB_STAGE << std::endl;
   std::cout << "LevelDim \t= [ ";
-  for(int i=0;i<NB_STAGE;++i) std::cout << NR[i] << " ";
+  for(int i=0;i<(int)NB_STAGE;++i) std::cout << NR[i] << " ";
   std::cout << "]" << std::endl;
 
   generateDeficientDataSet(J,b,NB_STAGE,RANKFREE,RANKLINKED,NR,NC);
@@ -109,7 +109,7 @@ int main ()
   gettimeofday(&t0,NULL);
   for(int i=0;i<1000;++i) ehqp(hsolver);
   gettimeofday(&t1,NULL);
-  time = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
+  time = (double)(t1.tv_sec-t0.tv_sec)+(double)(t1.tv_usec-t0.tv_usec)/1.0e6;
   cout << "ehqp = " << time << " ms " << std::endl;
 
 
@@ -121,7 +121,7 @@ int main ()
     Eigen::DestructiveColPivQR<MatrixXd,MatrixXd > mQR(A,Y, 1e-6);
   //Eigen::DestructiveColPivQR<SubMatrixXd,MatrixXd > mQR(Ar,Y, 1e-6);
   gettimeofday(&t1,NULL);
-  time = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
+  time = (double)(t1.tv_sec-t0.tv_sec)+(double)(t1.tv_usec-t0.tv_usec)/1.0e6;
   cout << "qr = " << time << " ms " << std::endl;
 
 

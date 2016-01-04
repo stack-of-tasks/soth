@@ -78,7 +78,7 @@ namespace soth
 
     void compute( const MatrixXd& A,  const int rank_=-1, const double EPSILON=1e-8 )
     {
-      NC=A.cols(); NR=A.rows();
+      NC=(int)A.cols(); NR=(int)A.rows();
 #ifdef DEBUG
       Ainit=A;
 #endif

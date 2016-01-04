@@ -60,14 +60,15 @@ int main ( void )
 	gettimeofday(&t0,NULL);
 	COD Acod; Acod.compute(A,RANK);
 	gettimeofday(&t1,NULL);
-	double time = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
+	double time = (double)(t1.tv_sec-t0.tv_sec)+(double)(t1.tv_usec-t0.tv_usec)/1.0e6;
 	totalTime += time;
 
 	gettimeofday(&t0,NULL);
 	//JacobiSVD<MatrixXd> Asvd(A, ComputeThinU | ComputeThinV);
 	gettimeofday(&t1,NULL);
 
-	double timeSVD = (t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6;
+	double timeSVD = (double)(t1.tv_sec-t0.tv_sec)+
+	  (double)(t1.tv_usec-t0.tv_usec)/1.0e6;
 	totalTimeSVD += timeSVD;
 	if(! (shoot%100)) std::cout <<  time*1000 <<  "\t" << timeSVD*1000 << std::endl;
       }
