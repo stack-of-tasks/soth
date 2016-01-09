@@ -14,7 +14,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 # Boost_SIGNALS_LIBRARY
 
 SET(${PROJECT_NAME}_SRC
-    ActiveSet.cpp
+#    ActiveSet.cpp
     Allocator.cpp
     Algebra.cpp
     Bound.cpp

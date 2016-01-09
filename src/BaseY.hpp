@@ -31,7 +31,13 @@ namespace soth
     BaseY( const unsigned int & size );
 
     void computeExplicitly();
-    void reset() { rank=0; isExplicit=false; }
+    void reset() { 
+      rank=0; 
+#ifndef NDEBUG
+      matrixExplicit.setZero();
+#endif
+      isExplicit=false; 
+    }
   public:
     /* --- Accessor --- */
     MatrixXd& getHouseholderEssential() {return householderEssential;}

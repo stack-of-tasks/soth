@@ -9,7 +9,7 @@
 
 namespace soth
 {
-
+  
   HCOD::
   HCOD( unsigned int inSizeProblem, unsigned int nbStage )
   :
@@ -118,9 +118,9 @@ namespace soth
     sotDEBUGOUT(5);
   }
 
-  int HCOD::sizeA() const
+  HCOD::Index HCOD::sizeA() const
   {
-    int s=0;
+    Index s=0;
     for (size_t i=0; i<stages.size(); ++i)
       s+= stages[i]->sizeA();
     return s;
@@ -197,13 +197,16 @@ namespace soth
   {
     if(! isReset) reset(); // TODO: should it be automatically reset?
     assert( isReset&&(!isInit) );
-
+    sotDEBUG(5) << "Y during initialize:" << Y.matrixExplicit << std::endl;
     /* Compute the initial COD for each stage. */
     for( unsigned int i=0;i<stages.size();++i )
       {
 	assert( stages[i]!=0 );
 	sotDEBUG(5) <<" --- STAGE " <<i
 		    << " ---------------------------------" << std::endl;
+#ifndef NDEBUG
+	//	stages[i]->setInitialActiveSet();
+	#endif
 	stages[i]->computeInitialCOD(Y);
       }
     isReset=false; isInit=true;
@@ -230,7 +233,12 @@ namespace soth
     unsigned int rankDef = (*stageIter)->update(cst,Yup);
     for( ++stageIter;stageIter!=stages.end();++stageIter )
       {
-	(*stageIter)->propagateUpdate(Yup,rankDef);
+        sotDEBUG(5) << "Y (updateY): " << (*stageIter)->name << ","
+                    << Y.matrixExplicit << std::endl;
+        (*stageIter)->propagateUpdate(Yup,rankDef);
+        sotDEBUG(5) << "Y (after-updateY): " << (*stageIter)->name << ","
+                    << Y.matrixExplicit << std::endl;
+
       }
     updateY(Yup);
   }
@@ -278,7 +286,9 @@ namespace soth
   void HCOD::
   updateY( const GivensSequence& Yup )
   {
+    sotDEBUG(5) << "Y (before updateY): " << Y.matrixExplicit << std::endl;
     Y *= Yup;
+    sotDEBUG(5) << "Y (updateY): " << Y.matrixExplicit << std::endl;
     Yup.applyTransposeOnTheRight(Ytu);
     Yup.applyTransposeOnTheRight(YtuNext); /* TODO: this second multiplication could
 					    * be avoided. */
@@ -318,9 +328,12 @@ namespace soth
   void HCOD::
   computeSolution(  bool compute_u )
   {
+    sotDEBUGIN(5);
     assert(isInit);
 
+    sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
     YtuNext.setZero();
+    sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
     for( unsigned int i=0;i<stages.size();++i )
       {
         stages[i]->computeSolution(YtuNext);
@@ -328,7 +341,9 @@ namespace soth
 
     if( compute_u )
       {
+        sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
         Y.multiply(YtuNext,uNext);
+        sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
         sotDEBUG(5) << "u0 = " << (MATLAB)solution << std::endl;
         sotDEBUG(5) << "u1 = " << (MATLAB)uNext << std::endl;
       }
@@ -336,6 +351,7 @@ namespace soth
     sotDEBUG(5) << "Ytu0 = " << (MATLAB)Ytu << std::endl;
     sotDEBUG(5) << "Ytu1 = " << (MATLAB)YtuNext << std::endl;
     isSolutionCpt=true;
+    sotDEBUGOUT(5);
   }
   void HCOD::
   damp( void )
@@ -507,7 +523,9 @@ namespace soth
     /*struct timeval t0,t1,t2;double time1,time2;
     gettimeofday(&t0,NULL);*/
     initialize();
+    sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
     Y.computeExplicitly(); // TODO: this should be done automatically on Y size.
+    sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
     /*gettimeofday(&t1,NULL);
     time1 = ((t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6);*/
 
@@ -638,7 +656,7 @@ namespace soth
       const Stage & s = *stages[nbstage];
       if( s.useDamp() )// && s.sizeN()>0 )
     	{
-    	  const unsigned int sm = s.getSizeM();
+    	  const Index sm = s.getSizeM();
     	  VectorXd z(sizeProblem); z.head(sm) = Ytu.head(sm);
     	  z.tail(sizeProblem-sm).setZero();
     	  VectorXd Yz(sizeProblem);
@@ -675,6 +693,8 @@ namespace soth
 	os << "u1 = " << (MATLAB)uNext << std::endl;
 	os << "Ytu0 = " << (MATLAB)Ytu << std::endl;
 	os << "Ytu1 = " << (MATLAB)YtuNext << std::endl;
+        os << "Y.matrixExplicit" << Y.matrixExplicit<< std::endl;
+        os << "(solution-Y.matrixExplicit*Ytu).norm()=" << (solution-Y.matrixExplicit*Ytu).norm() << std::endl;
 	assert( (solution-Y.matrixExplicit*Ytu).norm() < Stage::EPSILON );
 	assert( (uNext-Y.matrixExplicit*YtuNext).norm() < Stage::EPSILON );
       }

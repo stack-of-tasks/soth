@@ -59,9 +59,9 @@ namespace soth
   // typedef std::pair<int,Bound::bound_t> ConstraintRef;
   struct ConstraintRef
   {
-    int row;
+    Eigen::MatrixXd::Index row;
     Bound::bound_t type;
-    ConstraintRef( int r, Bound::bound_t t ) :row(r),type(t) {}
+    ConstraintRef( Eigen::MatrixXd::Index r, Bound::bound_t t ) :row(r),type(t) {}
     ConstraintRef( void ): row(-1),type(Bound::BOUND_NONE) {}
     double sign() const { return (type==Bound::BOUND_SUP)?+1:-1; }
   };

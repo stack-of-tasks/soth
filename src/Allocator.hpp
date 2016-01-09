@@ -6,23 +6,26 @@
 #include <iostream>
 #include <soth/api.hpp>
 
+#include <Eigen/Core>
+
 namespace soth
 {
   class SOTH_EXPORT AllocatorML
   {
-    typedef std::list<unsigned int> resource_t;
+    typedef Eigen::MatrixXd::Index Index;
+    typedef std::list<Index> resource_t;
     typedef resource_t::iterator resource_iter_t;
 
     resource_t resource;
-    unsigned int max;
+    Index max;
 
   public:
-    AllocatorML( unsigned int max ) : resource(),max(max) {}
+    AllocatorML( Index max ) : resource(),max(max) {}
 
     void reset();
-    void resetTop( unsigned int min );
-    unsigned int get();
-    void put( const unsigned int & token );
+    void resetTop( Index min );
+    Index get();
+    void put( const Index & token );
     void disp( std::ostream & os ) const;
 
     SOTH_EXPORT friend std::ostream& operator<<( std::ostream & os, const AllocatorML & aml );

@@ -25,6 +25,7 @@ namespace soth
 
     typedef Map<const MatrixXd> MapXd;
     typedef Map<const VectorBound> MapBound;
+    typedef MatrixXd::Index Index;
 
     MapXd Jmap;
     MapBound boundsMap;
@@ -35,7 +36,7 @@ namespace soth
 
     const MatrixXdRef & J;
     const VectorBoundRef & bounds;
-    const unsigned int nr,nc; // nr=nbCols(J), nc=nbRows(J).
+    const Index nr,nc; // nr=nbCols(J), nc=nbRows(J).
     const BaseY& Y;
 
   public:
@@ -44,10 +45,10 @@ namespace soth
      * vector - no copy. */
     BasicStage( const MatrixXd & J, const VectorBound & bounds, const BaseY& Y  );
     /* Constructor from size and data maps. */
-    BasicStage( const unsigned int nr, const unsigned int nc,
+    BasicStage( const Index nr, const Index nc,
 		const double * Jdata, const Bound * bdata, const BaseY& Y );
     /* Same as upper, with bdata:=&boundsInternal. */
-    BasicStage( const unsigned int nr, const unsigned int nc,
+    BasicStage( const Index nr, const Index nc,
 		const double * Jdata, const BaseY& Y );
 
     /* Reset the data map from references - no copy. */
@@ -55,13 +56,13 @@ namespace soth
     /* Reset the data map from pointers. */
     void set( const double * Jdata, const Bound * bdata );
 
-    unsigned int nbConstraints( void ) const { return nr; }
+    Index nbConstraints( void ) const { return nr; }
 
     /* Return the J row of the <cst> constraint (in the global ppol,
      * not only in the active pool. */
-    VectorXd getJrow( const unsigned int & cst  ) const;
+    VectorXd getJrow( const Index & cst  ) const;
     /* Return the bound-values of constraint <cst>.*/
-    Bound getBoundRow( const unsigned int & cst  ) const;
+    Bound getBoundRow( const Index & cst  ) const;
 
   public: /* For debug purpose, could be remove on RELEASE. */
     std::string name;

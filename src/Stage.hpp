@@ -65,10 +65,10 @@ namespace soth
 
     bool isWIdenty;
     /* sizeL = card(Ir). sizeM = previousRank. */
-    unsigned int sizeM,sizeL;
+    Index sizeM,sizeL;
 
     /* Memory allocators. */
-    SubActiveSet<ActiveSet,Indirect> activeSet;
+    SubActiveSet<ActiveSet<Indirect>,Indirect> activeSet;
     AllocatorML freeML;
 
     /* Damping */
@@ -237,17 +237,17 @@ namespace soth
     RowL rowL0( const Index r );
     RowML rowMrL0( const Index r );
     RowL rowML( const Index r );
-    unsigned int rowSize( const Index r );
+    Index rowSize( const Index r );
 
     /* TODO: sizeL and sizeM should be automatically determined from the corresponding indexes. */
-    inline unsigned int nbConstraints( void ) const { return nr; }
-    inline unsigned int sizeA( void ) const { return activeSet.nbActive(); }
+    inline Index nbConstraints( void ) const { return nr; }
+    inline Index sizeA( void ) const { return activeSet.nbActive(); }
     // sizeN = card(In) = sizeA-sizeL.
-    inline int sizeN( void ) const { assert((int)(sizeA()-sizeL)>=0);return sizeA()-sizeL; }
+    inline Index sizeN( void ) const { assert((int)(sizeA()-sizeL)>=0);return sizeA()-sizeL; }
     inline Index rank() const {return sizeL;}
 
-    inline int getSizeM() const { return sizeM; }
-    inline int getSizeL() const { return sizeL; }
+    inline Index getSizeM() const { return sizeM; }
+    inline Index getSizeL() const { return sizeL; }
 
     using BasicStage::getJrow;
     using BasicStage::getBoundRow;

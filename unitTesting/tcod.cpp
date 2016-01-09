@@ -38,12 +38,21 @@ int main ( void )
 # ifndef NDEBUG
     cout << "A ="<< (MATLAB)A << endl;
     std::cout << "rank = " << Acod.rank << std::endl;
-    std::cout << "U = " << (MATLAB)Acod.matrixUr() << std::endl;
+    if (Acod.matrixU().cols()!=0)
+      std::cout << "U = " << (MATLAB)Acod.matrixUr() << std::endl;
+    else 
+      std::cout << "U = " << (MATLAB)Acod.matrixU() << std::endl;
     std::cout << "L = " << (MATLAB)(MatrixXd)Acod.matrixL() << std::endl;
-    std::cout << "V = " << (MATLAB)Acod.matrixVr() << std::endl;
-    std::cout << "ULV = " << (MATLAB)(MatrixXd)(Acod.matrixUr()*Acod.matrixL()*Acod.matrixVr().transpose()) << std::endl;
-    std::cout << "ERR = " << (A-Acod.matrixUr()*Acod.matrixL()*Acod.matrixVr().transpose()).norm() << std::endl;
-    exit(-1);
+    if (Acod.matrixV().cols()!=0)
+      std::cout << "V = " << (MATLAB)Acod.matrixVr() << std::endl;
+    else
+      std::cout << "V = " << (MATLAB)Acod.matrixV() << std::endl;
+    
+    if ((Acod.matrixU().cols()!=0) && (Acod.matrixV().cols()!=0))
+      {
+	std::cout << "ULV = " << (MATLAB)(MatrixXd)(Acod.matrixUr()*Acod.matrixL()*Acod.matrixVr().transpose()) << std::endl;
+	std::cout << "ERR = " << (A-Acod.matrixUr()*Acod.matrixL()*Acod.matrixVr().transpose()).norm() << std::endl;
+      }
 #endif
 
     /* --- CHRONO --- */

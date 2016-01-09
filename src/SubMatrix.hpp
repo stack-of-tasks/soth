@@ -143,7 +143,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef VectorXi RowIndices;
+    typedef Matrix<Index,Dynamic,1> RowIndices;
 
   protected:
     NoRowSelectionImpl(const MatrixType& m, bool /*defaultPermutation*/ )
@@ -164,7 +164,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef VectorXi RowIndices;
+    typedef Matrix<Index,Dynamic,1> RowIndices;
 
     RowSelectionImpl(const MatrixType& m, bool defaultPermutation = false)
       : m_contain(m),owned_rowIndices(),rowIndices( owned_rowIndices )
@@ -288,7 +288,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef VectorXi ColIndices;
+    typedef Matrix<Index,Dynamic,1> ColIndices;
     
   protected:
     NoColSelectionImpl(const MatrixType& m, bool /*defaultPermutation*/)
@@ -309,7 +309,7 @@ namespace Eigen
   {
   public:
     typedef typename MatrixType::Index Index;
-    typedef VectorXi ColIndices;
+    typedef Matrix<Index,Dynamic,1> ColIndices;
 
     ColSelectionImpl(const MatrixType& m, bool defaultPermutation)
       : m_contain(m),owned_colIndices(),colIndices( owned_colIndices )
@@ -475,7 +475,7 @@ namespace Eigen
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SubMatrix)
 
-    typedef VectorXi Indices;
+    typedef Matrix<typename MatrixType::Index,Dynamic,1> Indices;
     typedef ei_choose_assert_selection<PermutationType> assert_index;
 
     inline SubMatrix(MatrixType& matrix )

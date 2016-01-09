@@ -18,6 +18,7 @@ namespace soth
     typedef stage_sequence_t::iterator stage_iter_t;
     typedef stage_sequence_t::const_iterator stage_citer_t;
     typedef stage_sequence_t::reverse_iterator stage_riter_t;
+    typedef MatrixXd::Index Index;
 
   public:
     HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
@@ -45,7 +46,7 @@ namespace soth
     double getMaxDamping() const;
 
     //sizes
-    int sizeA() const;
+    Index sizeA() const;
     int rank() const;
     unsigned int nbStages() const { return (unsigned int)stages.size(); }
 

@@ -47,6 +47,9 @@ int main (int , char** )
       std::cout <<" --- STAGE " <<i<< " --------------------------------- " << std::endl;
       /* Compute the initial COD for each stage. */
       stages[i] = stage_ptr_t(new soth::Stage( J[i],b[i],Y ));
+      #ifndef NDEBUG
+      stages[i]->reset();
+      #endif
       stages[i]->setInitialActiveSet();
       stages[i]->computeInitialCOD(Y);
       Eigen::MatrixXd Jrec; stages[i]->recompose(Jrec);

@@ -464,7 +464,9 @@ namespace soth
   applyThisOnTheLeft(MatrixBase<Derived> & M) const
   {
     for (size_t i=0; i<G.size(); ++i)
-      G[i].applyThisOnTheLeft(M);
+      {
+	G[i].applyThisOnTheLeft(M);
+      }
   }
 
   // M := M*G.

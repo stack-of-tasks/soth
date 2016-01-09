@@ -114,9 +114,13 @@ namespace soth
 			     std::vector<unsigned int>& nr,
 			     unsigned int & nc )
   {
-    nc = Random::rand<int>() % 30 +4 ; //%  50 + 6;
+    //    nc = Random::rand<int>() % 30 +4 ; //%  50 + 6;
+    int lnc = Random::rand<int>();
+
+    nc = lnc %30 +4;
     nbStage = randu(1,1+nc/4);
 
+    sotDEBUG(1) << "lnc = " << lnc << endl;
     sotDEBUG(1) << "nc = " << nc << endl;
     sotDEBUG(1) << "nbStage = " << nbStage << endl;
 
