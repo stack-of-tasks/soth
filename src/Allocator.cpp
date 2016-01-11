@@ -36,7 +36,7 @@ namespace soth
   put( const Index & token )
   {
     resource.push_front(token);
-    assert( resource.size()<=max );
+    assert( (Index)resource.size()<=max );
   }
 
   void AllocatorML::

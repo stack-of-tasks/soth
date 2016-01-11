@@ -3,7 +3,7 @@
 namespace soth
 {
   // Empty construction with memory allocation.
-  BaseY::BaseY( const unsigned int & insize )
+  BaseY::BaseY( const Index & insize )
     :isExplicit(false)
     ,size(insize)
     ,rank(0)

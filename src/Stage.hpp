@@ -87,9 +87,9 @@ namespace soth
 
   public:
     Stage( const MatrixXd & J, const VectorBound & bounds, BaseY& Y  );
-    Stage( const unsigned int nr, const unsigned int nc,
+    Stage( const Index nr, const Index nc,
 	   const double * Jdata, const Bound * bdata, const BaseY& Y );
-    Stage( const unsigned int nr, const unsigned int nc,
+    Stage( const Index nr, const Index nc,
 	   const double * Jdata, const BaseY& Y );
 
     /* --- INIT ------------------------------------------------------------- */
@@ -111,7 +111,7 @@ namespace soth
     /* --- DOWN ------------------------------------------------------------- */
   public:
     /* Return true if the rank re-increase operated at the current stage. */
-    bool downdate( const unsigned int position,
+    bool downdate( const Index position,
 		   GivensSequence & Ydown );
     /* Return true if the rank decrease operated at the current stage. */
     bool propagateDowndate( GivensSequence & Ydown,
@@ -119,16 +119,16 @@ namespace soth
 
   protected:
     void regularizeHessenberg( GivensSequence & Ydown );
-    unsigned int nullifyACrossFromW( const  unsigned int position );
-    void removeARowFromL( unsigned int row );
-    void removeACrossFromW( const unsigned int & row, const unsigned int & col );
+    Index nullifyACrossFromW( const Index position );
+    void removeARowFromL( Index row );
+    void removeACrossFromW( const Index & row, const Index & col );
 
     /* --- UPD -------------------------------------------------------------- */
   public:
     /* Return the rank of the line where the rank re-decrease will occurs. */
-    unsigned int update( const ConstraintRef & cst, GivensSequence & Yup );
+    Index update( const ConstraintRef & cst, GivensSequence & Yup );
     void propagateUpdate( GivensSequence & Ydown,
-			  unsigned int decreasePreviousRank );
+			  Index decreasePreviousRank );
   protected:
     void addARow( const Index & mlrowup,bool deficient=false );
 
@@ -180,7 +180,7 @@ namespace soth
 		     ConstraintRef*, double* tau );
     bool checkBound( const VectorXd& u0,const VectorXd& u1,
 		     ConstraintRef& cstmax, double& taumax );
-    bool maxLambda( const VectorXd& u, double & lmax, unsigned int & row ) const;
+    bool maxLambda( const VectorXd& u, double & lmax, Index & row ) const;
     void freezeSlacks(const bool & slacks = true);
 
 
@@ -189,7 +189,7 @@ namespace soth
   public:
     /* WMLY = [ W*M W(:,1:rank)*L zeros(sizeA,nc-sizeM-sizeL) ]*Y' */
     void recompose( MatrixXd& WMLY ) const;
-    void show( std::ostream& os, unsigned int stageRef, bool check=false ) const;
+    void show( std::ostream& os, Index stageRef, bool check=false ) const;
     void showActiveSet( std::ostream& os ) const;
 
     /* Return a sub matrix containing the active rows of J, in the
@@ -207,9 +207,9 @@ namespace soth
     bool testUnactiveTwins( void );
 
     /* For debug purpose, give the line of an active constraint (assert the activity). */
-    Index where( unsigned int cst ) const;
-    ConstraintRef which( unsigned int row ) const;
-    bool isActive( unsigned int cst ) const;
+    Index where( Index cst ) const;
+    ConstraintRef which( Index row ) const;
+    bool isActive( Index cst ) const;
 
   public:
     /* --- ACCESSORS --- */

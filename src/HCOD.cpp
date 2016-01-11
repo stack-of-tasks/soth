@@ -11,7 +11,7 @@ namespace soth
 {
   
   HCOD::
-  HCOD( unsigned int inSizeProblem, unsigned int nbStage )
+  HCOD( Index inSizeProblem, Index nbStage )
   :
     sizeProblem(inSizeProblem)
     ,Y(sizeProblem)
@@ -39,13 +39,13 @@ namespace soth
     isInit=false;
   }
   void HCOD::
-  pushBackStage( const unsigned int & nr, const double * Jdata, const Bound * bdata )
+  pushBackStage( const Index & nr, const double * Jdata, const Bound * bdata )
   {
     stages.push_back(stage_ptr_t(new soth::Stage( nr,sizeProblem,Jdata,bdata,Y )));
     isInit=false;
   }
   void HCOD::
-  pushBackStage( const unsigned int & nr, const double * Jdata )
+  pushBackStage( const Index & nr, const double * Jdata )
   {
     stages.push_back( stage_ptr_t(new soth::Stage( nr,sizeProblem,Jdata,Y )) );
 
@@ -57,20 +57,20 @@ namespace soth
 		  const std::vector<VectorBound> & bounds )
   {
     assert( J.size() == bounds.size() );
-    for( unsigned int i=0;i<J.size();++i )
+    for( std::vector<MatrixXd>::size_type i=0;i<J.size();++i )
       {
 	pushBackStage( J[i],bounds[i] );
       }
   }
 
   Stage& HCOD::
-  stage( unsigned int i )
+  stage( Index i )
   {
     assert( i<stages.size() );
     return *stages[i];
   }
   const Stage& HCOD::
-  stage( unsigned int i ) const
+  stage( Index i ) const
   {
     assert( i<stages.size() );
     return *stages[i];
@@ -86,14 +86,14 @@ namespace soth
   }
 
   void HCOD::
-  setInitialActiveSet( const cstref_vector_t& Ir0,unsigned int k )
+  setInitialActiveSet( const cstref_vector_t& Ir0,Index k )
   {
     sotDEBUG(5) << "Ir["<<k<<"]"<<std::endl;
     stage(k).setInitialActiveSet(Ir0,true);
   }
 
   cstref_vector_t HCOD::
-  getOptimalActiveSet( unsigned int k )
+  getOptimalActiveSet( Index k )
   {
     return stage(k).getOptimalActiveSet();
   }
@@ -199,7 +199,7 @@ namespace soth
     assert( isReset&&(!isInit) );
     sotDEBUG(5) << "Y during initialize:" << Y.matrixExplicit << std::endl;
     /* Compute the initial COD for each stage. */
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
 	assert( stages[i]!=0 );
 	sotDEBUG(5) <<" --- STAGE " <<i
@@ -212,12 +212,12 @@ namespace soth
     isReset=false; isInit=true;
   }
   void HCOD::
-  update( const unsigned int & stageUp,const ConstraintRef & cst )
+  update( const Index & stageUp,const ConstraintRef & cst )
   {
     assert(isInit);
     GivensSequence Yup;
-    unsigned int rankDef = stages[stageUp]->update(cst,Yup);
-    for( unsigned int i=stageUp+1;i<stages.size();++i )
+    Index rankDef = stages[stageUp]->update(cst,Yup);
+    for( stage_sequence_size_t i=stageUp+1;i<stages.size();++i )
       {
 	stages[i]->propagateUpdate(Yup,rankDef);
       }
@@ -230,7 +230,7 @@ namespace soth
     sotDEBUG(5) << "Update " << (*stageIter)->name <<", "
 		<< cst << std::endl;
     GivensSequence Yup;
-    unsigned int rankDef = (*stageIter)->update(cst,Yup);
+    Index rankDef = (*stageIter)->update(cst,Yup);
     for( ++stageIter;stageIter!=stages.end();++stageIter )
       {
         sotDEBUG(5) << "Y (updateY): " << (*stageIter)->name << ","
@@ -243,19 +243,19 @@ namespace soth
     updateY(Yup);
   }
   void HCOD::
-  downdate( const unsigned int & stageDown, const unsigned int & rowDown )
+  downdate( const Index & stageDown, const Index & rowDown )
   {
     assert(isInit);
     GivensSequence Ydown;
     bool propag=stages[stageDown]->downdate(rowDown,Ydown);
-    for( unsigned int i=stageDown+1;i<stages.size();++i )
+    for( stage_sequence_size_t i=stageDown+1;i<stages.size();++i )
       {
      	propag = stages[i]->propagateDowndate(Ydown,propag);
       }
     updateY(Ydown);
   }
   void HCOD::
-  downdate( stage_iter_t stageIter,const unsigned int & rowDown )
+  downdate( stage_iter_t stageIter,const Index & rowDown )
   {
     assert(isInit);
 
@@ -303,7 +303,7 @@ namespace soth
    * The result is stored in the stages (getLagrangeMultipliers()).
    */
   void HCOD::
-  computeLagrangeMultipliers( const unsigned int & stageRef )
+  computeLagrangeMultipliers( const Index & stageRef )
   {
     assert( isSolutionCpt );
     assert( stageRef<=stages.size() );
@@ -334,7 +334,7 @@ namespace soth
     sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
     YtuNext.setZero();
     sotDEBUG(5) << "Y= " << (MATLAB)Y.matrixExplicit<< std::endl;
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
         stages[i]->computeSolution(YtuNext);
       }
@@ -418,12 +418,12 @@ namespace soth
   /* Return true iff the search is positive, ie if downdate was
    * needed and performed. */
   bool HCOD::
-  searchAndDowndate( const unsigned int & stageRef )
+  searchAndDowndate( const Index & stageRef )
   {
     assert( stageRef<=stages.size() );
-    double lambdamax = Stage::EPSILON; unsigned int row;
+    double lambdamax = Stage::EPSILON; Index row;
 
-    const stage_iter_t refend = stages.begin()+ std::min((unsigned)(stages.size()),stageRef+1);
+    const stage_iter_t refend = stages.begin()+ std::min((Index)(stages.size()),stageRef+1);
     stage_iter_t stageDown =  refend;
     for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
@@ -439,11 +439,11 @@ namespace soth
   }
 
   bool HCOD::
-  search( const unsigned int & stageRef )
+  search( const Index & stageRef )
   {
     assert( stageRef<=stages.size() );
-    double lambdamax = Stage::EPSILON; unsigned int row;
-    const stage_iter_t refend = stages.begin()+std::min((unsigned)(stages.size()),stageRef+1);
+    double lambdamax = Stage::EPSILON; Index row;
+    const stage_iter_t refend = stages.begin()+std::min((Index)(stages.size()),stageRef+1);
     stage_iter_t stageDown = refend;
     for( stage_iter_t iter = stages.begin(); iter!=refend; ++iter )
       {
@@ -530,7 +530,7 @@ namespace soth
     time1 = ((t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6);*/
 
     int iter = 0;
-    unsigned int stageMinimal = 0;
+    Index stageMinimal = 0;
     do
       {
 	iter ++; sotDEBUG(5) << " --- *** \t" << iter << "\t***.---" << std::endl;
@@ -553,7 +553,7 @@ namespace soth
 	    sotDEBUG(5) << "No update, make step ==1." << std::endl;
 	    makeStep();
 
-	    for( ;stageMinimal<=stages.size();++stageMinimal )
+	    for( ;stageMinimal<=(Index)stages.size();++stageMinimal )
 	      {
 		sotDEBUG(5) << "--- Started to examinate stage " << stageMinimal << std::endl;
 		computeLagrangeMultipliers(stageMinimal);
@@ -566,7 +566,7 @@ namespace soth
 		    break;
 		  }
 
-		for( unsigned int i=0;i<stageMinimal;++i )
+		for( Index i=0;i<stageMinimal;++i )
 		  stages[i]->freezeSlacks(false);
 		if( stageMinimal<nbStages() )
 		  stages[stageMinimal]->freezeSlacks(true);
@@ -597,7 +597,7 @@ namespace soth
   {
     sotDEBUGPRIOR(+20);
     bool res = true;
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
 	bool sres=stages[i]->testRecomposition();
 	if( os&&(!sres) ) *os << "Stage " <<i<<" is not properly recomposed."<<std::endl;
@@ -611,7 +611,7 @@ namespace soth
   {
     sotDEBUGPRIOR(+20);
     bool res = true;
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
 	bool sres=stages[i]->testSolution( uNext );
 	if( os&&(!sres) ) *os << "Stage " <<i<<" has not been properly inverted."<<std::endl;
@@ -626,20 +626,20 @@ namespace soth
   /* Compute sum(i=1:sr) Ji' li, with Jsr = I and lsr = u, and check
    * that the result is null. */
   bool HCOD::
-  testLagrangeMultipliers( int unsigned stageRef,std::ostream* os ) const
+  testLagrangeMultipliers( Index stageRef,std::ostream* os ) const
   {
     assert( stageRef<=stages.size() );
     VectorXd verifL(sizeProblem);
 
     /* verifL = Jsr' lsr, with Jsr = I and lsr = u. */
-    if( stageRef==stages.size() )
+    if( stageRef==(Index)stages.size() )
       { verifL = solution; }
     else
       verifL.setZero();
 
     /* verif += sum Ji' li. */
-    const unsigned int nbstage = std::min((unsigned int)(stages.size()-1),stageRef);
-    for( unsigned int i=0;i<=nbstage;++i )
+    const Index nbstage = std::min((Index)(stages.size()-1),stageRef);
+    for( Index i=0;i<=nbstage;++i )
       {
 	const Stage & s = *stages[i];
 	sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
@@ -651,7 +651,7 @@ namespace soth
     sotDEBUG(5) << "verif = " << (soth::MATLAB)verifL << std::endl;
 
     // Damping
-    if( nbstage>0 && stageRef<stages.size() )
+    if( nbstage>0 && stageRef<(Index)stages.size() )
       {
       const Stage & s = *stages[nbstage];
       if( s.useDamp() )// && s.sizeN()>0 )
@@ -679,7 +679,7 @@ namespace soth
   show( std::ostream& os, bool check )
   {
     sotDEBUGIN(15);
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
 	stages[i]->show(os,i+1,check);
       }
@@ -706,7 +706,7 @@ namespace soth
   {
     sotDEBUGIN(15);
     os << "{" << std::endl;
-    for( unsigned int i=0;i<stages.size();++i )
+    for( stage_sequence_size_t i=0;i<stages.size();++i )
       {
 	os<< "    "; stages[i]->showActiveSet(os); os << std::endl;
       }

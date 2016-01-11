@@ -7,13 +7,13 @@ namespace soth
   {
   }
 
-  Givens::Givens(double a, double b, int i, int j, double* z)
+  Givens::Givens(double a, double b, Index i, Index j, double* z)
     :i(i), j(j)
   {
     makeGivens(a,b,i,j,z);
   }
 
-  void Givens::makeGivens(double a, double b, int i, int j, double* z)
+  void Givens::makeGivens(double a, double b, Index i, Index j, double* z)
   {
     G.makeGivens(a,b,z);
     this->i = i;

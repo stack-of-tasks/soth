@@ -28,7 +28,7 @@ namespace soth
 
   public:
     // Empty construction with memory allocation.
-    BaseY( const unsigned int & size );
+    BaseY( const Index & size );
 
     void computeExplicitly();
     void reset() { 

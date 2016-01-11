@@ -273,8 +273,11 @@ namespace soth
 
   public:
     inline operator Matrix<Index,Dynamic,1> (void) const {  return getIndirection(); }
-    SOTH_EXPORT friend std::ostream& operator<< ( std::ostream & os,const ActiveSet& as );
+    //    SOTH_EXPORT friend std::ostream& operator<< ( std::ostream & os,const ActiveSet<typename Indirect> & as );
   };
+
+  template< typename Indirect >
+  SOTH_EXPORT std::ostream&  operator<< ( std::ostream & os,const ActiveSet<Indirect>& as );
 
 
   /* The previous class is not aware of the indirection built upon WMLY. This indirection
@@ -492,7 +495,7 @@ namespace soth
   getIndirection(void) const
   {
     if (nba==0)
-      return Matrix<Indirect::Index,Dynamic,1>();
+      return Matrix<typename Indirect::Index,Dynamic,1>();
 
     Matrix< typename Indirect::Index, Dynamic,1> res(nba);
     for( unsigned int r=0;r<nba;++r )

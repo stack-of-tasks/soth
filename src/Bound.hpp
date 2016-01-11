@@ -67,6 +67,7 @@ namespace soth
   };
   extern const ConstraintRef  CONSTRAINT_VOID;
   typedef std::vector<ConstraintRef> cstref_vector_t;
+  typedef std::vector<ConstraintRef>::size_type cstref_vector_size_t;
 
   SOTH_EXPORT std::ostream& operator<< (std::ostream& os, const VectorBound& t);
   SOTH_EXPORT std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );
