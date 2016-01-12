@@ -40,7 +40,7 @@ if [ -f /etc/lsb-release ]; then
      echo "export DISTRIB_CODENAME="$DISTRIB_CODENAME >> /tmp/local.bash;
      echo "export DISTRIB_RELEASE="$DISTRIB_RELEASE >> /tmp/local.bash;
      echo "export DISTRIB_DESCRIPTION=\""$DISTRIB_DESCRIPTION\" >> /tmp/local.bash;)
-    source /tmp/local.bash
+     . /tmp/local.bash
 fi
 
 # Compile and run tests
