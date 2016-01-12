@@ -1,8 +1,8 @@
 soth
 ====
 
-[![Build Status](https://travis-ci.org/stack-of-tasks/soth.png)](https://travis-ci.org/stack-of-tasks/soth)
-[![Coverage Status](https://coveralls.io/repos/stack-of-tasks/soth/badge.png?branch=master)](https://coveralls.io/r/stack-of-tasks/soth?branch=master)
+[![Build Status](https://travis-ci.org/olivier-stasse/soth.png)](https://travis-ci.org/stack-of-tasks/soth)
+[![Coverage Status](https://coveralls.io/repos/olivier-stasse/soth/badge.png?branch=master)](https://coveralls.io/r/stack-of-tasks/soth?branch=master)
 
 
 Setup

@@ -22,7 +22,7 @@ namespace soth
   /* --- STAGE -------------------------------------------------------------- */
 
   BasicStage::
-  BasicStage( const unsigned int innr, const unsigned int innc,
+  BasicStage( const Index innr, const Index innc,
 	      const double * Jdata, const Bound * bdata, const BaseY& Y )
     :boundsInternal()
     ,Jmap( Jdata,innr,innc )
@@ -35,7 +35,7 @@ namespace soth
   {}
 
   BasicStage::
-  BasicStage( const unsigned int innr, const unsigned int innc,
+  BasicStage( const Index innr, const Index innc,
 	      const double * Jdata, const BaseY& Y )
     :boundsInternal(innr)
     ,Jmap( Jdata,innr,innc )
@@ -54,7 +54,7 @@ namespace soth
     ,boundsMap( inbounds.data(),inbounds.size(),1)
 
     ,J( Jmap ), bounds( boundsMap )
-    ,nr( (unsigned int)inJ.rows() ), nc( (unsigned int)inJ.cols() )
+    ,nr( (Index)inJ.rows() ), nc( (Index)inJ.cols() )
 
     ,Y(inY)
   {
@@ -102,13 +102,13 @@ namespace soth
 
 
   VectorXd BasicStage::
-  getJrow( const unsigned int & cst  ) const
+  getJrow( const Index & cst  ) const
   {
     return J.row(cst);
   }
 
   Bound BasicStage::
-  getBoundRow( const unsigned int & cst  ) const
+  getBoundRow( const Index & cst  ) const
   {
     return bounds[cst];
   }

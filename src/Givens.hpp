@@ -22,25 +22,25 @@ namespace soth
   {
   public:
     typedef JacobiRotation<double> NestedType;
-
+    typedef MatrixXd::Index Index;
   public:
     SOTH_EXPORT Givens();
-    SOTH_EXPORT Givens(double a, double b, int i, int j, double* z=0);
+    SOTH_EXPORT Givens(double a, double b, Index i, Index j, double* z=0);
 
     template<typename VectorBase>
-    Givens(const VectorBase & v, int i, int j);
+    Givens(const VectorBase & v, Index i, Index j);
     template<typename VectorBase>
-    Givens(VectorBase & v, int i, int j, bool apply = false);
+    Givens(VectorBase & v, Index i, Index j, bool apply = false);
 
   public:
-    SOTH_EXPORT void makeGivens(double a, double b, int i, int j, double* z=0);
+    SOTH_EXPORT void makeGivens(double a, double b, Index i, Index j, double* z=0);
 
     /* Givens to the right, ie such that G'*v (:= G.applyTransposeOnTheRight(v) )
      * is nullified. */
     template<typename VectorBase>
-    void makeGivens(const VectorBase & v, int i, int j );
+    void makeGivens(const VectorBase & v, Index i, Index j );
     template<typename VectorBase>
-    void makeGivens(VectorBase & v, int i, int j, bool apply);
+    void makeGivens(VectorBase & v, Index i, Index j, bool apply);
 
     /* --- Multiplication --- */
     // M := M*G.
@@ -68,15 +68,15 @@ namespace soth
     void applyThisOnTheLeftPartiel(SubMatrix<MatrixType,PermutationType,IsSub> & M) const;
 
     // M := G'*M. -- TODO: use Index instead of int
-    template<typename D> void applyTransposeOnTheRight(MatrixBase<D> & M, const int size) const;
+    template<typename D> void applyTransposeOnTheRight(MatrixBase<D> & M, const Index size) const;
     template<typename MatrixType, int PermutationType, bool IsSub>
-    void applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub> & M, const int size) const;
+    void applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub> & M, const Index size) const;
     // TODO: same partiel method for all the cases
 
 
     /* For application on lines of triangular matrices: check
      * if the plannar rotation apply on the 0s. */
-    bool applicable( unsigned int size ) const
+    bool applicable( Index size ) const
     {
       bool ci = (i<size);
       bool cj = (j<size);
@@ -120,8 +120,8 @@ namespace soth
 
   private: public: //DEBUG
     NestedType G,Gt;
-    unsigned int i;
-    unsigned int j;
+    Index i;
+    Index j;
 
   public: // Transpose
 
@@ -243,14 +243,14 @@ namespace soth
 
   /* --- Construction single ------------------------------------------------ */
   template<typename VectorBase>
-  inline Givens::Givens(const VectorBase & v, int i, int j)
+  inline Givens::Givens(const VectorBase & v, Index i, Index j)
     :i(i), j(j)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
     makeGivens(v, i, j);
   }
   template<typename VectorBase>
-  inline Givens::Givens(VectorBase & v, int i, int j, bool apply)
+  inline Givens::Givens(VectorBase & v, Index i, Index j, bool apply)
     :i(i), j(j)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
@@ -258,14 +258,14 @@ namespace soth
   }
 
   template<typename VectorBase>
-  inline void Givens::makeGivens(const VectorBase & v, int i, int j)
+  inline void Givens::makeGivens(const VectorBase & v, Index i, Index j)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
     makeGivens(v(i), v(j), i, j, NULL );
   }
 
   template<typename VectorBase>
-  inline void Givens::makeGivens(VectorBase & v, int i, int j, bool apply)
+  inline void Givens::makeGivens(VectorBase & v, Index i, Index j, bool apply)
   {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(VectorBase);
     if( !apply ) makeGivens(v,i,j);
@@ -294,10 +294,10 @@ namespace soth
   void Givens::
   applyThisOnTheLeftPartiel(MatrixBase<Derived> & M) const
   {
-    if( (int(i)<M.cols())&&(int(j)<M.cols()) )
+    if( (Index(i)<M.cols())&&(Index(j)<M.cols()) )
       M.applyOnTheRight(i, j, G);
-    else if(int(i)<M.cols()) { assert( M.col(i).norm()<1e-6 ); }
-    else if(int(j)<M.cols()) { assert( M.col(j).norm()<1e-6 ); }
+    else if(Index(i)<M.cols()) { assert( M.col(i).norm()<1e-6 ); }
+    else if(Index(j)<M.cols()) { assert( M.col(j).norm()<1e-6 ); }
   }
 
   // M := M*G'.
@@ -366,7 +366,7 @@ namespace soth
   void Givens::
   applyThisOnTheLeft(SubMatrix<MatrixType,PermutationType,IsSub> & M) const
   {
-    assert( 0<=i && int(i)<M.cols() && 0<=j && int(j)<M.cols() );
+    assert( 0<=i && Index(i)<M.cols() && 0<=j && Index(j)<M.cols() );
     typedef typename MatrixType::Index Index;
     for(Index r=0; r<M.rows(); ++r)
       {
@@ -399,7 +399,7 @@ namespace soth
   void Givens::
   applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub>& M) const
   {
-    assert( 0<=i && int(i)<M.rows() && 0<=j && int(j)<M.rows() );
+    assert( 0<=i && Index(i)<M.rows() && 0<=j && Index(j)<M.rows() );
     typedef typename MatrixType::Index Index;
     for(Index c=0; c<M.cols(); ++c)
       {
@@ -441,9 +441,9 @@ namespace soth
   template<typename MatrixType, int PermutationType, bool IsSub>
   void Givens::
   applyTransposeOnTheRight(SubMatrix<MatrixType,PermutationType,IsSub>& M,
-			   const int nbCols) const
+			   const Index nbCols) const
   {
-    assert( 0<=i && int(i)<M.rows() && 0<=j && int(j)<M.rows() );
+    assert( 0<=i && Index(i)<M.rows() && 0<=j && Index(j)<M.rows() );
     assert( 0<= nbCols && nbCols<=M.cols() );
     typedef typename MatrixType::Index Index;
     for(Index c=0; c<nbCols; ++c)
@@ -464,7 +464,9 @@ namespace soth
   applyThisOnTheLeft(MatrixBase<Derived> & M) const
   {
     for (size_t i=0; i<G.size(); ++i)
-      G[i].applyThisOnTheLeft(M);
+      {
+	G[i].applyThisOnTheLeft(M);
+      }
   }
 
   // M := M*G.
@@ -481,7 +483,8 @@ namespace soth
   void GivensSequence::
   applyTransposeOnTheLeft(MatrixBase<Derived> & M) const
   {
-    for (int i=G.size()-1; i>=0; --i)
+    typedef typename MatrixBase<Derived>::Index Index;
+    for (Index i=G.size()-1; i>=0; --i)
       G[i].applyTransposeOnTheLeft(M);
   }
 
@@ -490,7 +493,8 @@ namespace soth
   void GivensSequence::
   applyThisOnTheRight(MatrixBase<Derived> & M) const
   {
-    for (int i=G.size()-1; i>=0; --i)
+    typedef typename MatrixBase<Derived>::Index Index;
+    for (Index i=G.size()-1; i>=0; --i)
       { G[i].applyThisOnTheRight(M); }
   }
 
@@ -507,7 +511,7 @@ namespace soth
   /* --- Multiplication display -------------------------------------------- */
   template<>
   inline MATLAB::
-  MATLAB( unsigned int size,const GivensSequence & m1 )
+  MATLAB( MatrixXd::Index size,const GivensSequence & m1 )
   {
     if( size == 0 ) initMatrixColNull(0);
     else

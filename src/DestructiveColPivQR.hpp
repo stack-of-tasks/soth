@@ -41,7 +41,7 @@ class DestructiveColPivQR
     typedef _HouseholderStorageType  MatrixQType;
     //typedef typename internal::plain_diag_type<MatrixType>::type HCoeffsType;
     typedef Diagonal<MatrixQType,0> HCoeffsType;
-    typedef PermutationMatrix<ColsAtCompileTime, MaxColsAtCompileTime> PermutationType;
+  typedef PermutationMatrix<ColsAtCompileTime, MaxColsAtCompileTime, typename MatrixType::Index> PermutationType;
     typedef typename internal::plain_row_type<MatrixType, Index>::type IntRowVectorType;
     typedef typename internal::plain_row_type<MatrixType>::type RowVectorType;
     typedef typename internal::plain_row_type<MatrixType, RealScalar>::type RealRowVectorType;

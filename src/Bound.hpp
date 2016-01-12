@@ -59,14 +59,15 @@ namespace soth
   // typedef std::pair<int,Bound::bound_t> ConstraintRef;
   struct ConstraintRef
   {
-    int row;
+    Eigen::MatrixXd::Index row;
     Bound::bound_t type;
-    ConstraintRef( int r, Bound::bound_t t ) :row(r),type(t) {}
+    ConstraintRef( Eigen::MatrixXd::Index r, Bound::bound_t t ) :row(r),type(t) {}
     ConstraintRef( void ): row(-1),type(Bound::BOUND_NONE) {}
     double sign() const { return (type==Bound::BOUND_SUP)?+1:-1; }
   };
   extern const ConstraintRef  CONSTRAINT_VOID;
   typedef std::vector<ConstraintRef> cstref_vector_t;
+  typedef std::vector<ConstraintRef>::size_type cstref_vector_size_t;
 
   SOTH_EXPORT std::ostream& operator<< (std::ostream& os, const VectorBound& t);
   SOTH_EXPORT std::ostream& operator<<( std::ostream&os,const ConstraintRef& cst );

@@ -48,7 +48,7 @@
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 #ifdef NDEBUG
-#   undef SOTH_DEBUG
+//#   undef SOTH_DEBUG
 #endif
 
 namespace soth
@@ -114,22 +114,28 @@ SOTH_EXPORT extern sotDebugTrace sotDEBUGFLOW;
 SOTH_EXPORT extern sotDebugTrace sotERRORFLOW;
 
 #ifdef SOTH_DEBUG
-#define sotPREDEBUG  "% " << __FILE__ << ": " <<__FUNCTION__  \
+#if 0
+#define sotPREDEBUG  "% " << __FILE__ << ": " <<__FUNCTION__		\
                               << "(#" << __LINE__ << ") :\n"
-#define sotPREERROR  "\t!! "<<__FILE__ << ": " <<__FUNCTION__  \
+#define sotPREERROR  "\t!! " << __FILE__  << ": " <<__FUNCTION__  \
                             << "(#" << __LINE__ << ") :"
-
-#  define sotDEBUG(level) if( (level+sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!sotDEBUGFLOW.outputbuffer.good()) ) ;\
-    else sotDEBUGFLOW.outputbuffer<<sotPREDEBUG
-#  define sotDEBUGMUTE(level) if( (level+sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!sotDEBUGFLOW.outputbuffer.good()) ) ;\
-    else sotDEBUGFLOW.outputbuffer
-#  define sotERROR  if(!sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.outputbuffer << sotPREERROR
-#  define sotDEBUGF if(!sotDEBUGFLOW.outputbuffer.good()); else sotDEBUGFLOW.pre(sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_DEBUG_MODE).trace
-#  define sotERRORF if(!sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.pre(sotERRORFLOW.tmpbuffer<<sotPREERROR).trace
+#else
+#define sotPREDEBUG  "% " << ": " <<__FUNCTION__		\
+                              << "(#" << __LINE__ << ") :\n"
+#define sotPREERROR  "\t!! " << ": " <<__FUNCTION__  \
+                            << "(#" << __LINE__ << ") :"
+#endif
+#  define sotDEBUG(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ; \
+    else soth::sotDEBUGFLOW.outputbuffer<<sotPREDEBUG
+#  define sotDEBUGMUTE(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ;\
+    else soth::sotDEBUGFLOW.outputbuffer
+#  define sotERROR  if(!soth::sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.outputbuffer << sotPREERROR
+#  define sotDEBUGF if(!soth::sotDEBUGFLOW.outputbuffer.good()); else soth::sotDEBUGFLOW.pre(soth::sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_DEBUG_MODE).trace
+#  define sotERRORF if(!soth::sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.pre(sotERRORFLOW.tmpbuffer<<sotPREERROR).trace
 // TEMPLATE
-#  define sotTDEBUG(level) if( (level+sotDEBUGFLOW.debugPrior>SOTH_TEMPLATE_DEBUG_MODE)||(!sotDEBUGFLOW.outputbuffer.good()) ) ;\
-    else sotDEBUGFLOW.outputbuffer << sotPREDEBUG
-#  define sotTDEBUGF  if(!sotDEBUGFLOW.outputbuffer.good()); else sotDEBUGFLOW.pre(sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_TEMPLATE_DEBUG_MODE).trace
+#  define sotTDEBUG(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_TEMPLATE_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ;\
+    else soth::sotDEBUGFLOW.outputbuffer << sotPREDEBUG
+#  define sotTDEBUGF  if(!soth::sotDEBUGFLOW.outputbuffer.good()); else soth::sotDEBUGFLOW.pre(soth::sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_TEMPLATE_DEBUG_MODE).trace
 inline bool sotDEBUG_ENABLE( const int & level ) { return level<=SOTH_DEBUG_MODE; }
 inline bool sotTDEBUG_ENABLE( const int & level ) { return level<=SOTH_TEMPLATE_DEBUG_MODE; }
 
@@ -155,8 +161,14 @@ class sotDEBUGPRIORclass
 
 /* -------------------------------------------------------------------------- */
 #else // #ifdef SOTH_DEBUG
-#define sotPREERROR  "\t!! "<<__FILE__ << ": " <<__FUNCTION__  \
+#if 0
+#define sotPREERROR  "\t!! " << __FILE__ << ": " <<__FUNCTION__  \
                             << "(#" << __LINE__ << ") :"
+#else
+#define sotPREERROR  "\t!! " << ": " <<__FUNCTION__  \
+                            << "(#" << __LINE__ << ") :"
+
+#endif
 #  define sotDEBUG(level) if( 1 ) ; else std::cout
 #  define sotDEBUGMUTE(level) if( 1 ) ; else std::cout
 #  define sotERROR sotERRORFLOW.outputbuffer << sotPREERROR

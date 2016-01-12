@@ -18,6 +18,8 @@
 using namespace Eigen;
 using namespace soth;
 
+typedef Matrix<MatrixXd::Index,Dynamic,1> IndexType;
+
 void testSimpleGivens()
 {
   using std::endl; using std::cout;
@@ -68,8 +70,8 @@ void testSubMatrixGivens()
   MatrixXd A = MatrixXd::Random(4,6);
   sotDEBUG(1) << "A = " << (MATLAB)A << endl;
 
-  VectorXi idxr(4); idxr << 3,1,0,2;
-  VectorXi idxc(6); idxc << 3,5,0,1,2,4;
+  IndexType idxr(4); idxr << 3,1,0,2;
+  IndexType idxc(6); idxc << 3,5,0,1,2,4;
   SubMatrix<MatrixXd> M(A,idxr,idxc);
   sotDEBUG(1) << "M = " << (MATLAB)M << endl;
 
@@ -114,8 +116,8 @@ void testSequenceSub()
   MatrixXd A = MatrixXd::Random(4,6);
   sotDEBUG(1) << "A = " << (MATLAB)A << endl;
 
-  VectorXi idxr(4); idxr << 3,1,0,2;
-  VectorXi idxc(6); idxc << 3,5,0,1,2,4;
+  IndexType idxr(4); idxr << 3,1,0,2;
+  IndexType idxc(6); idxc << 3,5,0,1,2,4;
   SubMatrix<MatrixXd> M(A,idxr,idxc);
   sotDEBUG(1) << "M = " << (MATLAB)M << endl;
   MatrixXd Msav = M;

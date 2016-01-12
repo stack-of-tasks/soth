@@ -10,7 +10,7 @@ namespace soth
 {
   class Random
   {
-    static const unsigned int SOTH_RND_MAX;// = 4278255361U;
+    static const unsigned int SOTH_RND_MAX;//= 4278255361U;
     static const unsigned int MULT = 1884103651;
     static unsigned int current;
 

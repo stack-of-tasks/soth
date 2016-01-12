@@ -28,10 +28,16 @@ namespace soth
 
   public:
     // Empty construction with memory allocation.
-    BaseY( const unsigned int & size );
+    BaseY( const Index & size );
 
     void computeExplicitly();
-    void reset() { rank=0; isExplicit=false; }
+    void reset() { 
+      rank=0; 
+#ifndef NDEBUG
+      matrixExplicit.setZero();
+#endif
+      isExplicit=false; 
+    }
   public:
     /* --- Accessor --- */
     MatrixXd& getHouseholderEssential() {return householderEssential;}

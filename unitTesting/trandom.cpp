@@ -25,6 +25,7 @@ using std::endl;
 using std::cout;
 using std::cerr;
 
+typedef MatrixXd::Index Index;
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -162,7 +163,7 @@ namespace DummyActiveSet
    * better. */
   bool compareSolvers( const std::vector<Eigen::MatrixXd>& Jref,
 		       const std::vector<soth::VectorBound>& bref,
-		       const std::vector< std::vector<int> >& active,
+		       const std::vector< std::vector<Index> >& active,
 		       const std::vector< std::vector<Bound::bound_t> >& bounds,
 		       const double & urefnorm,
 		       const std::vector<double> & erefnorm,
@@ -176,7 +177,7 @@ namespace DummyActiveSet
     for( unsigned int i=0;i<Jref.size();++i )
       {
 	MatrixXd& J = Jsot[i]; VectorXd& e= esot[i];
-	const std::vector<int> & Aset = active[i];
+	const std::vector<Index> & Aset = active[i];
 	const std::vector<Bound::bound_t> & Bset = bounds[i];
 	const unsigned int NR = (unsigned int)Aset.size();
 
@@ -212,7 +213,7 @@ namespace DummyActiveSet
 	    std::cout << "\n        [ ";
 	    for( unsigned int r=0;r<active[i].size();++r )
 	      {
-		const int ref = active[i][r];
+		const Index ref = active[i][r];
 		if( bounds[i][ref] == Bound::BOUND_INF ) cout << "-";
 		else if( bounds[i][ref] == Bound::BOUND_SUP ) cout << "+";
 		std::cout <<active[i][r] << " ";
@@ -248,7 +249,7 @@ namespace DummyActiveSet
 
   void selectConstraint( const std::vector<soth::VectorBound>& bref,
 			 const std::vector<bool>& activeBool,
-			 std::vector< std::vector<int> > & aset )
+			 std::vector< std::vector<Index> > & aset )
   {
     aset.resize(bref.size());
     int cst = 0;
@@ -266,7 +267,7 @@ namespace DummyActiveSet
   }
 
   void selectBool( const std::vector<soth::VectorBound>& bref,
-		   std::vector<std::vector<int> > aset,
+		   std::vector<std::vector<Index> > aset,
 		   const std::vector<bool>& boundBool,
 		   std::vector< std::vector<Bound::bound_t> >& boundSelec )
   {
@@ -292,7 +293,7 @@ namespace DummyActiveSet
   }
 
   int computeNbDouble( const std::vector<soth::VectorBound>& bref,
-		       std::vector<std::vector<int> > aset )
+		       std::vector<std::vector<Index> > aset )
   {
     int nbDoubleConstraint = 0;
     for( unsigned int i=0;i<bref.size();++i )
@@ -336,7 +337,7 @@ namespace DummyActiveSet
     for( long int refc =0;refc< (1<<(nbConstraint)); ++refc )
       {
 	if( !( refc%1000) ) std::cout << refc << " ... " << endl;
-	std::vector<bool> abool; std::vector<std::vector<int> > aset;
+	std::vector<bool> abool; std::vector<std::vector<Index> > aset;
 	intToVbool(nbConstraint,refc,abool); selectConstraint(bref,abool,aset);
 
 	int nbDoubleConstraint = computeNbDouble(bref,aset);
@@ -369,7 +370,7 @@ namespace DummyActiveSet
     const double urefnorm = uref.norm();
     const std::vector<double> erefnorm = stageErrors( Jref,bref,uref );
 
-    std::vector<bool> abool; std::vector<std::vector<int> > aset;
+    std::vector<bool> abool; std::vector<std::vector<Index> > aset;
     intToVbool(nbConstraint,refc,abool); selectConstraint(bref,abool,aset);
     int nbDoubleConstraint = computeNbDouble(bref,aset);
     std::vector<bool> bbool; std::vector< std::vector<Bound::bound_t> > bset;
@@ -547,7 +548,8 @@ int main (int argc, char** argv)
 
   cout << " --- CHECK ------------------------------ " << endl;
   sotDEBUG(1) << " --- CHECK ------------------------------ " << endl;
-  std::vector< std::vector<int> > active(NB_STAGE);
+
+  std::vector< std::vector<Index> > active(NB_STAGE);
   std::vector< std::vector<Bound::bound_t> > bounds(NB_STAGE);
   for( unsigned int i=0;i<NB_STAGE;++i )
     {

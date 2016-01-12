@@ -18,24 +18,26 @@ namespace soth
     typedef stage_sequence_t::iterator stage_iter_t;
     typedef stage_sequence_t::const_iterator stage_citer_t;
     typedef stage_sequence_t::reverse_iterator stage_riter_t;
+    typedef stage_sequence_t::size_type stage_sequence_size_t;
+    typedef MatrixXd::Index Index;
 
   public:
-    HCOD( unsigned int sizeProblem, unsigned int nbStage = 0 );
+    HCOD( Index sizeProblem, Index nbStage = 0 );
 
     void pushBackStage( const MatrixXd & J, const VectorBound & bounds );
-    void pushBackStage( const unsigned int & nr, const double * Jdata, const Bound * bdata );
-    void pushBackStage( const unsigned int & nr, const double * Jdata );
+    void pushBackStage( const Index & nr, const double * Jdata, const Bound * bdata );
+    void pushBackStage( const Index & nr, const double * Jdata );
     void pushBackStages( const std::vector<MatrixXd> & J,
 			 const std::vector<VectorBound> & bounds );
 
-    Stage& stage( unsigned int i );
-    const Stage& stage( unsigned int i ) const;
-    inline Stage& operator[] ( unsigned int i ) { return stage(i); }
-    inline const Stage& operator[] ( unsigned int i ) const { return stage(i); }
+    Stage& stage( Index i );
+    const Stage& stage( Index i ) const;
+    inline Stage& operator[] ( Index i ) { return stage(i); }
+    inline const Stage& operator[] ( Index i ) const { return stage(i); }
 
     void setInitialActiveSet();
-    void setInitialActiveSet( const cstref_vector_t& Ir0,unsigned int k );
-    cstref_vector_t getOptimalActiveSet( unsigned int k );
+    void setInitialActiveSet( const cstref_vector_t& Ir0,Index k );
+    cstref_vector_t getOptimalActiveSet( Index k );
     std::vector<cstref_vector_t>   getOptimalActiveSet();
     void setInitialActiveSet( const  std::vector<cstref_vector_t> & Ir);
 
@@ -45,18 +47,18 @@ namespace soth
     double getMaxDamping() const;
 
     //sizes
-    int sizeA() const;
+    Index sizeA() const;
     int rank() const;
-    unsigned int nbStages() const { return (unsigned int)stages.size(); }
+    Index nbStages() const { return (Index)stages.size(); }
 
     /* --- Decomposition --- */
   public:
     void reset( void );
     void initialize( void );
-    void update( const unsigned int & stageUp,const ConstraintRef & cst );
+    void update( const Index & stageUp,const ConstraintRef & cst );
     void update( stage_iter_t stageIter,const ConstraintRef & cst );
-    void downdate( const unsigned int & stageDown, const unsigned int & row );
-    void downdate( stage_iter_t stageIter,const unsigned int & row );
+    void downdate( const Index & stageDown, const Index & row );
+    void downdate( stage_iter_t stageIter,const Index & row );
   protected:
     void updateY( const GivensSequence& Yup );
 
@@ -64,11 +66,11 @@ namespace soth
   public:
     void damp( void );
     void computeSolution( bool compute_u = true );
-    void computeLagrangeMultipliers( const unsigned int & stageRef );
+    void computeLagrangeMultipliers( const Index & stageRef );
     double computeStepAndUpdate( void );
     double computeStep( void );
-    bool searchAndDowndate( const unsigned int & stageRef );
-    bool search( const unsigned int & stageRef );
+    bool searchAndDowndate( const Index & stageRef );
+    bool search( const Index & stageRef );
 
     void makeStep( double tau, bool compute_u = true );
     void makeStep( bool compute_u = true );
@@ -86,8 +88,8 @@ namespace soth
     void showActiveSet( std::ostream& os ) const;
     bool testRecomposition( std::ostream* os=NULL );
     bool testSolution( std::ostream* os=NULL );
-    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream* os=NULL ) const;
-    bool testLagrangeMultipliers( unsigned int stageRef,std::ostream& os ) const
+    bool testLagrangeMultipliers( Index stageRef,std::ostream* os=NULL ) const;
+    bool testLagrangeMultipliers( Index stageRef,std::ostream& os ) const
     { return testLagrangeMultipliers(stageRef,&os); }
 
     void setNameByOrder( const std::string root = ""  );
@@ -101,7 +103,7 @@ namespace soth
     HCOD( void ) : Y(0) {};
 
   protected:public://DEBUG
-    unsigned int sizeProblem;
+    Index sizeProblem;
     soth::BaseY Y;
     stage_sequence_t stages;
     VectorXd solution;

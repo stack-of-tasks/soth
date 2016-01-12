@@ -1,3 +1,7 @@
+#define SOTH_DEBUG
+#define SOTH_DEBUG_MODE 45
+#include "soth/debug.hpp"
+
 #include "Random.hpp"
 #include <cstdlib>
 
@@ -9,7 +13,7 @@ inline double round( double d )
 namespace soth
 {
   unsigned int Random::current = 33331;
-  const unsigned int  Random::SOTH_RND_MAX = RAND_MAX;
+  const unsigned int  Random::SOTH_RND_MAX = 2147483647;// RAND_MAX;
 
   unsigned int Random::next()
   {
@@ -46,7 +50,9 @@ namespace soth
   int randu( int bmin,int bmax )
   {
     assert( bmin<bmax );
-    return (int)floor((bmax-bmin+1)*Random::rand<double>()+bmin);
+    double X= Random::rand<double>();
+    sotDEBUG(1) << "X=" << X <<std::endl;
+    return (int)floor((bmax-bmin+1)*X+bmin);
   }
 
 

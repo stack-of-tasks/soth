@@ -12,6 +12,7 @@
 #include <ctime>
 
 using namespace Eigen;
+typedef Matrix<MatrixXd::Index,Dynamic,1> IndexType;
 
 void testPermutedBasic()
 {
@@ -107,7 +108,7 @@ void testSubVector()
   std::cout << "original vector:" << std::endl;
   std::cout << v.transpose() << std::endl << std::endl;
 
-  VectorXi row(4); row << 2,3,5,0;
+  Matrix<VectorXi::Index,Dynamic,1> row(4); row << 2,3,5,0;
   SubMatrix<VectorXi, RowPermutation> pv(v,row);
   std::cout << "subVector:" << std::endl;
   std::cout << pv.transpose() << std::endl << std::endl;
@@ -123,7 +124,7 @@ void testSubVector()
   std::cout << res << std::endl << std::endl;
   assert( res[1] == 4 );
 
-  VectorXi row2(4); row2 << 7,6,1,4;
+  Matrix<VectorXi::Index,Dynamic,1> row2(4); row2 << 7,6,1,4;
   SubMatrix<VectorXi, RowPermutation> pv2(v);
   pv2.setRowIndices(row2);
   pv2 = pv;
@@ -148,7 +149,7 @@ void testDoublePerm()
   std::cout << "original matrix:" << std::endl << std::endl;
   std::cout << m << std::endl;
 
-  VectorXi idx(3); idx << 3,1,2;
+  Matrix<MatrixXi::Index,Dynamic,1> idx(3); idx << 3,1,2;
   SubMatrix<MatrixXi> p(m,&idx,&idx);
   std::cout << "double permuted matrix:" << std::endl << "."<<p<<"."<<std::endl;
   assert( p(1,2) == 9 );
@@ -234,7 +235,7 @@ void speedTest()
 
 void testCol()
 {
-  VectorXi row(3); row << 2,3,0;
+  Matrix<MatrixXi::ColXpr::Index,Dynamic,1> row(3); row << 2,3,0;
   MatrixXi m(4,5);
   Map<MatrixXi> map(m.data(), m.size(), 1);
   map = VectorXi::LinSpaced((int)m.size(), 0, (int)(m.size()-1));
@@ -280,10 +281,10 @@ void testStack()
   /* --- */
   typedef SubMatrix<MatrixXi,RowPermutation> SubMatrixXi;
 
-  VectorXi row1(3); row1 << 2,3,0;
+  Matrix<SubMatrixXi::Index,Dynamic,1> row1(3); row1 << 2,3,0;
   SubMatrixXi m1i( m1,row1 );
   std::cout << "m1i = " << m1i << std::endl;
-  VectorXi row2(1); row2 << 0;
+  Matrix<SubMatrixXi::Index,Dynamic,1> row2(1); row2 << 0;
   SubMatrixXi m2i( m2,row2 );
   std::cout << "m2i = " << m2i << std::endl;
 

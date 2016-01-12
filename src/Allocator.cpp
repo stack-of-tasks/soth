@@ -13,30 +13,30 @@ namespace soth
 
   /* Replace the tokens [min,max[ in the ressource. */
   void AllocatorML::
-  resetTop( unsigned int min )
+  resetTop( Index min )
   {
     assert(min<=max);
     resource.resize( max-min );
-    unsigned int inc = min;
+    Index inc = min;
     for( resource_iter_t iter=resource.begin();iter!=resource.end();++iter )
       { (*iter) = inc++; }
     assert( resource.size() == 0 || resource.back() == max-1 );
   }
 
-  unsigned int AllocatorML::
+  typename AllocatorML::Index AllocatorML::
   get()
   {
     assert( resource.size()>0 );
-    const unsigned int token = resource.front();
+    const Index token = resource.front();
     resource.pop_front();
     return token;
   }
 
   void AllocatorML::
-  put( const unsigned int & token )
+  put( const Index & token )
   {
     resource.push_front(token);
-    assert( resource.size()<=max );
+    assert( (Index)resource.size()<=max );
   }
 
   void AllocatorML::

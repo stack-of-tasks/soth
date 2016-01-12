@@ -37,6 +37,8 @@ void generateDataSet( std::vector<Eigen::MatrixXd> &J,
 
       soth::MatrixRnd::randomize( Xhi );
       soth::MatrixRnd::randomize( Jfr );
+      sotDEBUG(5) << "Xhi: " << Xhi <<std::endl;
+      sotDEBUG(5) << "Jfr: " << Jfr <<std::endl;
       J[s] = Xhi*Jfr;
 
       for( int i=0;i<NR[s];++i ) b[s][i] = (double)(i+1);
@@ -112,7 +114,9 @@ int main (int , char** )
 
   Eigen::MatrixXd Massert(5,9);
   soth::MatrixRnd::randomize( Massert );
-  assert( std::abs(Massert(1,2)-0.985007)<1e-5 );
+  std::cout << "Massert(1,2): " << Massert(1,2) << std::endl;
+
+  assert( std::abs(Massert(1,2)+0.368673)<1e-5 );
 
 
   {
@@ -143,7 +147,7 @@ int main (int , char** )
 
     soth::HCOD hcod(NC,NB_STAGE);
     hcod.pushBackStages( J,b );
-
+    
     hcod.initialize();
     exitOk&=hcod.testRecomposition(&std::cout);
     //if( sotDEBUGFLOW.outputbuffer.good() ) hcod.show( sotDEBUGFLOW.outputbuffer );
@@ -998,7 +1002,7 @@ int main (int , char** )
 
 
   exit( (exitOk?0:1) );
-
+  
 }
 
 
