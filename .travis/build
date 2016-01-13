@@ -55,7 +55,7 @@ if [ "$DISTRIB_RELEASE" = "14.04" ]; then
       -DCMAKE_INSTALL_PREFIX:STRING="$install_dir"
 fi
 
-if [ "$DISTRIB_RELEASE" == "12.04" ]; then
+if [ "$DISTRIB_RELEASE" = "12.04" ]; then
     cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"		\
 	-DCMAKE_CXX_FLAGS="--coverage"		\
 	-DCMAKE_EXE_LINKER_FLAGS="--coverage"		\
