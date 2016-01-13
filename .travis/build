@@ -61,6 +61,6 @@ if [ "$DISTRIB_RELEASE" = "12.04" ]; then
 	-DCMAKE_INSTALL_PREFIX:STRING="$install_dir"
 fi
 
-make soth
+make
 make test
 make install
