@@ -46,6 +46,7 @@ fi
 # Compile and run tests
 cd "$build_dir"
 if [ "$DISTRIB_RELEASE" = "14.04" ]; then
+  echo "Build with 14.04"
   cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"		\
       -DCMAKE_CXX_FLAGS="--coverage"		\
       -DCMAKE_EXE_LINKER_FLAGS="--coverage"		\
@@ -54,9 +55,9 @@ if [ "$DISTRIB_RELEASE" = "14.04" ]; then
 fi
 
 if [ "$DISTRIB_RELEASE" = "12.04" ]; then
+    echo "Build with 12.04"
     cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"		\
 	-DCMAKE_CXX_FLAGS="--coverage"		\
-	-DCMAKE_EXE_LINKER_FLAGS="--coverage"		\
 	-DCMAKE_INSTALL_PREFIX:STRING="$install_dir"
 fi
 
