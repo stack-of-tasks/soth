@@ -6,6 +6,32 @@
 #include "soth/BaseY.hpp"
 #include <boost/smart_ptr.hpp>
 
+
+#if defined(__WIN32__) ||(__WIN32) || defined(WIN32)
+#include <windows.h>
+#elif  defined(__linux) || defined(__linux__) || defined(linux)
+#include <sys/stat.h>
+#include <sys/time.h>
+#endif
+inline double getCPUtime( )
+{
+	double current_time = -1.0;
+#if defined(__WIN32__) ||(__WIN32) || defined(WIN32)
+
+	LARGE_INTEGER counter, frequency;
+	QueryPerformanceFrequency(&frequency);
+	QueryPerformanceCounter(&counter);
+	current_time = ((double) counter.QuadPart) / ((double) frequency.QuadPart);
+#elif  defined(__linux) || defined(__linux__) || defined(linux)
+	struct timeval theclock;
+	gettimeofday( &theclock,0 );
+	current_time = 1.0*theclock.tv_sec + 1.0e-6*theclock.tv_usec;
+#endif
+
+	return current_time;
+}
+
+
 namespace soth
 {
 
@@ -22,7 +48,8 @@ namespace soth
     typedef MatrixXd::Index Index;
 
   public:
-    HCOD( Index sizeProblem, Index nbStage = 0 );
+	HCOD( Index sizeProblem, Index nbStage = 0 ,
+		 int maxNumberIterations=1000, double maxTime=0.1 );
 
     void pushBackStage( const MatrixXd & J, const VectorBound & bounds );
     void pushBackStage( const Index & nr, const double * Jdata, const Bound * bdata );
@@ -45,6 +72,8 @@ namespace soth
     bool useDamp() const { return withDamp; }
     void setDamping( const double & d );
     double getMaxDamping() const;
+	double getLastTime() const{return lastTime;}
+	int getIterations() const{return lastNumberIterations;}
 
     //sizes
     Index sizeA() const;
@@ -111,6 +140,11 @@ namespace soth
     VectorXd uNext,Ytu,YtuNext,rho;
     int freezedStages;
     bool isReset,isInit,isSolutionCpt,withDamp;
+	int maxNumberIterations;
+	int lastNumberIterations;
+	double maxTime;
+	double lastTime;
+	mutable double startTime;
   };
 
 
