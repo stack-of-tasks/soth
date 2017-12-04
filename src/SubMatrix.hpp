@@ -48,13 +48,14 @@ namespace Eigen
       typedef typename nested_eval<MatrixType,PermutationType>::type MatrixTypeNested;
       typedef typename remove_all<MatrixTypeNested>::type MatrixTypeNestedCleaned;
       typedef typename XprType::CoeffReturnType CoeffReturnType;
+      typedef typename SubMatrix<MatrixType, PermutationType, IsSub>::MemoryBase MemoryBase;
       enum {
 	CoeffReadCost = evaluator<MatrixTypeNestedCleaned>::CoeffReadCost,
 	Flags = MatrixType::Flags | LinearAccessBit
       };
 
       evaluator(const XprType& xpr)
-        : m_argImpl(MemoryBase::m_matrix.const_cast_derived())
+        : m_argImpl(xpr.m_matrix)
       { }
 
       CoeffReturnType coeff(Index row, Index col) const
