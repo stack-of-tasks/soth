@@ -75,7 +75,7 @@ namespace Eigen
 
       inline Scalar & coeffRef(Index row) const
       {
-       	return m_argImpl.coeff(row);
+       	return m_argImpl.coeffRef(row);
       }
 
       evaluator<MatrixTypeNestedCleaned> m_argImpl;
