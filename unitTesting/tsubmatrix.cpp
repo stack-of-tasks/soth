@@ -281,10 +281,10 @@ void testStack()
   /* --- */
   typedef SubMatrix<MatrixXi,RowPermutation> SubMatrixXi;
 
-  Matrix<SubMatrixXi::Index,Dynamic,1> row1(3); row1 << 2,3,0;
+  Matrix<MatrixXi::Index,Dynamic,1> row1(3); row1 << 2,3,0;
   SubMatrixXi m1i( m1,row1 );
   std::cout << "m1i = " << m1i << std::endl;
-  Matrix<SubMatrixXi::Index,Dynamic,1> row2(1); row2 << 0;
+  Matrix<MatrixXi::Index,Dynamic,1> row2(1); row2 << 0;
   SubMatrixXi m2i( m2,row2 );
   std::cout << "m2i = " << m2i << std::endl;
 
