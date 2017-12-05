@@ -58,22 +58,22 @@ namespace Eigen
         : m_argImpl(xpr.m_matrix)
       { }
 
-      CoeffReturnType coeff(Index row, Index col) const
+      inline CoeffReturnType coeff(Index row, Index col) const
       {
        	return m_argImpl.coeff(row,col);
       }
 
-      CoeffReturnType coeff(Index row) const
+      inline CoeffReturnType coeff(Index row) const
       {
        	return m_argImpl.coeff(row);
       }
 
-      inline Scalar & coeffRef(Index row, Index col) const
+      inline Scalar& coeffRef(Index row, Index col)
       {
        	return m_argImpl.coeffRef(row,col);
       }
 
-      inline Scalar & coeffRef(Index row) const
+      inline Scalar& coeffRef(Index row)
       {
        	return m_argImpl.coeffRef(row);
       }
@@ -691,8 +691,6 @@ namespace Eigen
     };
   }
 
-
-
   template<typename MatrixType1,typename MatrixType2>
   class StackMatrix
     : public MatrixBase< StackMatrix<MatrixType1,MatrixType2> >
@@ -742,13 +740,60 @@ namespace Eigen
       if( index<r1 ) return m1(index); else return m2(index-r1);
     }
 
-  protected:
     Base1& m1;
     Base2& m2;
 
   };
 
+  namespace internal
+  {
+    template<typename MatrixType1,typename MatrixType2>
+    struct evaluator< StackMatrix<MatrixType1, MatrixType2> >
+      : evaluator_base< StackMatrix<MatrixType1, MatrixType2> >
+    {
+      typedef StackMatrix<MatrixType1, MatrixType2> XprType;
+      typedef MatrixBase< MatrixType1 > Base1;
+      typedef MatrixBase< MatrixType2 > Base2;
+      typedef typename MatrixType1::Scalar Scalar;
+      // typedef typename nested_eval<XprType, 1>::type ArgTypeNested;
+      // typedef typename remove_all<ArgTypeNested>::type ArgTypeNestedCleaned;
+      typedef typename XprType::CoeffReturnType CoeffReturnType;
+      enum {
+        CoeffReadCost = evaluator<MatrixType1>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+      };
 
+      evaluator(const XprType& xpr)
+        : m1 (xpr.m1)
+          , m2 (xpr.m2)
+      { }
+
+      inline Scalar& coeffRef(Index row, Index col)
+      {
+        const Index r1 = m1.rows();
+        if( row<r1 ) return m1.coeffRef(row,col); else return m2.coeffRef(row-r1,col);
+      }
+      inline Scalar& coeffRef(Index index)
+      {
+        const Index r1 = m1.rows();
+        if( index<r1 ) return m1.coeffRef(index); else return m2.coeffRef(index-r1);
+      }
+      inline const CoeffReturnType coeff(Index row, Index col) const
+      {
+        const Index r1 = m1.rows();
+        if( row<r1 ) return m1.coeffRef(row,col); else return m2.coeffRef(row-r1,col);
+      }
+      inline const CoeffReturnType coeff(Index index) const
+      {
+        const Index r1 = m1.rows();
+        if( index<r1 ) return m1.coeffRef(index); else return m2.coeffRef(index-r1);
+      }
+
+      protected:
+      Base1& m1;
+      Base2& m2;
+    };
+  }
 
 } // namespace soth
 
