@@ -35,7 +35,12 @@ namespace Eigen
 	ColsAtCompileTime = (PermutationType==RowPermutation) ? (MatrixType::ColsAtCompileTime) : Dynamic,
 	MaxRowsAtCompileTime = (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic),
 	MaxColsAtCompileTime = (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic),
-	Flags = (MatrixType::Flags & HereditaryBits) | ei_compute_lvalue_bit<MatrixType>::ret | LinearAccessBit
+        VectorAtCompileTime = (RowsAtCompileTime == 1) || (ColsAtCompileTime == 1),
+	Flags = (
+            (MatrixType::Flags & HereditaryBits) | ei_compute_lvalue_bit<MatrixType>::ret
+            | (VectorAtCompileTime ? LinearAccessBit : 0)
+            )
+          & (VectorAtCompileTime ? ~0 : ~LinearAccessBit)
       };
     };
 
@@ -45,17 +50,17 @@ namespace Eigen
     {
       typedef SubMatrix<MatrixType, PermutationType, IsSub> XprType;
       typedef typename MatrixType::Scalar Scalar;
-      typedef typename nested_eval<MatrixType,PermutationType>::type MatrixTypeNested;
+      typedef typename nested_eval<MatrixType,1>::type MatrixTypeNested;
       typedef typename remove_all<MatrixTypeNested>::type MatrixTypeNestedCleaned;
       typedef typename XprType::CoeffReturnType CoeffReturnType;
       typedef typename SubMatrix<MatrixType, PermutationType, IsSub>::MemoryBase MemoryBase;
       enum {
 	CoeffReadCost = evaluator<MatrixTypeNestedCleaned>::CoeffReadCost,
-	Flags = MatrixType::Flags | LinearAccessBit
+	Flags = XprType::Flags
       };
 
       evaluator(const XprType& xpr)
-        : m_argImpl(xpr.m_matrix)
+        : m_argImpl(xpr)
       { }
 
       inline CoeffReturnType coeff(Index row, Index col) const
@@ -78,7 +83,8 @@ namespace Eigen
        	return m_argImpl.coeffRef(row);
       }
 
-      evaluator<MatrixTypeNestedCleaned> m_argImpl;
+      // evaluator<MatrixTypeNestedCleaned> m_argImpl;
+      const XprType& m_argImpl;
       
     };
   }
@@ -760,7 +766,8 @@ namespace Eigen
       typedef typename XprType::CoeffReturnType CoeffReturnType;
       enum {
         CoeffReadCost = evaluator<MatrixType1>::CoeffReadCost,
-        Flags = Eigen::ColMajor
+	Flags = ((MatrixType1::Flags & HereditaryBits) | ei_compute_lvalue_bit<MatrixType1>::ret)
+          & ~LinearAccessBit
       };
 
       evaluator(const XprType& xpr)
