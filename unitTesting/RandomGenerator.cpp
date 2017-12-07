@@ -499,8 +499,8 @@ namespace soth
 
     sotDEBUG(15) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
     sotDEBUG(15) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
-    rankDistrib = rankDistrib.unaryExpr(&round);
-    rowDistrib = rowDistrib.unaryExpr(&round);
+    rankDistrib = rankDistrib.unaryExpr(std::ptr_fun<double,double>(round));
+    rowDistrib = rowDistrib.unaryExpr(std::ptr_fun<double,double>(round));
 
    VectorXd selfdefDistrib(nbStage); soth::MatrixRnd::randomize( selfdefDistrib,0,1 );
     double vsd = selfdefDistrib.cwiseProduct(rowDistrib-rankDistrib).sum();
@@ -521,7 +521,7 @@ namespace soth
 
     sotDEBUG(15) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
 
-    selfdefDistrib = selfdefDistrib.unaryExpr(&round);
+    selfdefDistrib = selfdefDistrib.unaryExpr(std::ptr_fun<double,double>(round));
     sotDEBUG(5) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
     sotDEBUG(5) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
     sotDEBUG(5) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;

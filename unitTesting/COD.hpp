@@ -129,7 +129,7 @@ namespace soth
     MatrixXd::ColsBlockXpr matrixVr() { return V.leftCols(rank); }
     MatrixXd::ColsBlockXpr matrixUo() { return U.rightCols(NR-rank); }
     MatrixXd::ColsBlockXpr matrixVo() { return V.rightCols(NC-rank); }
-    TriangularView<Block<MatrixXd>,Lower> matrixL() { return L.topRows(rank); }
+    TriangularView<Block<MatrixXd>,Lower> matrixL() { return L.topRows(rank).triangularView<Lower>(); }
 
     /* Solve min||Ax-b|| for a matrix A whose rank is given. */
     VectorXd solve( const VectorXd& b , bool inY=false)

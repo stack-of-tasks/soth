@@ -29,17 +29,63 @@ namespace Eigen
     struct traits<SubMatrix<MatrixType, PermutationType, IsSub> >
       : traits<MatrixType>
     {
-      typedef typename nested<MatrixType>::type MatrixTypeNested;
-      typedef typename remove_reference<MatrixTypeNested>::type _MatrixTypeNested;
       typedef typename MatrixType::StorageKind StorageKind;
       enum {
 	RowsAtCompileTime = (PermutationType==ColPermutation) ? (MatrixType::RowsAtCompileTime) : Dynamic,
 	ColsAtCompileTime = (PermutationType==RowPermutation) ? (MatrixType::ColsAtCompileTime) : Dynamic,
 	MaxRowsAtCompileTime = (IsSub ? MatrixType::MaxRowsAtCompileTime : Dynamic),
 	MaxColsAtCompileTime = (IsSub ? MatrixType::MaxColsAtCompileTime : Dynamic),
-	Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
-	CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+        VectorAtCompileTime = (RowsAtCompileTime == 1) || (ColsAtCompileTime == 1),
+	Flags = (
+            (MatrixType::Flags & HereditaryBits) | ei_compute_lvalue_bit<MatrixType>::ret
+            | (VectorAtCompileTime ? LinearAccessBit : 0)
+            )
+          & (VectorAtCompileTime ? ~0 : ~LinearAccessBit)
       };
+    };
+
+    template<typename MatrixType, int PermutationType, bool IsSub>
+    struct evaluator< SubMatrix<MatrixType, PermutationType, IsSub> >
+      : evaluator_base< SubMatrix<MatrixType, PermutationType, IsSub> >
+    {
+      typedef SubMatrix<MatrixType, PermutationType, IsSub> XprType;
+      typedef typename MatrixType::Scalar Scalar;
+      typedef typename nested_eval<MatrixType,1>::type MatrixTypeNested;
+      typedef typename remove_all<MatrixTypeNested>::type MatrixTypeNestedCleaned;
+      typedef typename XprType::CoeffReturnType CoeffReturnType;
+      typedef typename SubMatrix<MatrixType, PermutationType, IsSub>::MemoryBase MemoryBase;
+      enum {
+	CoeffReadCost = evaluator<MatrixTypeNestedCleaned>::CoeffReadCost,
+	Flags = XprType::Flags
+      };
+
+      evaluator(const XprType& xpr)
+        : m_argImpl(xpr)
+      { }
+
+      inline CoeffReturnType coeff(Index row, Index col) const
+      {
+       	return m_argImpl.coeff(row,col);
+      }
+
+      inline CoeffReturnType coeff(Index row) const
+      {
+       	return m_argImpl.coeff(row);
+      }
+
+      inline Scalar& coeffRef(Index row, Index col)
+      {
+       	return m_argImpl.coeffRef(row,col);
+      }
+
+      inline Scalar& coeffRef(Index row)
+      {
+       	return m_argImpl.coeffRef(row);
+      }
+
+      // evaluator<MatrixTypeNestedCleaned> m_argImpl;
+      const XprType& m_argImpl;
+      
     };
   }
 
@@ -583,6 +629,7 @@ namespace Eigen
       return MemoryBase::m_matrix.const_cast_derived()
 	.coeffRef(ei_submatrix_index_helper<MatrixType, PermutationType>::index(this->rowIndex(index), this->colIndex(index)));
     }
+
   };
 
 
@@ -636,7 +683,7 @@ namespace Eigen
     struct traits< StackMatrix<MatrixType1,MatrixType2> >
       : traits<MatrixType1>
     {
-      typedef typename nested<MatrixType1>::type MatrixTypeNested;
+      typedef typename MatrixType1::Nested MatrixTypeNested;
       typedef typename remove_reference<MatrixTypeNested>::type _MatrixTypeNested;
       typedef typename MatrixType1::StorageKind StorageKind;
       enum {
@@ -645,12 +692,10 @@ namespace Eigen
 	MaxRowsAtCompileTime = MatrixType1::MaxRowsAtCompileTime,
 	MaxColsAtCompileTime = MatrixType1::MaxColsAtCompileTime,
 	Flags = (_MatrixTypeNested::Flags & HereditaryBits) | ei_compute_lvalue_bit<_MatrixTypeNested>::ret,
-	CoeffReadCost = _MatrixTypeNested::CoeffReadCost //Todo : check that
+	CoeffReadCost = evaluator<_MatrixTypeNested>::CoeffReadCost //Todo : check that
       };
     };
   }
-
-
 
   template<typename MatrixType1,typename MatrixType2>
   class StackMatrix
@@ -701,13 +746,61 @@ namespace Eigen
       if( index<r1 ) return m1(index); else return m2(index-r1);
     }
 
-  protected:
     Base1& m1;
     Base2& m2;
 
   };
 
+  namespace internal
+  {
+    template<typename MatrixType1,typename MatrixType2>
+    struct evaluator< StackMatrix<MatrixType1, MatrixType2> >
+      : evaluator_base< StackMatrix<MatrixType1, MatrixType2> >
+    {
+      typedef StackMatrix<MatrixType1, MatrixType2> XprType;
+      typedef MatrixBase< MatrixType1 > Base1;
+      typedef MatrixBase< MatrixType2 > Base2;
+      typedef typename MatrixType1::Scalar Scalar;
+      // typedef typename nested_eval<XprType, 1>::type ArgTypeNested;
+      // typedef typename remove_all<ArgTypeNested>::type ArgTypeNestedCleaned;
+      typedef typename XprType::CoeffReturnType CoeffReturnType;
+      enum {
+        CoeffReadCost = evaluator<MatrixType1>::CoeffReadCost,
+	Flags = ((MatrixType1::Flags & HereditaryBits) | ei_compute_lvalue_bit<MatrixType1>::ret)
+          & ~LinearAccessBit
+      };
 
+      evaluator(const XprType& xpr)
+        : m1 (xpr.m1)
+          , m2 (xpr.m2)
+      { }
+
+      inline Scalar& coeffRef(Index row, Index col)
+      {
+        const Index r1 = m1.rows();
+        if( row<r1 ) return m1.coeffRef(row,col); else return m2.coeffRef(row-r1,col);
+      }
+      inline Scalar& coeffRef(Index index)
+      {
+        const Index r1 = m1.rows();
+        if( index<r1 ) return m1.coeffRef(index); else return m2.coeffRef(index-r1);
+      }
+      inline const CoeffReturnType coeff(Index row, Index col) const
+      {
+        const Index r1 = m1.rows();
+        if( row<r1 ) return m1.coeffRef(row,col); else return m2.coeffRef(row-r1,col);
+      }
+      inline const CoeffReturnType coeff(Index index) const
+      {
+        const Index r1 = m1.rows();
+        if( index<r1 ) return m1.coeffRef(index); else return m2.coeffRef(index-r1);
+      }
+
+      protected:
+      Base1& m1;
+      Base2& m2;
+    };
+  }
 
 } // namespace soth
 
