@@ -11,6 +11,10 @@
 #include "soth/Random.hpp"
 #include <fstream>
 
+#if EIGEN_VERSION_AT_LEAST(3,2,92)
+#define XENIAL_DETECTED 1
+#endif
+
 #ifdef WIN32
 inline double round( double d )
 {	return floor( d + 0.5 );	}
@@ -499,9 +503,13 @@ namespace soth
 
     sotDEBUG(15) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
     sotDEBUG(15) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
+#ifndef XENIAL_DETECTED   
+    rankDistrib = rankDistrib.unaryExpr(&round);
+    rowDistrib = rowDistrib.unaryExpr(&round);
+#else
     rankDistrib = rankDistrib.unaryExpr(std::ptr_fun<double,double>(round));
     rowDistrib = rowDistrib.unaryExpr(std::ptr_fun<double,double>(round));
-
+#endif
    VectorXd selfdefDistrib(nbStage); soth::MatrixRnd::randomize( selfdefDistrib,0,1 );
     double vsd = selfdefDistrib.cwiseProduct(rowDistrib-rankDistrib).sum();
     sotDEBUG(20) << "vsd = " << vsd << " / " << TOTALSELFDEF << std::endl;
@@ -520,8 +528,11 @@ namespace soth
     sotDEBUG(25) << selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
 
     sotDEBUG(15) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;
-
+#ifndef XENIAL_DETECTED   
+    selfdefDistrib = selfdefDistrib.unaryExpr(&round);
+#else
     selfdefDistrib = selfdefDistrib.unaryExpr(std::ptr_fun<double,double>(round));
+#endif
     sotDEBUG(5) << "Mi: "<< rowDistrib.sum() << " " <<(MATLAB)rowDistrib << std::endl;
     sotDEBUG(5) << "Ri: "<<  rankDistrib.sum() << " " << (MATLAB)rankDistrib << std::endl;
     sotDEBUG(5) << "Si: "<<  selfdefDistrib.sum() << " " << (MATLAB)selfdefDistrib << std::endl;

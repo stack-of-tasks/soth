@@ -281,10 +281,18 @@ void testStack()
   /* --- */
   typedef SubMatrix<MatrixXi,RowPermutation> SubMatrixXi;
 
+#ifndef XENIAL_DETECTED
+  Matrix<SubMatrixXi::Index,Dynamic,1> row1(3); row1 << 2,3,0;
+#else
   Matrix<MatrixXi::Index,Dynamic,1> row1(3); row1 << 2,3,0;
+#endif
   SubMatrixXi m1i( m1,row1 );
   std::cout << "m1i = " << m1i << std::endl;
+#ifndef XENIAL_DETECTED
+  Matrix<SubMatrixXi::Index,Dynamic,1> row2(1); row2 << 0;
+#else
   Matrix<MatrixXi::Index,Dynamic,1> row2(1); row2 << 0;
+#endif
   SubMatrixXi m2i( m2,row2 );
   std::cout << "m2i = " << m2i << std::endl;
 
