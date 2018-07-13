@@ -1,8 +1,9 @@
 soth
 ====
 
-[![Build Status](https://travis-ci.org/stack-of-tasks/soth.png)](https://travis-ci.org/stack-of-tasks/soth)
-[![Coverage Status](https://coveralls.io/repos//stack-of-tasks/soth/badge.png?branch=master)](https://coveralls.io/r/stack-of-tasks/soth?branch=master)
+[![Building Status](https://travis-ci.org/stack-of-tasks/soth.svg?branch=master)](https://travis-ci.org/stack-of-tasks/soth)
+[![Pipeline status](https://gepgitlab.laas.fr/stack-of-tasks/soth/badges/master/pipeline.svg)](https://gepgitlab.laas.fr/stack-of-tasks/soth/commits/master)
+[![Coverage report](https://gepgitlab.laas.fr/stack-of-tasks/soth/badges/master/coverage.svg?job=doc-coverage)](http://projects.laas.fr/stack-of-tasks/doc/stack-of-tasks/soth/master/coverage/)
 
 
 Setup
