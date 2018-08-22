@@ -17,6 +17,8 @@ SET(PROJECT_URL "http://github.com/laas/soth")
 SET(CXX_DISABLE_WERROR True)
 SET(CMAKE_VERBOSE_MAKEFILE true)
 
+SET(DOXYGEN_USE_MATHJAX YES)
+
 # C++ version 4.7 is less permissive than older versions.
 #  To avoid the created errors, the flag -fpermissive is added.
 # TODO: remove this patch
@@ -37,7 +39,7 @@ ENDIF(UNIX)
 SETUP_PROJECT()
 SEARCH_FOR_EIGEN()
 
-# Handle OS specificities 
+# Handle OS specificities
 INCLUDE(CheckIncludeFiles)
 CHECK_INCLUDE_FILES("sys/time.h" SYS_TIME_H)
 IF(SYS_TIME_H)
