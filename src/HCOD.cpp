@@ -11,7 +11,7 @@ namespace soth
 {
   
   HCOD::
-  HCOD( Index inSizeProblem, Index nbStage )
+  HCOD( Index inSizeProblem, Index nbStage, int _maxNumberIterations, double _maxTime )
   :
     sizeProblem(inSizeProblem)
     ,Y(sizeProblem)
@@ -20,6 +20,8 @@ namespace soth
     ,uNext(sizeProblem),Ytu(sizeProblem),YtuNext(sizeProblem),rho(sizeProblem)
     ,freezedStages(0)
     ,isReset(false),isInit(false),isSolutionCpt(false),withDamp(false)
+	,maxNumberIterations(_maxNumberIterations)
+	,maxTime(_maxTime)
   {
 # ifndef NDEBUG
     //sotDebugTrace::openFile();
@@ -530,6 +532,8 @@ namespace soth
     time1 = ((t1.tv_sec-t0.tv_sec)+(t1.tv_usec-t0.tv_usec)/1.0e6);*/
 
     int iter = 0;
+
+	startTime=getCPUtime();
     Index stageMinimal = 0;
     do
       {
@@ -573,8 +577,11 @@ namespace soth
 
 	      }
 	  }
+	lastTime=getCPUtime()-startTime;
+	lastNumberIterations=iter;
 
-	if( iter>1000 ) throw 666;
+	if( lastTime>maxTime ) throw 667;
+	if( iter>maxNumberIterations ) throw 666;
     } while(stageMinimal<=nbStages());
     sotDEBUG(5) << "Lagrange>=0, no downdate, active search completed." << std::endl;
     /*gettimeofday(&t2,NULL);
