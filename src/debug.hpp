@@ -31,17 +31,14 @@
  *
  * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-
-
-
 #ifndef __SOTH_DEBUG_HH
 #define __SOTH_DEBUG_HH
 
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <stdarg.h>
+#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include "soth/api.hpp"
 
 /* -------------------------------------------------------------------------- */
@@ -51,9 +48,7 @@
 //#   undef SOTH_DEBUG
 #endif
 
-namespace soth
-{
-
+namespace soth {
 #ifndef SOTH_DEBUG_MODE
 #define SOTH_DEBUG_MODE 0
 #endif
@@ -61,130 +56,190 @@ namespace soth
 #define SOTH_TEMPLATE_DEBUG_MODE 0
 #endif
 
-#define SOT_COMMON_TRACES do {  \
-		    va_list arg; \
-		    va_start(arg,format); \
-		    vsnprintf( charbuffer,SIZE,format,arg ); \
-		    va_end(arg); \
-		    outputbuffer << tmpbuffer.str() << charbuffer <<std::endl; \
-		} while(0)
+#define SOT_COMMON_TRACES                                       \
+  do {                                                          \
+    va_list arg;                                                \
+    va_start(arg, format);                                      \
+    vsnprintf(charbuffer, SIZE, format, arg);                   \
+    va_end(arg);                                                \
+    outputbuffer << tmpbuffer.str() << charbuffer << std::endl; \
+  } while (0)
 
-class SOTH_EXPORT sotDebugTrace
-{
+class SOTH_EXPORT sotDebugTrace {
  public:
-    static const int SIZE = 512;
+  static const int SIZE = 512;
 
-    std::stringstream tmpbuffer;
-    std::ostream& outputbuffer;
-    std::ofstream voidbuffer;
-    char charbuffer[SIZE+1];
-    int traceLevel;
-    int traceLevelTemplate;
-    int debugPrior;
+  std::stringstream tmpbuffer;
+  std::ostream& outputbuffer;
+  std::ofstream voidbuffer;
+  char charbuffer[SIZE + 1];
+  int traceLevel;
+  int traceLevelTemplate;
+  int debugPrior;
 
-    sotDebugTrace( std::ostream& os ): outputbuffer(os),debugPrior(0) {}
+  sotDebugTrace(std::ostream& os) : outputbuffer(os), debugPrior(0) {}
 
-    inline void trace( const int level,const char* format,...)
-	{ if( level+debugPrior<=traceLevel ) SOT_COMMON_TRACES; tmpbuffer.str(""); }
-    inline void trace( const char* format,...){ SOT_COMMON_TRACES;  tmpbuffer.str(""); }
-    inline void trace( const int level=-1 )
-	{ if( level+debugPrior<=traceLevel ) outputbuffer << tmpbuffer.str(); tmpbuffer.str("");  }
+  inline void trace(const int level, const char* format, ...) {
+    if (level + debugPrior <= traceLevel) SOT_COMMON_TRACES;
+    tmpbuffer.str("");
+  }
+  inline void trace(const char* format, ...) {
+    SOT_COMMON_TRACES;
+    tmpbuffer.str("");
+  }
+  inline void trace(const int level = -1) {
+    if (level + debugPrior <= traceLevel) outputbuffer << tmpbuffer.str();
+    tmpbuffer.str("");
+  }
 
-    inline void traceTemplate( const int level,const char* format,...)
-	{ if( level+debugPrior<=traceLevelTemplate ) SOT_COMMON_TRACES; tmpbuffer.str(""); }
-    inline void traceTemplate( const char* format,...)
-	{ SOT_COMMON_TRACES; tmpbuffer.str("");  }
+  inline void traceTemplate(const int level, const char* format, ...) {
+    if (level + debugPrior <= traceLevelTemplate) SOT_COMMON_TRACES;
+    tmpbuffer.str("");
+  }
+  inline void traceTemplate(const char* format, ...) {
+    SOT_COMMON_TRACES;
+    tmpbuffer.str("");
+  }
 
-    inline sotDebugTrace& pre( const std::ostream&  ) { return *this; }
-    inline sotDebugTrace& pre( const std::ostream& ,int  level)
-    { traceLevel = level; return *this; }
-/*     inline sotDebugTrace& preTemplate( const std::ostream& dummy,int level )  */
-/* 	{ traceLevelTemplate = level; return *this; } */
+  inline sotDebugTrace& pre(const std::ostream&) { return *this; }
+  inline sotDebugTrace& pre(const std::ostream&, int level) {
+    traceLevel = level;
+    return *this;
+  }
+  /*     inline sotDebugTrace& preTemplate( const std::ostream& dummy,int level
+   * )  */
+  /* 	{ traceLevelTemplate = level; return *this; } */
 
+  static const char* DEBUG_FILENAME_DEFAULT;
+  static void openFile(const char* filename = DEBUG_FILENAME_DEFAULT);
+  static void closeFile(const char* filename = DEBUG_FILENAME_DEFAULT);
 
-    static const char * DEBUG_FILENAME_DEFAULT;
-    static void openFile( const char * filename = DEBUG_FILENAME_DEFAULT );
-    static void closeFile( const char * filename = DEBUG_FILENAME_DEFAULT );
-
-    operator std:: ostream& ()    {  return outputbuffer; }
+  operator std::ostream&() { return outputbuffer; }
 };
-
 
 SOTH_EXPORT extern sotDebugTrace sotDEBUGFLOW;
 SOTH_EXPORT extern sotDebugTrace sotERRORFLOW;
 
 #ifdef SOTH_DEBUG
 #if 0
-#define sotPREDEBUG  "% " << __FILE__ << ": " <<__FUNCTION__		\
-                              << "(#" << __LINE__ << ") :\n"
-#define sotPREERROR  "\t!! " << __FILE__  << ": " <<__FUNCTION__  \
-                            << "(#" << __LINE__ << ") :"
+#define sotPREDEBUG \
+  "% " << __FILE__ << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :\n"
+#define sotPREERROR \
+  "\t!! " << __FILE__ << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :"
 #else
-#define sotPREDEBUG  "% " << ": " <<__FUNCTION__		\
-                              << "(#" << __LINE__ << ") :\n"
-#define sotPREERROR  "\t!! " << ": " <<__FUNCTION__  \
-                            << "(#" << __LINE__ << ") :"
+#define sotPREDEBUG \
+  "% "              \
+      << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :\n"
+#define sotPREERROR \
+  "\t!! "           \
+      << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :"
 #endif
-#  define sotDEBUG(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ; \
-    else soth::sotDEBUGFLOW.outputbuffer<<sotPREDEBUG
-#  define sotDEBUGMUTE(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ;\
-    else soth::sotDEBUGFLOW.outputbuffer
-#  define sotERROR  if(!soth::sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.outputbuffer << sotPREERROR
-#  define sotDEBUGF if(!soth::sotDEBUGFLOW.outputbuffer.good()); else soth::sotDEBUGFLOW.pre(soth::sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_DEBUG_MODE).trace
-#  define sotERRORF if(!soth::sotDEBUGFLOW.outputbuffer.good()); else sotERRORFLOW.pre(sotERRORFLOW.tmpbuffer<<sotPREERROR).trace
+#define sotDEBUG(level)                                            \
+  if ((level + soth::sotDEBUGFLOW.debugPrior > SOTH_DEBUG_MODE) || \
+      (!soth::sotDEBUGFLOW.outputbuffer.good()))                   \
+    ;                                                              \
+  else                                                             \
+    soth::sotDEBUGFLOW.outputbuffer << sotPREDEBUG
+#define sotDEBUGMUTE(level)                                        \
+  if ((level + soth::sotDEBUGFLOW.debugPrior > SOTH_DEBUG_MODE) || \
+      (!soth::sotDEBUGFLOW.outputbuffer.good()))                   \
+    ;                                                              \
+  else                                                             \
+    soth::sotDEBUGFLOW.outputbuffer
+#define sotERROR                               \
+  if (!soth::sotDEBUGFLOW.outputbuffer.good()) \
+    ;                                          \
+  else                                         \
+    sotERRORFLOW.outputbuffer << sotPREERROR
+#define sotDEBUGF                                                          \
+  if (!soth::sotDEBUGFLOW.outputbuffer.good())                             \
+    ;                                                                      \
+  else                                                                     \
+    soth::sotDEBUGFLOW                                                     \
+        .pre(soth::sotDEBUGFLOW.tmpbuffer << sotPREDEBUG, SOTH_DEBUG_MODE) \
+        .trace
+#define sotERRORF                              \
+  if (!soth::sotDEBUGFLOW.outputbuffer.good()) \
+    ;                                          \
+  else                                         \
+    sotERRORFLOW.pre(sotERRORFLOW.tmpbuffer << sotPREERROR).trace
 // TEMPLATE
-#  define sotTDEBUG(level) if( (level+soth::sotDEBUGFLOW.debugPrior>SOTH_TEMPLATE_DEBUG_MODE)||(!soth::sotDEBUGFLOW.outputbuffer.good()) ) ;\
-    else soth::sotDEBUGFLOW.outputbuffer << sotPREDEBUG
-#  define sotTDEBUGF  if(!soth::sotDEBUGFLOW.outputbuffer.good()); else soth::sotDEBUGFLOW.pre(soth::sotDEBUGFLOW.tmpbuffer<<sotPREDEBUG,SOTH_TEMPLATE_DEBUG_MODE).trace
-inline bool sotDEBUG_ENABLE( const int & level ) { return level<=SOTH_DEBUG_MODE; }
-inline bool sotTDEBUG_ENABLE( const int & level ) { return level<=SOTH_TEMPLATE_DEBUG_MODE; }
+#define sotTDEBUG(level)                                                    \
+  if ((level + soth::sotDEBUGFLOW.debugPrior > SOTH_TEMPLATE_DEBUG_MODE) || \
+      (!soth::sotDEBUGFLOW.outputbuffer.good()))                            \
+    ;                                                                       \
+  else                                                                      \
+    soth::sotDEBUGFLOW.outputbuffer << sotPREDEBUG
+#define sotTDEBUGF                                        \
+  if (!soth::sotDEBUGFLOW.outputbuffer.good())            \
+    ;                                                     \
+  else                                                    \
+    soth::sotDEBUGFLOW                                    \
+        .pre(soth::sotDEBUGFLOW.tmpbuffer << sotPREDEBUG, \
+             SOTH_TEMPLATE_DEBUG_MODE)                    \
+        .trace
+inline bool sotDEBUG_ENABLE(const int& level) {
+  return level <= SOTH_DEBUG_MODE;
+}
+inline bool sotTDEBUG_ENABLE(const int& level) {
+  return level <= SOTH_TEMPLATE_DEBUG_MODE;
+}
 
-class sotDEBUGPRIORclass
-{
+class sotDEBUGPRIORclass {
  protected:
-    int previousLevel;
-    sotDEBUGPRIORclass( void ) {};
+  int previousLevel;
+  sotDEBUGPRIORclass(void){};
+
  public:
- sotDEBUGPRIORclass( int prior )
-     : previousLevel(sotDEBUGFLOW.debugPrior)
-	{
-	    sotDEBUGFLOW.debugPrior+=prior;
-	}
-    ~sotDEBUGPRIORclass( void )
-	{
-	    sotDEBUGFLOW.debugPrior=previousLevel;
-	}
+  sotDEBUGPRIORclass(int prior) : previousLevel(sotDEBUGFLOW.debugPrior) {
+    sotDEBUGFLOW.debugPrior += prior;
+  }
+  ~sotDEBUGPRIORclass(void) { sotDEBUGFLOW.debugPrior = previousLevel; }
 };
 
 #define sotDEBUGPRIOR(a) sotDEBUGPRIORclass sotDEBUGPRIORclass##__FUNCTION__(a);
 
-
 /* -------------------------------------------------------------------------- */
-#else // #ifdef SOTH_DEBUG
+#else  // #ifdef SOTH_DEBUG
 #if 0
-#define sotPREERROR  "\t!! " << __FILE__ << ": " <<__FUNCTION__  \
-                            << "(#" << __LINE__ << ") :"
+#define sotPREERROR \
+  "\t!! " << __FILE__ << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :"
 #else
-#define sotPREERROR  "\t!! " << ": " <<__FUNCTION__  \
-                            << "(#" << __LINE__ << ") :"
+#define sotPREERROR \
+  "\t!! "           \
+      << ": " << __FUNCTION__ << "(#" << __LINE__ << ") :"
 
 #endif
-#  define sotDEBUG(level) if( 1 ) ; else std::cout
-#  define sotDEBUGMUTE(level) if( 1 ) ; else std::cout
-#  define sotERROR sotERRORFLOW.outputbuffer << sotPREERROR
-#define sotDEBUGPRIOR(a) do {} while(0)
-inline void sotDEBUGF( const int ,const char* ,...) { return; }
-inline void sotDEBUGF( const char* ,...) { return; }
-inline void sotERRORF( const int ,const char* ,...) { return; }
-inline void sotERRORF( const char* ,...) { return; }
+#define sotDEBUG(level) \
+  if (1)                \
+    ;                   \
+  else                  \
+    std::cout
+#define sotDEBUGMUTE(level) \
+  if (1)                    \
+    ;                       \
+  else                      \
+    std::cout
+#define sotERROR sotERRORFLOW.outputbuffer << sotPREERROR
+#define sotDEBUGPRIOR(a) \
+  do {                   \
+  } while (0)
+inline void sotDEBUGF(const int, const char*, ...) { return; }
+inline void sotDEBUGF(const char*, ...) { return; }
+inline void sotERRORF(const int, const char*, ...) { return; }
+inline void sotERRORF(const char*, ...) { return; }
 // TEMPLATE
-#  define sotTDEBUG(level) if( 1 ) ; else std::cout
-inline void sotTDEBUGF( const int ,const char* ,...) { return; }
-inline void sotTDEBUGF( const char* ,...) { return; }
+#define sotTDEBUG(level) \
+  if (1)                 \
+    ;                    \
+  else                   \
+    std::cout
+inline void sotTDEBUGF(const int, const char*, ...) { return; }
+inline void sotTDEBUGF(const char*, ...) { return; }
 #define sotDEBUG_ENABLE(level) false
 #define sotTDEBUG_ENABLE(level) false
 
-#endif // #ifdef SOTH_DEBUG
+#endif  // #ifdef SOTH_DEBUG
 /* -------------------------------------------------------------------------- */
 
 #define sotDEBUGIN(level) sotDEBUG(level) << "# In {" << std::endl
@@ -195,16 +250,12 @@ inline void sotTDEBUGF( const char* ,...) { return; }
 #define sotTDEBUGOUT(level) sotTDEBUG(level) << "# Out }" << std::endl
 #define sotTDEBUGINOUT(level) sotTDEBUG(level) << "# In/Out { }" << std::endl
 
-
-
-} //namespace soth;
+}  // namespace soth
 
 /*  Prevent unused warning */
 #define UNUSED(x) ((void)x)
 
-
 #endif /* #ifdef __SOTH_DEBUG_HH */
-
 
 /*
  * Local variables:

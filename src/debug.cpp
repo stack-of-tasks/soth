@@ -31,57 +31,52 @@
  *
  * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-
 #include "soth/debug.hpp"
+#include <cstdlib>
 #include <fstream>
 #include <ios>
-#include <cstdlib>
 
-namespace soth
-{
-
+namespace soth {
 #ifdef WIN32
-  const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "traces.txt";
-#else	/*WIN32*/
-  const char * sotDebugTrace::DEBUG_FILENAME_DEFAULT = "/tmp/traces.txt";
-#endif	/*WIN32*/
-
-
+const char* sotDebugTrace::DEBUG_FILENAME_DEFAULT = "traces.txt";
+#else  /*WIN32*/
+const char* sotDebugTrace::DEBUG_FILENAME_DEFAULT = "/tmp/traces.txt";
+#endif /*WIN32*/
 
 #ifdef SOTH_DEBUG
-  std::ofstream debugfile( sotDebugTrace::DEBUG_FILENAME_DEFAULT, std::ios::trunc&std::ios::out );
+std::ofstream debugfile(sotDebugTrace::DEBUG_FILENAME_DEFAULT,
+                        std::ios::trunc& std::ios::out);
 #else
-  std::ofstream debugfile; //( "/dev/null", std::ios::trunc&std::ios::out );
-  class __sotDebug_init
-  {
-  public:
-    __sotDebug_init( void ) 
-    { debugfile.setstate( std::ios::failbit ) ; /* debugfile.close(); */ }
-  };
-  __sotDebug_init __sotDebug_initialisator;
+std::ofstream debugfile;  //( "/dev/null", std::ios::trunc&std::ios::out );
+class __sotDebug_init {
+ public:
+  __sotDebug_init(void) {
+    debugfile.setstate(std::ios::failbit); /* debugfile.close(); */
+  }
+};
+__sotDebug_init __sotDebug_initialisator;
 
 #endif
 
-  sotDebugTrace sotDEBUGFLOW(debugfile);
-  sotDebugTrace sotERRORFLOW(debugfile);
+sotDebugTrace sotDEBUGFLOW(debugfile);
+sotDebugTrace sotERRORFLOW(debugfile);
 
+void sotDebugTrace::openFile(const char* filename) {
+  if (debugfile.good() && debugfile.is_open()) debugfile.close();
+  debugfile.clear();
+  debugfile.open(filename, std::ios::trunc & std::ios::out);
+  // std::cout << filename << debugfile.good() << debugfile.is_open() <<
+  // std::endl;
+}
 
-  void sotDebugTrace::openFile( const char * filename )
-  {
-    if( debugfile.good()&&debugfile.is_open() ) debugfile.close();
-    debugfile.clear();
-    debugfile.open( filename, std::ios::trunc&std::ios::out );
-    //std::cout << filename << debugfile.good() << debugfile.is_open() << std::endl;
+void sotDebugTrace::closeFile(const char* /*filename*/) {
+  if (debugfile.good() && debugfile.is_open()) {
+    debugfile.close();
   }
+  debugfile.setstate(std::ios::failbit);
+}
 
-  void sotDebugTrace::closeFile( const char * /*filename*/ )
-  {
-    if( debugfile.good()&&debugfile.is_open() ) { debugfile.close(); }
-    debugfile.setstate( std::ios::failbit ) ;
-  }
+// sotDebugTrace sotDEBUGFLOW(std::cout);
+// sotDebugTrace sotERRORFLOW(std::cerr);
 
-
-  //sotDebugTrace sotDEBUGFLOW(std::cout);
-  //sotDebugTrace sotERRORFLOW(std::cerr);
-
-} // namespace soth
+}  // namespace soth

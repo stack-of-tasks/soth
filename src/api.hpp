@@ -21,14 +21,14 @@
 #ifndef SOTH_API_HH
 #define SOTH_API_HH
 
-#if defined (WIN32)
-#  ifdef soth_EXPORTS
-#    define SOTH_EXPORT __declspec(dllexport)
-#  else
-#    define SOTH_EXPORT __declspec(dllimport)
-#  endif
+#if defined(WIN32)
+#ifdef soth_EXPORTS
+#define SOTH_EXPORT __declspec(dllexport)
 #else
-#  define SOTH_EXPORT
+#define SOTH_EXPORT __declspec(dllimport)
+#endif
+#else
+#define SOTH_EXPORT
 #endif
 
 #endif
